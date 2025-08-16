@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<rect width="512" height="512" rx="48" fill="#0b1226"/>
+<g stroke="#22c55e" stroke-width="24" stroke-linecap="round" fill="none">
+  <path d="M256 96 L256 416"/>
+  <path d="M256 160 L208 120"/>
+  <path d="M256 200 L208 160"/>
+  <path d="M256 240 L208 200"/>
+  <path d="M256 280 L208 240"/>
+  <path d="M256 320 L208 280"/>
+  <path d="M256 360 L208 320"/>
+  <path d="M256 160 L304 120"/>
+  <path d="M256 200 L304 160"/>
+  <path d="M256 240 L304 200"/>
+  <path d="M256 280 L304 240"/>
+  <path d="M256 320 L304 280"/>
+  <path d="M256 360 L304 320"/>
+</g>
+</svg>

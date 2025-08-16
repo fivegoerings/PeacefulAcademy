@@ -1,17 +1,4 @@
-[build]
-  publish = "."
-  functions = "netlify/functions"
-
+# Netlify configuration for Peaceful Academy with Neon (Postgres)
 [functions]
   node_bundler = "esbuild"
   external_node_modules = ["@netlify/neon"]
-
-[[redirects]]
-  from = "/reports/*"
-  to = "/.netlify/functions/api/reports/:splat"
-  status = 200
-
-[[redirects]]
-  from = "/transcript/*"
-  to = "/.netlify/functions/api/transcript/:splat"
-  status = 200

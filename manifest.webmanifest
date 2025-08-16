@@ -5,7 +5,7 @@
   "display": "standalone",
   "background_color": "#0b1226",
   "theme_color": "#0b1226",
-  "description": "Missouri-compliant homeschool hours, courses, portfolio tracker.",
+  "description": "Missouri-compliant homeschool hours, courses, and portfolio tracker.",
   "icons": [
     {
       "src": "assets/icon.svg",
