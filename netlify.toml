@@ -10,3 +10,12 @@
   to = "/splash.html"
   status = 200
   force = true
+
+
+/ Add to your build configuration file (e.g., netlify.toml)
+[build]
+  functions = "/opt/build/repo/netlify/functions"
+  [[build.plugins]]
+    package = "@netlify/plugin-functions-core"
+    [build.plugins.inputs]
+      external_node_modules = ["@netlify/neon"]
