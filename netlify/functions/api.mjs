@@ -1,90 +1,80 @@
 import { neon } from '@netlify/neon';
 
-const sql = neon();
+export async function handler(event) {
+  if (event.httpMethod === 'OPTIONS') {
+    return { statusCode: 200, headers: corsHeaders() };
+  }
+  try {
+    const sql = neon(process.env.NETLIFY_DATABASE_URL);
+    const path = event.path || '';
 
-function json(body, status=200){
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: {
-      'content-type': 'application/json',
-      'access-control-allow-origin': '*',
-      'access-control-allow-methods': 'GET,OPTIONS'
+    if (path.includes('/health')) {
+      const [r] = await sql`SELECT version() AS version, now() AS now`;
+      return json({ ok: true, ...r });
     }
-  });
+
+    if (path.includes('/stats')) {
+      const [[s],[c],[l],[p]] = await Promise.all([
+        sql`SELECT COUNT(*)::int AS n FROM students`,
+        sql`SELECT COUNT(*)::int AS n FROM courses`,
+        sql`SELECT COUNT(*)::int AS n FROM logs`,
+        sql`SELECT COUNT(*)::int AS n FROM portfolio`
+      ]);
+      return json({ stats: { students:s.n, courses:c.n, logs:l.n, portfolio:p.n } });
+    }
+
+    if (path.includes('/reports/yearly')) {
+      const { studentId, year } = event.queryStringParameters || {};
+      const rows = await sql`
+        SELECT ${year} AS academic_year,
+               SUM(hours)::float AS total_hours,
+               SUM(CASE WHEN subject IN ('Reading','Language Arts','Mathematics','Science','Social Studies') THEN hours ELSE 0 END)::float AS core_hours,
+               SUM(CASE WHEN subject IN ('Reading','Language Arts','Mathematics','Science','Social Studies') AND location='home' THEN hours ELSE 0 END)::float AS home_core_hours
+        FROM logs
+        WHERE student_id=${studentId} AND (EXTRACT(YEAR FROM date)=${year} OR EXTRACT(YEAR FROM date)=${year}+1)
+      `;
+      return json({ rows });
+    }
+
+    if (path.includes('/transcript/')) {
+      const studentId = path.split('/transcript/')[1].split('?')[0];
+      const q = event.queryStringParameters || {};
+      const years = (q.years||'').split(',').filter(Boolean);
+      const scale = +(q.scale||120);
+      let rows=[];
+      if (years.length) {
+        rows = await sql`
+          SELECT EXTRACT(YEAR FROM date) AS academic_year,
+                 c.title AS course_title, l.subject, SUM(l.hours)::float AS hours_total,
+                 ROUND(SUM(l.hours)/${scale}::float,2) AS credits_scale
+          FROM logs l
+          JOIN courses c ON l.course_id=c.id
+          WHERE l.student_id=${studentId} AND EXTRACT(YEAR FROM date) = ANY(${years})
+          GROUP BY academic_year, c.title, l.subject
+          ORDER BY academic_year, c.title
+        `;
+      }
+      return json({ rows });
+    }
+
+    return json({ error: 'Unknown endpoint' }, 404);
+
+  } catch (e) {
+    return json({ error: e.message }, 500);
+  }
 }
 
-export default async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 204, headers: { 'access-control-allow-origin': '*', 'access-control-allow-methods': 'GET,OPTIONS' } });
-  }
-  if (req.method !== 'GET') return json({ error: 'Method not allowed' }, 405);
-
-  const url = new URL(req.url);
-  const match = url.pathname.match(/\/api(.*)$/);
-  const subpath = match ? match[1] : '/';
-
-  try {
-    if (subpath === '/health') {
-      const [{ now }] = await sql`select now() as now`;
-      const [{ version }] = await sql`select version()`;
-      return json({ ok:true, now, version });
-    }
-
-    if (subpath === '/stats') {
-      const rows = await sql`select
-        (select count(*)::int from students) as students,
-        (select count(*)::int from courses) as courses,
-        (select count(*)::int from logs) as logs,
-        (select count(*)::int from portfolio) as portfolio`;
-      return json({ stats: rows[0] });
-    }
-
-    if (subpath.startsWith('/reports/yearly')) {
-      const studentId = url.searchParams.get('studentId');
-      const year = url.searchParams.get('year');
-      if (studentId || year){
-        const rows = await sql`select student_id, student_name, academic_year, total_hours, core_hours, home_core_hours
-          from vw_yearly_totals
-          where (${ studentId ? sql`student_id = ${Number(studentId)}` : sql`1=1` })
-            and (${ year ? sql`academic_year = ${Number(year)}` : sql`1=1` })
-          order by student_id, academic_year`;
-        return json({ rows });
-      } else {
-        const rows = await sql`select student_id, student_name, academic_year, total_hours, core_hours, home_core_hours
-          from vw_yearly_totals
-          order by student_id, academic_year`;
-        return json({ rows });
-      }
-    }
-
-    if (subpath.startsWith('/transcript/')) {
-      const parts = subpath.split('/').filter(Boolean);
-      const studentId = Number(parts[1]);
-      if (!studentId) return json({ error: 'studentId required' }, 400);
-      const years = (url.searchParams.get('years')||'').split(',').map(s=>s.trim()).filter(Boolean).map(Number);
-      const scale = Number(url.searchParams.get('scale')||'120');
-      let rows;
-      if (years.length) {
-        rows = await sql`select student_id, student_name, academic_year, course_title, subject, hours_total, credits_120
-                         from vw_transcript_hours
-                         where student_id=${studentId} and academic_year = any(${years})
-                         order by academic_year, course_title`;
-      } else {
-        rows = await sql`select student_id, student_name, academic_year, course_title, subject, hours_total, credits_120
-                         from vw_transcript_hours
-                         where student_id=${studentId}
-                         order by academic_year, course_title`;
-      }
-      const data = rows.map(r => ({
-        ...r,
-        credits_scale: Math.round((Number(r.hours_total||0) / (scale||120)) * 100) / 100,
-        scale_used: scale||120
-      }));
-      return json({ rows: data });
-    }
-
-    return json({ error: 'Not found', path: subpath }, 404);
-  } catch (e) {
-    return json({ error: e.message||String(e) }, 500);
-  }
-};
+function json(obj, code=200) {
+  return {
+    statusCode: code,
+    headers: { "Content-Type": "application/json", ...corsHeaders() },
+    body: JSON.stringify(obj)
+  };
+}
+function corsHeaders() {
+  return {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type"
+  };
+}
