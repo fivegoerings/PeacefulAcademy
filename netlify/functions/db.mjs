@@ -1,96 +1,111 @@
 import { neon } from '@netlify/neon';
 
-const sql = neon(); // uses env NETLIFY_DATABASE_URL
+export async function handler(event) {
+  if (event.httpMethod === 'OPTIONS') {
+    return { statusCode: 200, headers: corsHeaders() };
+  }
 
-async function ensureSchema(){
-  await sql/*sql*/`
-  create table if not exists students (
-    id bigserial primary key,
-    name text not null,
-    dob date,
-    grade text,
-    start_year int,
-    notes text,
-    created_at timestamptz default now()
-  );
-  create table if not exists courses (
-    id bigserial primary key,
-    title text not null,
-    subject text,
-    description text,
-    created_at timestamptz default now()
-  );
-  create table if not exists logs (
-    id bigserial primary key,
-    student_id bigint,
-    student_name text,
-    course_id bigint,
-    course_title text,
-    subject text,
-    date date not null,
-    hours numeric(6,2) not null,
-    location text,
-    notes text,
-    created_at timestamptz default now()
-  );
-  create table if not exists portfolio (
-    id bigserial primary key,
-    student_id bigint,
-    student_name text,
-    course_id bigint,
-    course_title text,
-    subject text,
-    date date,
-    title text,
-    tags text[],
-    description text,
-    file_name text,
-    file_type text,
-    file_size int,
-    created_at timestamptz default now()
-  );`;
+  const action = (event.queryStringParameters?.action) ||
+                 (JSON.parse(event.body || '{}').action);
+
+  try {
+    const sql = neon(process.env.NETLIFY_DATABASE_URL);
+
+    // one-time: ensure tables exist
+    await sql`
+      CREATE TABLE IF NOT EXISTS students (
+        id SERIAL PRIMARY KEY,
+        name TEXT NOT NULL,
+        dob DATE,
+        grade TEXT,
+        start_year INT,
+        notes TEXT
+      );
+      CREATE TABLE IF NOT EXISTS courses (
+        id SERIAL PRIMARY KEY,
+        title TEXT NOT NULL,
+        subject TEXT,
+        description TEXT
+      );
+      CREATE TABLE IF NOT EXISTS logs (
+        id SERIAL PRIMARY KEY,
+        student_id INT REFERENCES students(id),
+        course_id INT REFERENCES courses(id),
+        subject TEXT,
+        date DATE,
+        hours NUMERIC,
+        location TEXT,
+        notes TEXT
+      );
+      CREATE TABLE IF NOT EXISTS portfolio (
+        id SERIAL PRIMARY KEY,
+        student_id INT REFERENCES students(id),
+        course_id INT REFERENCES courses(id),
+        title TEXT,
+        description TEXT,
+        tags TEXT[],
+        date DATE
+      );
+    `;
+
+    if (action === 'health') {
+      const [r] = await sql`SELECT version() AS version, now() AS now`;
+      return json({ ok: true, ...r });
+    }
+
+    if (action === 'stats') {
+      const [[s],[c],[l],[p]] = await Promise.all([
+        sql`SELECT COUNT(*)::int AS n FROM students`,
+        sql`SELECT COUNT(*)::int AS n FROM courses`,
+        sql`SELECT COUNT(*)::int AS n FROM logs`,
+        sql`SELECT COUNT(*)::int AS n FROM portfolio`
+      ]);
+      return json({ stats: { students: s.n, courses: c.n, logs: l.n, portfolio: p.n } });
+    }
+
+    // inserts
+    const body = JSON.parse(event.body || '{}').data || {};
+    if (action === 'student.insert') {
+      await sql`INSERT INTO students (name,dob,grade,start_year,notes)
+                VALUES (${body.name},${body.dob},${body.grade},${body.startYear},${body.notes})`;
+      return json({ ok: true });
+    }
+    if (action === 'course.insert') {
+      await sql`INSERT INTO courses (title,subject,description)
+                VALUES (${body.title},${body.subject},${body.description})`;
+      return json({ ok: true });
+    }
+    if (action === 'log.insert') {
+      await sql`INSERT INTO logs (student_id,course_id,subject,date,hours,location,notes)
+                VALUES (${body.studentId},${body.courseId},${body.subject},
+                        ${body.date},${body.hours},${body.location},${body.notes})`;
+      return json({ ok: true });
+    }
+    if (action === 'portfolio.insert') {
+      await sql`INSERT INTO portfolio (student_id,course_id,title,description,tags,date)
+                VALUES (${body.studentId},${body.courseId},${body.title},
+                        ${body.description},${body.tags},${body.date})`;
+      return json({ ok: true });
+    }
+
+    return json({ error: 'Unknown action: '+action }, 400);
+
+  } catch (e) {
+    return json({ error: e.message }, 500);
+  }
 }
 
-function ok(body, status=200){ return new Response(JSON.stringify(body), {status, headers:{'content-type':'application/json'}}); }
-function bad(msg, status=400){ return ok({error:String(msg)}, status); }
-
-export default async (req) => {
-  try{
-    if (req.method!=='POST') return bad('Method not allowed', 405);
-    const { action, data } = await req.json();
-    if (!action) return bad('Missing action');
-    await ensureSchema();
-
-    if (action==='student.insert'){
-      const { name, dob, grade, startYear, notes } = data||{};
-      if (!name) return bad('name required');
-      const r = await sql`insert into students (name,dob,grade,start_year,notes) values (${name},${dob||null},${grade||null},${startYear||null},${notes||null}) returning id`;
-      return ok({ id: r[0].id });
-    }
-    if (action==='course.insert'){
-      const { title, subject, description } = data||{};
-      if (!title) return bad('title required');
-      const r = await sql`insert into courses (title,subject,description) values (${title},${subject||null},${description||null}) returning id`;
-      return ok({ id: r[0].id });
-    }
-    if (action==='log.insert'){
-      const { studentId, studentName, courseId, courseTitle, subject, date, hours, location, notes } = data||{};
-      if (!studentName || !courseTitle || !date || !hours) return bad('studentName, courseTitle, date, hours required');
-      const r = await sql`insert into logs (student_id,student_name,course_id,course_title,subject,date,hours,location,notes) values (${studentId||null},${studentName},${courseId||null},${courseTitle},${subject||null},${date},${hours},${location||null},${notes||null}) returning id`;
-      return ok({ id: r[0].id });
-    }
-    if (action==='portfolio.insert'){
-      const { studentId, studentName, courseId, courseTitle, subject, date, title, tags, description, fileName, fileType, fileSize } = data||{};
-      const r = await sql`insert into portfolio (student_id,student_name,course_id,course_title,subject,date,title,tags,description,file_name,file_type,file_size) values (${studentId||null},${studentName||null},${courseId||null},${courseTitle||null},${subject||null},${date||null},${title||null},${tags||null},${description||null},${fileName||null},${fileType||null},${fileSize||null}) returning id`;
-      return ok({ id: r[0].id });
-    }
-    if (action==='logs.latest'){
-      const rows = await sql`select * from logs order by id desc limit 20`;
-      return ok({ rows });
-    }
-    return bad('Unknown action');
-  }catch(err){
-    console.error(err);
-    return bad(err.message || 'Server error', 500);
-  }
-};
+function json(obj, code=200) {
+  return {
+    statusCode: code,
+    headers: { "Content-Type": "application/json", ...corsHeaders() },
+    body: JSON.stringify(obj)
+  };
+}
+function corsHeaders() {
+  return {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type"
+  };
+}
