@@ -1,7 +1,10 @@
+[build]
+  publish = "."
+  functions = "netlify/functions"
+
 [functions]
   node_bundler = "esbuild"
   external_node_modules = ["@netlify/neon"]
-
 
 [[redirects]]
   from = "/reports/*"
@@ -12,17 +15,3 @@
   from = "/transcript/*"
   to = "/.netlify/functions/api/transcript/:splat"
   status = 200
-
-[[redirects]]
-  from = "/hello"
-  to = "/.netlify/functions/hello"
-  status = 200
-
-
-[build]
-  publish = "."
-  functions = "netlify/functions"
-
-[functions]
-  node_bundler = "esbuild"
-  external_node_modules = ["@netlify/neon"]
