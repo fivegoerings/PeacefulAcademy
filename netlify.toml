@@ -1,16 +1,76 @@
-# Netlify configuration for Peaceful Academy with Neon (Postgres)
+# =========================
+# Peaceful Academy — Netlify config
+# =========================
 
+# If your site is plain HTML/JS/CSS in the repo root, leave command empty and publish "."
 [build]
-  # If your site is static in the repo root; change if you build to "dist" or similar.
+  command = ""
   publish = "."
+  functions = "netlify/functions"
 
+# Pin a modern Node runtime for functions/builds
+[build.environment]
+  NODE_VERSION = "20"
+
+# Bundle functions with esbuild, include Neon runtime
 [functions]
   node_bundler = "esbuild"
   external_node_modules = ["@netlify/neon"]
-  # directory = "netlify/functions"  # uncomment if you’ve customized it
+  # If you keep SQL files or migrations that functions read at runtime, include them:
+  included_files = ["migrations/**", "sql/**"]
 
-# Redirects: send root traffic to splash.html (rewrite)
+# ---------- Redirects / Rewrites ----------
+
+# 1) Show splash as the root page
 [[redirects]]
   from = "/"
   to = "/splash.html"
   status = 200
+
+# 2) Route API calls to Netlify Functions: /api/foo -> /.netlify/functions/foo
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+  force = true
+
+# 3) (Optional) SPA fallback — enable only if you ship a front-end router
+# [[redirects]]
+#   from = "/*"
+#   to = "/index.html"
+#   status = 200
+
+# ---------- Security & Caching Headers ----------
+
+# Security headers for all paths
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "SAMEORIGIN"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "geolocation=(), microphone=(), camera=()"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
+
+# Static asset caching (adjust globs to your structure as needed)
+[[headers]]
+  for = "/**/*.@(css|js|mjs|png|jpg|jpeg|webp|gif|svg|ico|woff|woff2|ttf)"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Shorter cache for HTML
+[[headers]]
+  for = "/**/*.html"
+  [headers.values]
+    Cache-Control = "public, max-age=60"
+
+# ---------- Context Overrides ----------
+
+[context.production.environment]
+  NODE_ENV = "production"
+
+[context.deploy-preview.environment]
+  NODE_ENV = "development"
+
+[context.branch-deploy.environment]
+  NODE_ENV = "development"
