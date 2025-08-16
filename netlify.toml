@@ -1,15 +1,15 @@
 # Netlify configuration for Peaceful Academy with Neon (Postgres)
+
+[build]
+  # If your site is static in the repo root; change if you build to "dist" or similar.
+  publish = "."
+
 [functions]
   node_bundler = "esbuild"
   external_node_modules = ["@netlify/neon"]
+  # directory = "netlify/functions"  # uncomment if you’ve customized it
 
-
-# Netlify configuration for Peaceful Academy with Neon (Postgres)
-[functions]
-  node_bundler = "esbuild"
-  external_node_modules = ["@netlify/neon"]
-
-# Redirects: send root traffic to splash.html
+# Redirects: send root traffic to splash.html (rewrite)
 [[redirects]]
   from = "/"
   to = "/splash.html"
