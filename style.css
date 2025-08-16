@@ -1,0 +1,69 @@
+:root{
+  --bg: #0f172a;
+  --card: #0b1220;
+  --muted: #97a3b6;
+  --ring: #1e293b;
+  --primary: #2563eb;
+  --grad-a: #0ea5e9;
+  --grad-b: #6366f1;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+  color: #e2e8f0;
+  background:
+    radial-gradient(1200px 800px at 20% -10%, rgba(99,102,241,.14), transparent 60%),
+    radial-gradient(1200px 800px at 120% 10%, rgba(14,165,233,.12), transparent 60%),
+    var(--bg);
+}
+a{color:#93c5fd}
+.container{
+  max-width: 900px; margin: 0 auto; padding: 32px;
+  display:grid; gap:28px; align-content:center; min-height:100%;
+}
+.card{
+  background: linear-gradient( to bottom right, rgba(255,255,255,.06), rgba(255,255,255,.02));
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 20px; padding: 28px;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 10px 30px rgba(0,0,0,.25);
+}
+.header{display:flex; align-items:center; gap:16px}
+.header img{width:56px; height:56px}
+.badge{
+  display:inline-block; padding:.3rem .55rem; border:1px solid rgba(255,255,255,.12);
+  border-radius:999px; color:#cbd5e1; font-size:.85rem; letter-spacing:.02em;
+}
+h1{font-size: clamp(1.6rem, 2.6vw, 2.3rem); margin:.3rem 0 .6rem}
+p.lead{color:var(--muted); margin:0 0 1rem; font-size:1.05rem}
+.countdown{display:flex; gap:10px; flex-wrap:wrap}
+.timebox{
+  flex:1 1 110px; min-width:110px;
+  background: linear-gradient( to bottom right, rgba(255,255,255,.08), rgba(255,255,255,.02));
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:16px; padding:16px; text-align:center;
+}
+.timebox .num{font-size:1.8rem; font-weight:700}
+.timebox .lbl{font-size:.85rem; color:#c1cde0; letter-spacing:.08em; text-transform:uppercase}
+form{
+  display:grid; grid-template-columns: 1fr auto; gap:10px; margin-top:12px;
+}
+input[type="email"]{
+  width:100%; padding:14px 16px; border-radius:12px; border:1px solid rgba(255,255,255,.15);
+  background: rgba(10,15,25,.6); color:#e5e7eb; outline:none;
+}
+input[type="email"]:focus{border-color:#60a5fa; box-shadow: 0 0 0 4px rgba(37,99,235,.2)}
+button{
+  padding:14px 18px; border-radius:12px; border:1px solid #1d4ed8; cursor:pointer;
+  background: linear-gradient(90deg, var(--grad-a), var(--grad-b)); color:white; font-weight:600;
+}
+.small{color:#a7b4c8; font-size:.92rem}
+.footer{color:#93a1b5; font-size:.9rem}
+hr{border:none; height:1px; background: linear-gradient(90deg, rgba(255,255,255,.12), rgba(255,255,255,.03)); margin: 10px 0 20px}
+.visually-hidden{position:absolute!important; clip:rect(1px,1px,1px,1px); padding:0; border:0; height:1px; width:1px; overflow:hidden; white-space:nowrap; margin:-1px}
+@media (max-width:600px){
+  .header{flex-direction:column; align-items:flex-start}
+  form{grid-template-columns:1fr}
+}
