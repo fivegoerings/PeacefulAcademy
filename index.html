@@ -196,8 +196,35 @@ async function saveToNeon(kind, data){
   try{ await fetch('/.netlify/functions/db', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ action: kind + '.insert', data }) }); }
   catch(e){ console.warn('Neon save failed', e); }
 }
-async function dbHealth(){ const r=await fetch('/.netlify/functions/db', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ action:'health', data:{} }) }); return r.json(); }
-async function dbStats(){ const r=await fetch('/.netlify/functions/db', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ action:'stats', data:{} }) }); return r.json(); }
+async function safeJSON(res){
+  try { return await res.json(); } catch(e){
+    const t = await res.text().catch(()=>'');
+    throw new Error(`Invalid JSON (status ${res.status}): ${t.slice(0,200)}`);
+  }
+}
+async function dbHealth(){
+  try{
+    const r = await fetch('/.netlify/functions/api/health', { method:'GET' });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return await safeJSON(r);
+  }catch(e){
+    const r2 = await fetch('/.netlify/functions/db?action=health', { method:'GET' });
+    if (!r2.ok) throw new Error(`HTTP ${r2.status}`);
+    return await safeJSON(r2);
+  }
+}
+async function dbStats(){
+  try{
+    const r = await fetch('/.netlify/functions/api/stats', { method:'GET' });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return await safeJSON(r);
+  }catch(e){
+    const r2 = await fetch('/.netlify/functions/db?action=stats', { method:'GET' });
+    if (!r2.ok) throw new Error(`HTTP ${r2.status}`);
+    return await safeJSON(r2);
+  }
+}
+
 
 /* Views */
 async function renderStudents(){ const s=await DB.all('students'); const tb=$('#stTable tbody'); tb.innerHTML=''; s.forEach(x=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>${x.name}</td><td>${x.dob||''}</td><td>${x.grade||''}</td><td>${x.startYear||''}</td>`; tb.appendChild(tr); }); }
