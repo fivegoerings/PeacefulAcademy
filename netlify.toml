@@ -2,23 +2,6 @@
 # Peaceful Academy — Netlify config
 # =========================
 
-# If your site is plain HTML/JS/CSS in the repo root, leave command empty and publish "."
-[build]
-  command = ""
-  publish = "."
-  functions = "netlify/functions"
-
-# Pin a modern Node runtime for functions/builds
-[build.environment]
-  NODE_VERSION = "20"
-
-# Bundle functions with esbuild, include Neon runtime
-[functions]
-  node_bundler = "esbuild"
-  external_node_modules = ["@netlify/neon"]
-  # If you keep SQL files or migrations that functions read at runtime, include them:
-  included_files = ["migrations/**", "sql/**"]
-
 # ---------- Redirects / Rewrites ----------
 
 # 1) Show splash as the root page
@@ -39,6 +22,26 @@
 #   from = "/*"
 #   to = "/index.html"
 #   status = 200
+
+
+
+# If your site is plain HTML/JS/CSS in the repo root, leave command empty and publish "."
+[build]
+  command = ""
+  publish = "."
+  functions = "netlify/functions"
+
+# Pin a modern Node runtime for functions/builds
+[build.environment]
+  NODE_VERSION = "20"
+
+# Bundle functions with esbuild, include Neon runtime
+[functions]
+  node_bundler = "esbuild"
+  external_node_modules = ["@netlify/neon"]
+  # If you keep SQL files or migrations that functions read at runtime, include them:
+  included_files = ["migrations/**", "sql/**"]
+
 
 # ---------- Security & Caching Headers ----------
 
