@@ -2,29 +2,17 @@
 # Peaceful Academy — Netlify config
 # =========================
 
-# Netlify configuration for Peaceful Academy
+# Netlify configuration for Peaceful Fields Academy with Neon (Postgres)
+[build]
+  publish = "admin"
 
 [functions]
   node_bundler = "esbuild"
   external_node_modules = ["@netlify/neon"]
+  included_files = ["admin/sql/schema.sql"]
 
-
-# API first, so it isn't shadowed by any catch-all
+# Admin UI lives under /admin
 [[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/:splat"
+  from = "/admin/*"
+  to = "/admin/index.html"
   status = 200
-  force = true
-
-# Then the root redirect
-[[redirects]]
-  from = "/"
-  to = "/splash.html"
-  status = 301
-  force = true
-
-# Optional SPA fallback, last
-# [[redirects]]
-#   from = "/*"
-#   to = "/index.html"
-#   status = 200

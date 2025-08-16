@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Peaceful Fields Admin</title>
+  <link rel="stylesheet" href="/admin/style.css" />
+</head>
+<body>
+  <header>
+    <h1>Peaceful Fields Admin</h1>
+    <nav>
+      <button class="tab active" data-tab="monitor">DB Monitor</button>
+      <button class="tab" data-tab="students">Students</button>
+      <button class="tab" data-tab="courses">Courses</button>
+      <button class="tab" data-tab="enrollments">Enrollments</button>
+    </nav>
+  </header>
+
+  <div class="wrap">
+    <section id="monitor" class="active"></section>
+    <section id="students"></section>
+    <section id="courses"></section>
+    <section id="enrollments"></section>
+  </div>
+
+  <script src="/admin/app.js"></script>
+</body>
+</html>
