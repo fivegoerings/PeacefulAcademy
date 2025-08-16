@@ -1,24 +1,21 @@
-Peaceful Academy — Netlify + Neon + PWA
+Peaceful Academy — Netlify + Neon + PWA (with Database health/stats)
 
-What you get
-- index.html — single-page app (Missouri-compliant tracker) with Netlify Forms, Neon DB writes, Transcript & Diploma generators
-- manifest.webmanifest — PWA manifest
-- sw.js — service worker (offline support)
-- assets/icon.svg — app icon
-- netlify/functions/db.mjs — server function using @netlify/neon (Postgres)
-- netlify.toml — Netlify config (bundling)
+New:
+- Database view in the app (nav → Database): runs a health check and shows table row counts.
+- Netlify Function actions:
+  - health: quick connection + server version
+  - stats: counts for students, courses, logs, portfolio
 
-Deploy
-1) Upload all files/folders to Netlify (drag-and-drop or connect a repo).
-2) In Netlify → Site settings → Environment variables, add NETLIFY_DATABASE_URL with your Neon connection string (e.g., postgres://USER:PASSWORD@HOST/db?sslmode=require).
-3) Visit the live site and add a student/log to trigger table creation. Submissions will appear:
-   - Locally (browser IndexedDB)
-   - Netlify Forms (Forms tab)
-   - Neon (tables: students, courses, logs, portfolio)
+Setup:
+- Deploy to Netlify and set NETLIFY_DATABASE_URL in Site settings → Environment variables.
+- Open the live site → Database → Run health check.
 
-Notes
-- The app works offline. Data stays local and mirrors to Forms + Neon when online.
-- Transcript: choose student/years, build, optionally edit credits/grades inline, then print.
-- Diploma: set fields, preview, print.
 
-Enjoy!
+Endpoints (via redirects)
+- GET /reports/yearly               -> yearly totals (optional ?studentId=&year=)
+- GET /transcript/:studentId        -> transcript rows; optional ?years=2023,2024&scale=135
+- GET /.netlify/functions/api/health  and /stats for direct checks (no redirect)
+
+Examples:
+  curl -s https://YOUR-SITE.netlify.app/reports/yearly?studentId=1&year=2024
+  curl -s https://YOUR-SITE.netlify.app/transcript/1?years=2023,2024&scale=120
