@@ -1,36 +1,1174 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
+  <title>Peaceful Academy of Kansas City, Missouri</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Peaceful Fields Academy — Coming Soon</title>
-  <meta name="description" content="Peaceful Fields Academy of Kansas City, Missouri — homeschool tracking app is launching soon. Sign up to be notified.">
-  <meta name="robots" content="noindex, nofollow">
-  <meta property="og:title" content="Peaceful Fields Academy — Coming Soon">
-  <meta property="og:description" content="Homeschool courses, hours, and work samples — launching soon.">
-  <meta property="og:type" content="website">
-  <meta property="og:image" content="/assets/logo.svg">
-  <link rel="icon" type="image/svg+xml" href="/assets/logo.svg"/>
-  <link rel="preload" href="/assets/logo.svg" as="image">
-  <link rel="stylesheet" href="/style.css">
-  <script>
-    // Change your launch date here (UTC):
-    const LAUNCH_UTC = "2025-09-01T15:00:00Z";
-  </script>
+  <meta name="description" content="Peaceful Academy – Missouri-compliant homeschool hours, courses, and portfolio tracker." />
+  <style>
+    /* ====== Base / Theme ====== */
+    :root{
+      --bg:#0f172a;         /* slate-900 */
+      --panel:#111827;      /* gray-900 */
+      --ink:#e5e7eb;        /* gray-200 */
+      --muted:#94a3b8;      /* slate-400 */
+      --accent:#22c55e;     /* green-500 */
+      --accent-2:#06b6d4;   /* cyan-500 */
+      --warn:#f59e0b;       /* amber-500 */
+      --danger:#ef4444;     /* red-500 */
+      --ok:#10b981;         /* emerald-500 */
+      --card:#0b1226;
+      --border:#1f2937;
+      --chip:#0b1226;
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius:14px;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji"}
+    a{color:var(--accent-2);text-decoration:none}
+    a:hover{text-decoration:underline}
+    button,input,select,textarea{font:inherit;color:inherit}
+    button{cursor:pointer;border:1px solid var(--border);background:#0a1123;border-radius:10px;padding:.6rem .9rem}
+    button.primary{background:linear-gradient(135deg,#0ea5e9,#22c55e);border:none;color:white}
+    button.ghost{background:transparent;border:1px dashed var(--border)}
+    button.danger{background:var(--danger);border:none;color:white}
+    label{font-weight:600}
+    input,select,textarea{
+      background:#0b1226;border:1px solid var(--border);border-radius:10px;
+      padding:.55rem .7rem;width:100%
+    }
+    .grid{display:grid;gap:1rem}
+    .two{grid-template-columns:1fr 1fr}
+    .three{grid-template-columns:repeat(3,1fr)}
+    .four{grid-template-columns:repeat(4,1fr)}
+    .wrap{max-width:1100px;margin:0 auto;padding:24px}
+    .topbar{
+      position:sticky;top:0;z-index:3;background:rgba(15,23,42,.8);backdrop-filter: blur(10px);
+      border-bottom:1px solid var(--border)
+    }
+    nav{display:flex;gap:.5rem;flex-wrap:wrap}
+    nav a{
+      padding:.55rem .8rem;border-radius:999px;background:var(--chip);border:1px solid var(--border);color:var(--ink)
+    }
+    nav a.active{background:linear-gradient(135deg,#1e293b,#0b1226);border-color:#334155}
+    h1{font-size:1.8rem;margin:.2rem 0 .8rem}
+    h2{font-size:1.2rem;margin:0 0 .6rem;color:#d1d5db}
+    .card{
+      background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+      box-shadow:var(--shadow);padding:1rem
+    }
+    .status{display:flex;gap:.6rem;flex-wrap:wrap}
+    .chip{
+      border:1px solid var(--border);background:var(--chip);padding:.2rem .5rem;border-radius:999px;color:var(--muted);font-size:.85rem
+    }
+    .kpi{display:flex;gap:1rem;flex-wrap:wrap}
+    .kpi .box{flex:1;min-width:220px}
+    .kpi .box .num{font-size:1.8rem;font-weight:800}
+    .bar{
+      height:10px;border-radius:8px;background:#0b1226;border:1px solid #1f2937;overflow:hidden
+    }
+    .bar > span{display:block;height:100%;background:linear-gradient(90deg,#22c55e,#06b6d4)}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:.5rem;border-bottom:1px solid #1f2937;text-align:left}
+    tr:hover td{background:#0c142a}
+    .right{text-align:right}
+    .muted{color:var(--muted)}
+    .row{display:flex;gap:1rem;flex-wrap:wrap;align-items:center}
+    .spacer{height:10px}
+    .hide{display:none !important}
+    .pill{padding:.25rem .5rem;border-radius:999px;border:1px solid var(--border)}
+    .ok{color:var(--ok)}
+    .warn{color:var(--warn)}
+    .danger{color:var(--danger)}
+    .footer{margin:3rem 0 2rem;color:var(--muted);font-size:.9rem;text-align:center}
+    .thumb{width:120px;height:90px;object-fit:cover;border-radius:8px;border:1px solid var(--border);background:#0a1123}
+    .gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+    .tile{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:#0a1123}
+    .tile .meta{padding:.6rem}
+    .nowrap{white-space:nowrap}
+    .sticky-actions{position:sticky;bottom:0;background:linear-gradient(180deg,rgba(11,18,38,0),#0b1226 35%);padding-top:1rem}
+    .note{font-size:.92rem;color:#9ca3af}
+    @media (max-width:800px){ .two,.three,.four{grid-template-columns:1fr}}
+  </style>
 </head>
 <body>
-  <main class="container">
-    <section class="card">
-      <div class="header">
-        <img src="/assets/logo.svg" alt="Peaceful Fields Academy logo" width="56" height="56">
+<header class="topbar">
+  <div class="wrap">
+    <div class="row">
+      <div>
+        <h1 style="margin:0;font-size:1.4rem">Peaceful Academy • Kansas City, MO</h1>
+        <div class="status">
+          <span class="chip">Missouri school year: July 1 – June 30</span>
+          <span class="chip">Tracks 1000/600/400 hour rule</span>
+          <span class="chip">Local-only • Private</span>
+        </div>
+      </div>
+    </div>
+    <div style="height:10px"></div>
+    <nav id="nav">
+      <a href="#dashboard" class="active">Dashboard</a>
+      <a href="#students">Students</a>
+      <a href="#courses">Courses</a>
+      <a href="#log">Log Hours</a>
+      <a href="#portfolio">Portfolio</a>
+      <a href="#reports">Reports</a>
+      <a href="#settings">Settings</a>
+      <a href="#help">Help</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- ===== DASHBOARD ===== -->
+  <section id="view-dashboard" class="view">
+    <div class="grid two">
+      <div class="card">
+        <h2>Current Year Progress</h2>
+        <div class="note" id="yearLabel"></div>
+        <div class="kpi">
+          <div class="box card">
+            <div class="muted">Total Hours (goal 1000 / student)</div>
+            <div class="num" id="kpiTotal">0</div>
+            <div class="bar"><span id="barTotal" style="width:0%"></span></div>
+          </div>
+          <div class="box card">
+            <div class="muted">Core Hours (goal 600)</div>
+            <div class="num" id="kpiCore">0</div>
+            <div class="bar"><span id="barCore" style="width:0%"></span></div>
+          </div>
+          <div class="box card">
+            <div class="muted">Core @ Home (goal 400)</div>
+            <div class="num" id="kpiHome">0</div>
+            <div class="bar"><span id="barHome" style="width:0%"></span></div>
+          </div>
+        </div>
+
+        <div class="spacer"></div>
+        <div class="grid two">
+          <div>
+            <label for="dashStudent">Student</label>
+            <select id="dashStudent"></select>
+          </div>
+          <div>
+            <label for="dashYear">Academic Year</label>
+            <select id="dashYear"></select>
+          </div>
+        </div>
+        <div class="spacer"></div>
+        <table id="recentTable">
+          <thead><tr><th>Date</th><th>Course</th><th class="right">Hours</th><th>Loc</th><th>Notes</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>Quick Add Hours</h2>
+        <div class="grid two">
+          <div>
+            <label>Student</label>
+            <select id="qaStudent"></select>
+          </div>
+          <div>
+            <label>Course</label>
+            <select id="qaCourse"></select>
+          </div>
+          <div>
+            <label>Date</label>
+            <input type="date" id="qaDate">
+          </div>
+          <div>
+            <label>Hours</label>
+            <input type="number" step="0.25" min="0" id="qaHours" placeholder="e.g., 1.5">
+          </div>
+          <div>
+            <label>Location</label>
+            <select id="qaLocation">
+              <option value="home">Home</option>
+              <option value="offsite">Offsite</option>
+            </select>
+          </div>
+          <div>
+            <label>Notes</label>
+            <input id="qaNotes" placeholder="Chapter 3, lab, field trip…">
+          </div>
+        </div>
+        <div class="sticky-actions">
+          <button class="primary" id="qaAdd">Add Hours</button>
+          <button class="ghost" id="qaToday">Today</button>
+        </div>
+        <div class="note">Tip: Missouri allows counting learning all year (July 1–June 30). Field trips and hands-on learning can be logged when they map to a subject.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== STUDENTS ===== -->
+  <section id="view-students" class="view hide">
+    <div class="card">
+      <h2>Students</h2>
+      <div class="grid two">
+        <div class="card">
+          <div class="grid two">
+            <div>
+              <label>Name</label>
+              <input id="stName" placeholder="Full name">
+            </div>
+            <div>
+              <label>Date of Birth</label>
+              <input type="date" id="stDob">
+            </div>
+            <div>
+              <label>Grade (optional)</label>
+              <input id="stGrade" placeholder="e.g., 9">
+            </div>
+            <div>
+              <label>Start Year</label>
+              <select id="stStart"></select>
+            </div>
+          </div>
+          <div>
+            <label>Notes</label>
+            <textarea id="stNotes" rows="3" placeholder="Allergies, learning goals, evaluations, etc."></textarea>
+          </div>
+          <div class="sticky-actions">
+            <button class="primary" id="stSave">Add Student</button>
+            <button class="ghost" id="stClear">Clear</button>
+          </div>
+        </div>
         <div>
-          <span class="badge">Coming Soon</span>
-          <h1>Peaceful Fields Academy of Kansas City, Missouri</h1>
-          <p class="lead">We’re putting the final touches on our homeschool tracker (courses, hours, and work samples) with cloud sync. Be first to know when we open.</p>
+          <table id="stTable">
+            <thead><tr><th>Name</th><th>DOB</th><th>Grade</th><th>Start</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== COURSES ===== -->
+  <section id="view-courses" class="view hide">
+    <div class="card">
+      <h2>Courses & Subjects</h2>
+      <div class="grid two">
+        <div class="card">
+          <div class="grid two">
+            <div>
+              <label>Course Title</label>
+              <input id="coTitle" placeholder="Algebra I, American History, Reading Hour…">
+            </div>
+            <div>
+              <label>Subject Area</label>
+              <select id="coSubject">
+                <option value="Language Arts">Language Arts</option>
+                <option value="Reading">Reading</option>
+                <option value="Mathematics">Mathematics</option>
+                <option value="Science">Science</option>
+                <option value="Social Studies">Social Studies</option>
+                <option value="Elective">Elective / Other</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label>Description</label>
+            <textarea id="coDesc" rows="3" placeholder="Curriculum, objectives, materials… (plan book)"></textarea>
+          </div>
+          <div class="sticky-actions">
+            <button class="primary" id="coSave">Add Course</button>
+            <button class="ghost" id="coClear">Clear</button>
+          </div>
+        </div>
+        <div>
+          <table id="coTable">
+            <thead><tr><th>Course</th><th>Subject</th><th>Description</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="note">Core subjects (count toward 600 core hours): Reading, Language Arts, Mathematics, Social Studies, Science.</div>
+    </div>
+  </section>
+
+  <!-- ===== LOG HOURS ===== -->
+  <section id="view-log" class="view hide">
+    <div class="card">
+      <h2>Daily Log (Plan Book / Diary)</h2>
+      <div class="grid three">
+        <div>
+          <label>Student</label>
+          <select id="lgStudent"></select>
+        </div>
+        <div>
+          <label>Course</label>
+          <select id="lgCourse"></select>
+        </div>
+        <div>
+          <label>Date</label>
+          <input type="date" id="lgDate">
+        </div>
+        <div>
+          <label>Hours</label>
+          <input type="number" step="0.25" min="0" id="lgHours" placeholder="0.25 increments supported">
+        </div>
+        <div>
+          <label>Location</label>
+          <select id="lgLocation">
+            <option value="home">Home</option>
+            <option value="offsite">Offsite</option>
+          </select>
+        </div>
+        <div>
+          <label>Notes</label>
+          <input id="lgNotes" placeholder="What did you do? pages, labs, trip, project…">
+        </div>
+      </div>
+      <div class="sticky-actions">
+        <button class="primary" id="lgAdd">Add Entry</button>
+        <button class="ghost" id="lgToday2">Today</button>
+      </div>
+
+      <div class="spacer"></div>
+      <div class="row">
+        <div style="flex:1">
+          <label>Filter by Year</label>
+          <select id="lgYearFilter"></select>
+        </div>
+        <div style="flex:1">
+          <label>Filter by Student</label>
+          <select id="lgStudentFilter"></select>
+        </div>
+        <div style="flex:1">
+          <label>Filter by Subject</label>
+          <select id="lgSubjectFilter">
+            <option value="">All</option>
+            <option>Language Arts</option><option>Reading</option><option>Mathematics</option><option>Science</option><option>Social Studies</option><option>Elective</option>
+          </select>
+        </div>
+        <div class="row">
+          <button id="exportCSV">Export CSV</button>
+          <button id="exportJSON">Backup (JSON)</button>
+          <label class="pill muted nowrap">
+            Import JSON <input id="importJSON" type="file" accept="application/json" style="display:none">
+          </label>
         </div>
       </div>
 
-      <div class="countdown" role="timer" aria-live="polite">
-        <div class="timebox"><div class="num" id="d">—</div><div class="lbl">Days</div></div>
-        <div class="timebox"><div class="num" id="h">—</div><div class="lbl">Hours</div></div>
-        <div class="timebox"><div class="num" id="m">—</div><div cla
+      <table id="lgTable">
+        <thead><tr><th>Date</th><th>Student</th><th>Course</th><th>Subject</th><th class="right">Hours</th><th>Loc</th><th>Notes</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===== PORTFOLIO ===== -->
+  <section id="view-portfolio" class="view hide">
+    <div class="card">
+      <h2>Portfolio: Samples of Academic Work</h2>
+      <div class="grid two">
+        <div class="card">
+          <div class="grid two">
+            <div>
+              <label>Student</label>
+              <select id="pfStudent"></select>
+            </div>
+            <div>
+              <label>Course</label>
+              <select id="pfCourse"></select>
+            </div>
+            <div>
+              <label>Date</label>
+              <input type="date" id="pfDate">
+            </div>
+            <div>
+              <label>File</label>
+              <input type="file" id="pfFile" accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+            </div>
+            <div>
+              <label>Title</label>
+              <input id="pfTitle" placeholder="Essay draft, lab report, test…">
+            </div>
+            <div>
+              <label>Tags</label>
+              <input id="pfTags" placeholder="draft, test, project">
+            </div>
+          </div>
+          <div>
+            <label>Description / Notes</label>
+            <textarea id="pfDesc" rows="3" placeholder="Context, rubric, score, evaluation notes…"></textarea>
+          </div>
+          <div class="sticky-actions">
+            <button class="primary" id="pfSave">Add to Portfolio</button>
+            <button class="ghost" id="pfClear">Clear</button>
+          </div>
+          <div class="note">Files are stored privately in your browser (IndexedDB). Use Backup (JSON) to export metadata; files can be downloaded individually.</div>
+        </div>
+
+        <div>
+          <div class="row">
+            <div style="flex:1">
+              <label>Filter Year</label>
+              <select id="pfYearFilter"></select>
+            </div>
+            <div style="flex:1">
+              <label>Filter Student</label>
+              <select id="pfStudentFilter"></select>
+            </div>
+            <div style="flex:1">
+              <label>Filter Subject</label>
+              <select id="pfSubjectFilter">
+                <option value="">All</option>
+                <option>Language Arts</option><option>Reading</option><option>Mathematics</option><option>Science</option><option>Social Studies</option><option>Elective</option>
+              </select>
+            </div>
+          </div>
+          <div class="spacer"></div>
+          <div id="pfGallery" class="gallery"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== REPORTS ===== -->
+  <section id="view-reports" class="view hide">
+    <div class="card">
+      <h2>Annual Compliance Report</h2>
+      <div class="grid three">
+        <div>
+          <label>Student</label>
+          <select id="rpStudent"></select>
+        </div>
+        <div>
+          <label>Academic Year</label>
+          <select id="rpYear"></select>
+        </div>
+        <div>
+          <label>Group By</label>
+          <select id="rpGroupBy">
+            <option value="subject">Subject</option>
+            <option value="course">Course</option>
+            <option value="month">Month</option>
+          </select>
+        </div>
+      </div>
+      <div class="spacer"></div>
+      <div id="rpSummary" class="grid three"></div>
+      <div class="spacer"></div>
+      <table id="rpTable">
+        <thead><tr><th>Group</th><th class="right">Hours</th><th class="right">Home (core)</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div class="spacer"></div>
+      <button id="rpPrint">Print Report</button>
+    </div>
+  </section>
+
+  <!-- ===== SETTINGS ===== -->
+  <section id="view-settings" class="view hide">
+    <div class="card">
+      <h2>School Settings</h2>
+      <div class="grid two">
+        <div class="card">
+          <div class="grid two">
+            <div>
+              <label>School Name</label>
+              <input id="scName" value="Peaceful Academy of Kansas City, Missouri">
+            </div>
+            <div>
+              <label>Phone (optional)</label>
+              <input id="scPhone" placeholder="(xxx) xxx-xxxx">
+            </div>
+            <div>
+              <label>Address</label>
+              <input id="scAddress" placeholder="Street, Kansas City, MO">
+            </div>
+            <div>
+              <label>School Year Starts</label>
+              <select id="scYearStart">
+                <option value="07-01" selected>July 1 (Missouri default)</option>
+                <option value="08-01">August 1</option>
+                <option value="09-01">September 1</option>
+              </select>
+            </div>
+          </div>
+          <div class="sticky-actions">
+            <button class="primary" id="scSave">Save Settings</button>
+            <button class="ghost" id="scReset">Reset to Defaults</button>
+          </div>
+        </div>
+        <div class="card">
+          <h3 style="margin-top:0">Data & Backups</h3>
+          <div class="row">
+            <button id="scExportAll">Export ALL (JSON)</button>
+            <label class="pill muted nowrap">Import ALL (JSON) <input type="file" id="scImportAll" accept="application/json" style="display:none"></label>
+            <button class="danger" id="scWipe">Erase Everything</button>
+          </div>
+          <div class="note">Back up periodically. Import/Export moves your data to another device or browser.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== HELP ===== -->
+  <section id="view-help" class="view hide">
+    <div class="card">
+      <h2>Help & Missouri Compliance Notes</h2>
+      <ul>
+        <li><strong>Hours:</strong> Track at least <strong>1,000</strong> hours per student, with <strong>600 core</strong> hours across Reading, Language Arts, Math, Social Studies, and Science; at least <strong>400 of those core hours at home</strong>. School year is <strong>July 1 – June 30</strong>. <em>Missouri Rev. Stat. §167.031</em>.</li>
+        <li><strong>Records:</strong> Keep a plan book/diary (this app’s <em>Daily Log</em>), a <em>portfolio</em> of samples (this app’s <em>Portfolio</em>), and <em>evaluations</em>/test notes (store in Notes or upload to Portfolio). <em>§167.012</em>.</li>
+        <li><strong>Privacy:</strong> All data is stored locally in your browser using IndexedDB. Export JSON for backups.</li>
+        <li><strong>Tip:</strong> Create courses that map cleanly to core subjects so the core-hours math is automatic.</li>
+      </ul>
+      <div class="note">This tool helps with record-keeping but isn’t legal advice. Verify any questions directly against the statute text.</div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  © <span id="yearNow"></span> Peaceful Academy of Kansas City, Missouri • Local, private recordkeeping for Missouri homeschool law compliance.
+</footer>
+
+<script>
+/* =========================================================================
+   Peaceful Academy – Missouri Homeschool Tracker
+   - Local, private: IndexedDB (no network)
+   - Tracks 1000 total hours, 600 core (Reading/LA/Math/SS/Science), 400 at home
+   - School year default: July 1 – June 30 (Missouri §167.031)
+   - Plan book (daily log), Courses, Students, Portfolio (samples), Reports
+   - Backup: JSON export/import; CSV export for logs
+   =======================================================================*/
+
+/* -------------------- Utilities -------------------- */
+const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+const fmt = new Intl.NumberFormat(undefined,{maximumFractionDigits:2});
+const todayISO = () => new Date().toISOString().slice(0,10);
+const pad = (n) => n.toString().padStart(2,'0');
+
+/* Academic year helpers (default starts July 1) */
+function getSettings(){
+  const d = JSON.parse(localStorage.getItem('pa_settings')||'{}');
+  return Object.assign({
+    name:'Peaceful Academy of Kansas City, Missouri',
+    phone:'',
+    address:'',
+    yearStart:'07-01'
+  }, d);
+}
+function setSettings(obj){
+  localStorage.setItem('pa_settings', JSON.stringify(obj));
+  renderSettings();
+}
+function yearForDate(dateStr){
+  const s = getSettings().yearStart; // 'MM-DD'
+  const [Y,M,D] = dateStr.split('-').map(Number);
+  const anchor = new Date(Y, Number(s.slice(0,2))-1, Number(s.slice(3,5)));
+  const d = new Date(dateStr+'T12:00:00');
+  // If date is before yearStart in same calendar year, academic year is previous Y
+  let startY = d >= anchor ? Y : Y-1;
+  return startY; // academic year label will be startY–startY+1
+}
+function yearLabel(startY){ return `${startY}–${startY+1}`; }
+function currentAcademicStart(){
+  const t = todayISO();
+  return yearForDate(t);
+}
+function allAcademicYearsFromData(dates){
+  const years = new Set(dates.map(yearForDate));
+  if (years.size===0) years.add(currentAcademicStart());
+  return Array.from(years).sort((a,b)=>b-a);
+}
+
+/* Core subject check (MO) */
+const CORE_SUBJECTS = new Set(['Reading','Language Arts','Mathematics','Science','Social Studies']);
+
+/* -------------------- IndexedDB -------------------- */
+let db;
+function openDB(){
+  return new Promise((resolve, reject)=>{
+    const req = indexedDB.open('peacefulAcademyDB', 1);
+    req.onupgradeneeded = (ev)=>{
+      const db = ev.target.result;
+      db.createObjectStore('students', {keyPath:'id', autoIncrement:true});
+      db.createObjectStore('courses', {keyPath:'id', autoIncrement:true});
+      db.createObjectStore('logs', {keyPath:'id', autoIncrement:true});       // {date, studentId, courseId, hours, location, notes}
+      db.createObjectStore('portfolio', {keyPath:'id', autoIncrement:true});  // meta incl. fileId
+      db.createObjectStore('files', {keyPath:'id', autoIncrement:true});      // Blob storage
+    };
+    req.onsuccess = ()=>{ db = req.result; resolve(db); };
+    req.onerror = ()=>reject(req.error);
+  });
+}
+function tx(storeNames, mode='readonly'){
+  return db.transaction(storeNames, mode);
+}
+const DB = {
+  add: (store, obj) => new Promise((res,rej)=>{
+    const r = tx([store],'readwrite').objectStore(store).add(obj);
+    r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);
+  }),
+  put: (store, obj) => new Promise((res,rej)=>{
+    const r = tx([store],'readwrite').objectStore(store).put(obj);
+    r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);
+  }),
+  getAll: (store) => new Promise((res,rej)=>{
+    const r = tx([store],'readonly').objectStore(store).getAll();
+    r.onsuccess=()=>res(r.result||[]); r.onerror=()=>rej(r.error);
+  }),
+  delete: (store, key) => new Promise((res,rej)=>{
+    const r = tx([store],'readwrite').objectStore(store).delete(key);
+    r.onsuccess=()=>res(); r.onerror=()=>rej(r.error);
+  }),
+  get: (store, key) => new Promise((res,rej)=>{
+    const r = tx([store],'readonly').objectStore(store).get(key);
+    r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);
+  })
+};
+
+/* -------------------- Data access -------------------- */
+async function listStudents(){ return await DB.getAll('students'); }
+async function listCourses(){ return await DB.getAll('courses'); }
+async function listLogs(){ return await DB.getAll('logs'); }
+async function listPortfolio(){ return await DB.getAll('portfolio'); }
+async function getCourseMap(){
+  const m = new Map();
+  (await listCourses()).forEach(c=>m.set(c.id, c));
+  return m;
+}
+async function getStudentMap(){
+  const m = new Map();
+  (await listStudents()).forEach(s=>m.set(s.id, s));
+  return m;
+}
+
+/* -------------------- Rendering -------------------- */
+function show(view){
+  $$('.view').forEach(v=>v.classList.add('hide'));
+  $(`#view-${view}`).classList.remove('hide');
+  $$('#nav a').forEach(a=>a.classList.remove('active'));
+  $(`#nav a[href="#${view}"]`)?.classList.add('active');
+}
+
+function fillYears(selectEls){
+  const years = new Set();
+  // build from logs; if empty, include current
+  // this runs async after logs loaded in renderDashboard() etc.
+}
+
+async function renderStudents(){
+  const students = await listStudents();
+  const tbody = $('#stTable tbody'); tbody.innerHTML='';
+  for(const s of students){
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${s.name}</td><td>${s.dob||''}</td><td>${s.grade||''}</td><td>${s.startYear||''}</td>
+      <td class="right"><button data-id="${s.id}" class="stDel">Delete</button></td>`;
+    tbody.appendChild(tr);
+  }
+  // fill selects
+  const opts = students.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+  ['dashStudent','qaStudent','lgStudent','lgStudentFilter','pfStudent','pfStudentFilter','rpStudent']
+    .forEach(id=>{
+      const el = $('#'+id);
+      if(!el) return;
+      const prev = el.value;
+      el.innerHTML = (id==='lgStudentFilter'||id==='pfStudentFilter') ? `<option value="">All</option>${opts}` : opts;
+      if (prev) el.value = prev;
+    });
+}
+
+async function renderCourses(){
+  const courses = await listCourses();
+  const tbody = $('#coTable tbody'); tbody.innerHTML='';
+  for(const c of courses){
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${c.title}</td><td>${c.subject}</td><td class="muted">${c.description||''}</td>
+    <td class="right"><button data-id="${c.id}" class="coDel">Delete</button></td>`;
+    tbody.appendChild(tr);
+  }
+  const opts = courses.map(c=>`<option value="${c.id}">${c.title}</option>`).join('');
+  ['qaCourse','lgCourse','pfCourse'].forEach(id=>{
+    const el = $('#'+id); const prev = el.value; el.innerHTML = opts; if(prev) el.value=prev;
+  });
+}
+
+function academicYearsFromLogs(logs){
+  const ys = allAcademicYearsFromData(logs.map(l=>l.date));
+  return ys;
+}
+
+async function renderYearSelectors(){
+  const logs = await listLogs();
+  const years = academicYearsFromLogs(logs);
+  const make = (id, includeAll=false)=>{
+    const el = $('#'+id); if(!el) return;
+    const prev = el.value;
+    el.innerHTML = (includeAll?'<option value="">All</option>':'')
+      + years.map(y=>`<option value="${y}">${yearLabel(y)}</option>`).join('');
+    el.value = prev || years[0];
+  };
+  make('dashYear');
+  make('lgYearFilter', true);
+  make('pfYearFilter', true);
+  make('rpYear');
+  // student start year choices
+  const stStart = $('#stStart');
+  stStart.innerHTML = years.slice().reverse().map(y=>`<option value="${y}">${yearLabel(y)}</option>`).join('');
+}
+
+async function renderDashboard(){
+  const [logs,courses,students] = await Promise.all([listLogs(), listCourses(), listStudents()]);
+  await renderYearSelectors();
+  await renderStudents();
+  await renderCourses();
+
+  const sId = Number($('#dashStudent').value || (students[0]?.id || 0));
+  $('#dashStudent').value = sId||'';
+  const yStart = Number($('#dashYear').value) || currentAcademicStart();
+
+  // filter logs for student/year
+  const filtered = logs.filter(l => l.studentId === sId && yearForDate(l.date) === yStart);
+  const courseMap = new Map(courses.map(c=>[c.id,c]));
+  let total=0, core=0, homeCore=0;
+  for (const l of filtered){
+    const subj = courseMap.get(l.courseId)?.subject;
+    total += Number(l.hours)||0;
+    if (CORE_SUBJECTS.has(subj)){
+      core += Number(l.hours)||0;
+      if (l.location==='home') homeCore += Number(l.hours)||0;
+    }
+  }
+  $('#kpiTotal').textContent = fmt.format(total);
+  $('#kpiCore').textContent  = fmt.format(core);
+  $('#kpiHome').textContent  = fmt.format(homeCore);
+  $('#barTotal').style.width = Math.min(100, (total/1000)*100) + '%';
+  $('#barCore').style.width  = Math.min(100, (core/600)*100) + '%';
+  $('#barHome').style.width  = Math.min(100, (homeCore/400)*100) + '%';
+  $('#yearLabel').textContent = `Showing ${yearLabel(yStart)} for ${students.find(s=>s.id===sId)?.name||'—'}`;
+
+  // recent 10
+  const recent = filtered.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,10);
+  const tbody = $('#recentTable tbody'); tbody.innerHTML='';
+  for (const r of recent){
+    const tr = document.createElement('tr');
+    const c = courseMap.get(r.courseId);
+    tr.innerHTML = `<td class="nowrap">${r.date}</td><td>${c?.title||''}</td><td class="right">${fmt.format(r.hours)}</td><td>${r.location==='home'?'Home':'Offsite'}</td><td class="muted">${r.notes||''}</td>`;
+    tbody.appendChild(tr);
+  }
+
+  // quick add defaults
+  $('#qaStudent').value = sId||'';
+  $('#qaCourse').value = courses[0]?.id || '';
+  $('#qaDate').value = todayISO();
+}
+
+/* ---------- Logs table rendering ---------- */
+async function renderLogsTable(){
+  const [logs,courses,students] = await Promise.all([listLogs(), listCourses(), listStudents()]);
+  const subjFilter = $('#lgSubjectFilter').value;
+  const y = $('#lgYearFilter').value;
+  const s = $('#lgStudentFilter').value;
+
+  const courseMap = new Map(courses.map(c=>[c.id,c]));
+  const studentMap = new Map(students.map(s=>[s.id,s]));
+  const filtered = logs.filter(l=>{
+    if (y && yearForDate(l.date)!=Number(y)) return false;
+    if (s && l.studentId!=Number(s)) return false;
+    if (subjFilter){
+      const subj = courseMap.get(l.courseId)?.subject;
+      if (subj !== subjFilter) return false;
+    }
+    return true;
+  }).sort((a,b)=> b.date.localeCompare(a.date));
+
+  const tbody = $('#lgTable tbody'); tbody.innerHTML='';
+  for (const l of filtered){
+    const tr = document.createElement('tr');
+    const c = courseMap.get(l.courseId);
+    const st = studentMap.get(l.studentId);
+    tr.innerHTML = `<td class="nowrap">${l.date}</td>
+      <td>${st?.name||''}</td>
+      <td>${c?.title||''}</td>
+      <td>${c?.subject||''}</td>
+      <td class="right">${fmt.format(l.hours)}</td>
+      <td>${l.location==='home'?'Home':'Offsite'}</td>
+      <td class="muted">${l.notes||''}</td>
+      <td class="right"><button class="lgDel" data-id="${l.id}">Delete</button></td>`;
+    tbody.appendChild(tr);
+  }
+}
+
+/* ---------- Portfolio rendering ---------- */
+async function fileToBlob(file){ return file.slice(0,file.size, file.type); }
+
+async function renderPortfolio(){
+  const [items,courses,students] = await Promise.all([listPortfolio(), listCourses(), listStudents()]);
+  const year = $('#pfYearFilter').value;
+  const s = $('#pfStudentFilter').value;
+  const subj = $('#pfSubjectFilter').value;
+  const courseMap = new Map(courses.map(c=>[c.id,c]));
+  const studentMap = new Map(students.map(s=>[s.id,s]));
+
+  const filtered = items.filter(p=>{
+    if (year && yearForDate(p.date)!=Number(year)) return false;
+    if (s && p.studentId!=Number(s)) return false;
+    if (subj){
+      const subjOf = courseMap.get(p.courseId)?.subject;
+      if (subjOf !== subj) return false;
+    }
+    return true;
+  }).sort((a,b)=> b.date.localeCompare(a.date));
+
+  const gal = $('#pfGallery'); gal.innerHTML='';
+  for (const p of filtered){
+    const course = courseMap.get(p.courseId);
+    const st = studentMap.get(p.studentId);
+    const fileBlob = p.fileId ? await DB.get('files', p.fileId) : null;
+    const url = fileBlob ? URL.createObjectURL(fileBlob.blob) : '';
+    const isImg = fileBlob && fileBlob.type.startsWith('image/');
+    const tile = document.createElement('div');
+    tile.className='tile';
+    tile.innerHTML = `
+      <div style="height:140px;display:flex;align-items:center;justify-content:center;background:#0a1123">
+        ${fileBlob ? (isImg ? `<img class="thumb" style="width:100%;height:140px;object-fit:cover" src="${url}">`
+                             : `<div class="muted">File: ${fileBlob.name||fileBlob.type}</div>`)
+                   : '<div class="muted">No file</div>'}
+      </div>
+      <div class="meta">
+        <div><strong>${p.title||'(untitled)'}</strong></div>
+        <div class="muted">${p.date} • ${st?.name||''} • ${course?.title||''}</div>
+        <div class="note">${p.desc||''}</div>
+        <div class="row" style="margin-top:.5rem;justify-content:space-between">
+          <div class="muted">${(p.tags||[]).join(', ')}</div>
+          <div class="row">
+            ${fileBlob?`<a download="${(p.title||'portfolio')}" href="${url}">Download</a>`:''}
+            <button class="pfDel" data-id="${p.id}">Delete</button>
+          </div>
+        </div>
+      </div>`;
+    gal.appendChild(tile);
+  }
+}
+
+/* ---------- Reports ---------- */
+async function renderReports(){
+  const [logs,courses] = await Promise.all([listLogs(), listCourses()]);
+  const sId = Number($('#rpStudent').value);
+  const yStart = Number($('#rpYear').value);
+  const groupBy = $('#rpGroupBy').value;
+  const courseMap = new Map(courses.map(c=>[c.id,c]));
+  const filtered = logs.filter(l => l.studentId===sId && yearForDate(l.date)===yStart);
+
+  const totals = { total:0, core:0, homeCore:0 };
+  const groups = new Map(); // key -> {hours, homeCore}
+  function addGroup(key, hrs, isHomeCore){
+    const obj = groups.get(key) || { hours:0, homeCore:0 };
+    obj.hours += hrs;
+    if (isHomeCore) obj.homeCore += hrs;
+    groups.set(key, obj);
+  }
+
+  for (const l of filtered){
+    const hrs = Number(l.hours)||0;
+    const subj = courseMap.get(l.courseId)?.subject;
+    totals.total += hrs;
+    const isCore = CORE_SUBJECTS.has(subj);
+    const homeCore = isCore && l.location==='home';
+    if (isCore) totals.core+=hrs;
+    if (homeCore) totals.homeCore+=hrs;
+
+    let key = '';
+    if (groupBy==='subject'){ key = subj || '(none)'; }
+    else if (groupBy==='course'){ key = courseMap.get(l.courseId)?.title || '(none)'; }
+    else if (groupBy==='month'){ key = l.date.slice(0,7); }
+    addGroup(key, hrs, homeCore);
+  }
+
+  const ok1000 = totals.total>=1000, ok600 = totals.core>=600, ok400 = totals.homeCore>=400;
+  const el = $('#rpSummary'); el.innerHTML='';
+  const mk = (label, val, goal, ok) => {
+    const div = document.createElement('div');
+    div.className='card';
+    div.innerHTML = `<div class="muted">${label} (goal ${goal})</div>
+      <div class="num ${ok?'ok':(val? 'warn':'danger')}">${fmt.format(val)}</div>
+      <div class="bar"><span style="width:${Math.min(100,(val/goal)*100)}%"></span></div>`;
+    el.appendChild(div);
+  };
+  mk('Total Hours', totals.total, 1000, ok1000);
+  mk('Core Hours', totals.core, 600, ok600);
+  mk('Core @ Home', totals.homeCore, 400, ok400);
+
+  const tbody = $('#rpTable tbody'); tbody.innerHTML='';
+  const rows = Array.from(groups.entries()).sort((a,b)=>b[1].hours-a[1].hours);
+  for (const [k,v] of rows){
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${k}</td><td class="right">${fmt.format(v.hours)}</td><td class="right">${fmt.format(v.homeCore)}</td>`;
+    tbody.appendChild(tr);
+  }
+}
+
+/* -------------------- Nav & Events -------------------- */
+window.addEventListener('hashchange',()=>{
+  const view = (location.hash||'#dashboard').slice(1);
+  show(view);
+  if (view==='dashboard') renderDashboard();
+  if (view==='students') renderStudents();
+  if (view==='courses') renderCourses();
+  if (view==='log') renderLogsTable();
+  if (view==='portfolio') renderPortfolio();
+  if (view==='reports') renderReports();
+  if (view==='settings') renderSettings();
+  if (view==='help') {/* nothing to compute */}
+});
+
+/* Settings render/save */
+function renderSettings(){
+  const s = getSettings();
+  $('#scName').value = s.name;
+  $('#scPhone').value = s.phone;
+  $('#scAddress').value = s.address;
+  $('#scYearStart').value = s.yearStart;
+  $('#yearNow').textContent = new Date().getFullYear();
+}
+$('#scSave')?.addEventListener('click', ()=>{
+  setSettings({
+    name: $('#scName').value.trim(),
+    phone: $('#scPhone').value.trim(),
+    address: $('#scAddress').value.trim(),
+    yearStart: $('#scYearStart').value
+  });
+  alert('Settings saved.');
+  renderDashboard(); renderLogsTable(); renderPortfolio(); renderReports();
+});
+$('#scReset')?.addEventListener('click', ()=>{
+  if(!confirm('Reset settings to Missouri defaults?')) return;
+  setSettings({name:'Peaceful Academy of Kansas City, Missouri',phone:'',address:'',yearStart:'07-01'});
+});
+$('#scExportAll')?.addEventListener('click', async ()=>{
+  const data = {
+    settings: getSettings(),
+    students: await listStudents(),
+    courses: await listCourses(),
+    logs: await listLogs(),
+    portfolio: await listPortfolio()
+  };
+  const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+  const a = Object.assign(document.createElement('a'), {href: URL.createObjectURL(blob), download:`PeacefulAcademy_backup_${Date.now()}.json`});
+  a.click();
+});
+$('#scImportAll')?.addEventListener('change', async (e)=>{
+  const file = e.target.files?.[0]; if(!file) return;
+  const txt = await file.text(); const data = JSON.parse(txt);
+  if(!confirm('Import will REPLACE current data. Continue?')) return;
+  // wipe
+  await Promise.all(['students','courses','logs','portfolio','files'].map(s=>new Promise((res,rej)=>{
+    const r = tx([s],'readwrite').objectStore(s).clear(); r.onsuccess=()=>res(); r.onerror=()=>rej(r.error);
+  })));
+  if (data.settings) setSettings(data.settings);
+  for (const s of (data.students||[])) await DB.add('students', s);
+  for (const c of (data.courses||[])) await DB.add('courses', c);
+  for (const l of (data.logs||[])) await DB.add('logs', l);
+  // portfolio without files (metadata only import)
+  for (const p of (data.portfolio||[])) await DB.add('portfolio', p);
+  alert('Import complete.');
+  renderDashboard(); renderStudents(); renderCourses(); renderLogsTable(); renderPortfolio(); renderReports();
+});
+$('#scWipe')?.addEventListener('click', async ()=>{
+  if(!confirm('Erase ALL data? This cannot be undone.')) return;
+  await Promise.all(['students','courses','logs','portfolio','files'].map(s=>new Promise((res,rej)=>{
+    const r = tx([s],'readwrite').objectStore(s).clear(); r.onsuccess=()=>res(); r.onerror=()=>rej(r.error);
+  })));
+  alert('All data cleared.');
+  renderDashboard(); renderStudents(); renderCourses(); renderLogsTable(); renderPortfolio(); renderReports();
+});
+
+/* Students add/delete */
+$('#stSave')?.addEventListener('click', async ()=>{
+  const obj = {
+    name: $('#stName').value.trim(),
+    dob: $('#stDob').value||'',
+    grade: $('#stGrade').value.trim(),
+    startYear: Number($('#stStart').value)||currentAcademicStart(),
+    notes: $('#stNotes').value.trim()
+  };
+  if(!obj.name){ alert('Name required.'); return; }
+  await DB.add('students', obj);
+  $('#stName').value=''; $('#stDob').value=''; $('#stGrade').value=''; $('#stNotes').value='';
+  renderStudents(); renderYearSelectors(); renderDashboard();
+});
+$('#stClear')?.addEventListener('click', ()=>{$$('#view-students input, #view-students textarea').forEach(el=>el.value='')});
+document.body.addEventListener('click', async (e)=>{
+  if (e.target.classList.contains('stDel')){
+    if(!confirm('Delete this student? (Their logs/portfolio remain; filter by student to review)')) return;
+    await DB.delete('students', Number(e.target.dataset.id));
+    renderStudents(); renderDashboard(); renderLogsTable(); renderPortfolio(); renderReports();
+  }
+});
+
+/* Courses add/delete */
+$('#coSave')?.addEventListener('click', async ()=>{
+  const obj = {
+    title: $('#coTitle').value.trim(),
+    subject: $('#coSubject').value,
+    description: $('#coDesc').value.trim()
+  };
+  if(!obj.title){ alert('Course title required.'); return; }
+  await DB.add('courses', obj);
+  $('#coTitle').value=''; $('#coDesc').value='';
+  renderCourses(); renderDashboard();
+});
+$('#coClear')?.addEventListener('click', ()=>{$$('#view-courses input, #view-courses textarea').forEach(el=>el.value='')});
+document.body.addEventListener('click', async (e)=>{
+  if (e.target.classList.contains('coDel')){
+    if(!confirm('Delete this course? (Existing log entries keep their courseId)')) return;
+    await DB.delete('courses', Number(e.target.dataset.id));
+    renderCourses(); renderLogsTable(); renderDashboard(); renderPortfolio(); renderReports();
+  }
+});
+
+/* Quick Add & Log add */
+$('#qaToday')?.addEventListener('click', ()=>$('#qaDate').value = todayISO());
+$('#lgToday2')?.addEventListener('click', ()=>$('#lgDate').value = todayISO());
+
+$('#qaAdd')?.addEventListener('click', async ()=>{
+  const obj = {
+    studentId: Number($('#qaStudent').value),
+    courseId: Number($('#qaCourse').value),
+    date: $('#qaDate').value || todayISO(),
+    hours: Number($('#qaHours').value),
+    location: $('#qaLocation').value,
+    notes: $('#qaNotes').value.trim()
+  };
+  if(!obj.studentId || !obj.courseId || !obj.hours){ alert('Student, course, and hours are required.'); return; }
+  await DB.add('logs', obj);
+  $('#qaHours').value=''; $('#qaNotes').value='';
+  renderDashboard(); renderLogsTable(); renderReports();
+});
+
+$('#lgAdd')?.addEventListener('click', async ()=>{
+  const obj = {
+    studentId: Number($('#lgStudent').value),
+    courseId: Number($('#lgCourse').value),
+    date: $('#lgDate').value || todayISO(),
+    hours: Number($('#lgHours').value),
+    location: $('#lgLocation').value,
+    notes: $('#lgNotes').value.trim()
+  };
+  if(!obj.studentId || !obj.courseId || !obj.hours){ alert('Student, course, and hours required.'); return; }
+  await DB.add('logs', obj);
+  $('#lgHours').value=''; $('#lgNotes').value='';
+  renderLogsTable(); renderDashboard(); renderReports();
+});
+document.body.addEventListener('click', async (e)=>{
+  if (e.target.classList.contains('lgDel')){
+    await DB.delete('logs', Number(e.target.dataset.id));
+    renderLogsTable(); renderDashboard(); renderReports();
+  }
+});
+
+/* Filters */
+['dashStudent','dashYear','lgYearFilter','lgStudentFilter','lgSubjectFilter'].forEach(id=>{
+  document.getElementById(id)?.addEventListener('change', ()=>{
+    if (id.startsWith('dash')) renderDashboard(); else renderLogsTable();
+  });
+});
+['pfYearFilter','pfStudentFilter','pfSubjectFilter'].forEach(id=>{
+  document.getElementById(id)?.addEventListener('change', renderPortfolio);
+});
+['rpStudent','rpYear','rpGroupBy'].forEach(id=>{
+  document.getElementById(id)?.addEventListener('change', renderReports);
+});
+
+/* Export CSV & JSON from Logs */
+$('#exportCSV')?.addEventListener('click', async ()=>{
+  const [logs,courses,students] = await Promise.all([listLogs(), listCourses(), listStudents()]);
+  const courseMap = new Map(courses.map(c=>[c.id,c]));
+  const studentMap = new Map(students.map(s=>[s.id,s]));
+  const y = $('#lgYearFilter').value;
+
+  const rows = [['date','student','course','subject','hours','location','notes']];
+  for (const l of logs){
+    if (y && yearForDate(l.date)!=Number(y)) continue;
+    const c = courseMap.get(l.courseId), st = studentMap.get(l.studentId);
+    rows.push([l.date, st?.name||'', c?.title||'', c?.subject||'', String(l.hours), l.location, (l.notes||'').replace(/\n/g,' ')]);
+  }
+  const csv = rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const a = Object.assign(document.createElement('a'), {href: URL.createObjectURL(blob), download:`logs_${Date.now()}.csv`});
+  a.click();
+});
+$('#exportJSON')?.addEventListener('click', async ()=>{
+  const blob = new Blob([JSON.stringify({logs: await listLogs()}, null, 2)], {type:'application/json'});
+  const a = Object.assign(document.createElement('a'), {href: URL.createObjectURL(blob), download:`logs_${Date.now()}.json`});
+  a.click();
+});
+$('#importJSON')?.addEventListener('change', async (e)=>{
+  const file = e.target.files?.[0]; if(!file) return;
+  const txt = await file.text(); const data = JSON.parse(txt);
+  if(!Array.isArray(data.logs)){ alert('Invalid JSON format.'); return; }
+  for (const l of data.logs){ await DB.add('logs', l); }
+  alert('Imported logs.');
+  renderLogsTable(); renderDashboard(); renderReports();
+});
+
+/* Portfolio add/delete */
+$('#pfSave')?.addEventListener('click', async ()=>{
+  const file = $('#pfFile').files[0] || null;
+  let fileId = null;
+  if (file){
+    const blob = await fileToBlob(file);
+    fileId = await DB.add('files', { blob, type:file.type, name:file.name, size:file.size });
+  }
+  const obj = {
+    studentId: Number($('#pfStudent').value),
+    courseId: Number($('#pfCourse').value),
+    date: $('#pfDate').value || todayISO(),
+    title: $('#pfTitle').value.trim(),
+    desc: $('#pfDesc').value.trim(),
+    tags: $('#pfTags').value.split(',').map(t=>t.trim()).filter(Boolean),
+    fileId
+  };
+  if(!obj.studentId || !obj.courseId){ alert('Student and course required.'); return; }
+  await DB.add('portfolio', obj);
+  // clear
+  ['pfTitle','pfDesc','pfTags'].forEach(id=>$('#'+id).value=''); $('#pfFile').value='';
+  renderPortfolio();
+});
+$('#pfClear')?.addEventListener('click', ()=>{
+  ['pfTitle','pfDesc','pfTags','pfFile'].forEach(id=>$('#'+id).value='');
+});
+document.body.addEventListener('click', async (e)=>{
+  if(e.target.classList.contains('pfDel')){
+    if(!confirm('Delete this portfolio item?')) return;
+    const id = Number(e.target.dataset.id);
+    const p = await DB.get('portfolio', id);
+    if (p?.fileId) await DB.delete('files', p.fileId);
+    await DB.delete('portfolio', id);
+    renderPortfolio();
+  }
+});
+
+/* Reports print */
+$('#rpPrint')?.addEventListener('click', ()=> window.print());
+
+/* Init */
+(async function init(){
+  await openDB();
+  renderSettings();
+  if (!location.hash) location.hash='#dashboard';
+  // Prefill selects to avoid empty state
+  await renderStudents();
+  await renderCourses();
+  await renderYearSelectors();
+  await renderDashboard();
+
+  // Defaults for inputs
+  $('#qaDate').value = todayISO();
+  $('#lgDate').value = todayISO();
+  $('#pfDate').value = todayISO();
+})();
+</script>
+
+<!--
+Legal references (for your records):
+- Missouri Rev. Stat. §167.031: defines school year (July 1 – June 30) and 1,000/600/400 hours. See: https://revisor.mo.gov/main/OneSection.aspx?section=167.031
+- Missouri Rev. Stat. §167.012: recordkeeping (plan book/diary, portfolio samples, evaluations). See: https://revisor.mo.gov/main/OneSection.aspx?section=167.012
+-->
+</body>
+</html>
