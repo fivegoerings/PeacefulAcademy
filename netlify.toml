@@ -2,20 +2,14 @@
 # Peaceful Academy — Netlify config
 # =========================
 
-# ---------- Redirects / Rewrites ----------
+# Netlify configuration for Peaceful Academy
 
-# 1) Show splash as the root page
+[functions]
+  node_bundler = "esbuild"
+  external_node_modules = ["@netlify/neon"]
+
+# Redirect root to splash.html
 [[redirects]]
-  from = "/*"
+  from = "/"
   to = "/splash.html"
   status = 200
-  force = true
-
-
-/ Add to your build configuration file (e.g., netlify.toml)
-[build]
-  functions = "/opt/build/repo/netlify/functions"
-  [[build.plugins]]
-    package = "@netlify/plugin-functions-core"
-    [build.plugins.inputs]
-      external_node_modules = ["@netlify/neon"]
