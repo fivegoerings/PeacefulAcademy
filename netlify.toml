@@ -6,9 +6,10 @@
 
 # 1) Show splash as the root page
 [[redirects]]
-  from = "/"
+  from = "/*"
   to = "/splash.html"
   status = 200
+  force = true
 
 # 2) Route API calls to Netlify Functions: /api/foo -> /.netlify/functions/foo
 [[redirects]]
