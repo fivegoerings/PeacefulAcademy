@@ -1,5 +1,6 @@
 Peaceful Academy — Netlify-ready site
-
+Version .01
+Date 08/16/2025
 Contents
 - index.html — single-page app (MO-compliant tracker), Netlify Forms hooks, Transcript & Diploma generators
 - manifest.webmanifest — PWA manifest
