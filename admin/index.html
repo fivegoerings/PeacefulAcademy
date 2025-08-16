@@ -18,10 +18,85 @@
   </header>
 
   <div class="wrap">
-    <section id="monitor" class="active"></section>
-    <section id="students"></section>
-    <section id="courses"></section>
-    <section id="enrollments"></section>
+    <!-- Monitor -->
+    <section id="monitor" class="active">
+      <div class="card">
+        <div class="row"><h3>Connection Health</h3><span id="health" class="muted">—</span></div>
+        <pre id="healthJson" class="muted"></pre>
+      </div>
+      <div class="card">
+        <div class="row"><h3>Row Counts</h3><button id="refreshStats">Refresh</button></div>
+        <table>
+          <thead><tr><th>Table</th><th>Rows</th></tr></thead>
+          <tbody id="statsBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Students -->
+    <section id="students">
+      <div class="card">
+        <h3>Add Student</h3>
+        <form id="studentForm" class="inline">
+          <input name="first_name" placeholder="First name" required />
+          <input name="last_name" placeholder="Last name" required />
+          <input name="birth_date" type="date" />
+          <input name="email" placeholder="Email" />
+          <input name="phone" placeholder="Phone" />
+          <button type="submit">Create</button>
+        </form>
+      </div>
+      <div class="card">
+        <div class="row"><h3>Students</h3><button id="reloadStudents">Reload</button></div>
+        <table>
+          <thead><tr><th>Name</th><th>DOB</th><th>Email</th><th>Phone</th><th>Actions</th></tr></thead>
+          <tbody id="studentsBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Courses -->
+    <section id="courses">
+      <div class="card">
+        <h3>Add Course</h3>
+        <form id="courseForm" class="inline">
+          <input name="code" placeholder="Code (e.g., ENG9)" required />
+          <input name="title" placeholder="Title" required />
+          <input name="credits" type="number" step="0.5" placeholder="Credits" />
+          <input name="academic_year" type="number" placeholder="Year (e.g., 2025)" />
+          <button type="submit">Create</button>
+        </form>
+      </div>
+      <div class="card">
+        <div class="row"><h3>Courses</h3><button id="reloadCourses">Reload</button></div>
+        <table>
+          <thead><tr><th>Code</th><th>Title</th><th>Credits</th><th>Year</th><th>Actions</th></tr></thead>
+          <tbody id="coursesBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Enrollments -->
+    <section id="enrollments">
+      <div class="card">
+        <h3>Create Enrollment</h3>
+        <form id="enrollForm" class="inline">
+          <select name="student_id" id="enrollStudent"></select>
+          <select name="course_id" id="enrollCourse"></select>
+          <input name="term" placeholder="Term (e.g., 2025-Fall)" />
+          <input name="start_date" type="date" />
+          <input name="end_date" type="date" />
+          <button type="submit">Enroll</button>
+        </form>
+      </div>
+      <div class="card">
+        <div class="row"><h3>Enrollments</h3><button id="reloadEnrollments">Reload</button></div>
+        <table>
+          <thead><tr><th>Student</th><th>Course</th><th>Term</th><th>Start</th><th>End</th></tr></thead>
+          <tbody id="enrollBody"></tbody>
+        </table>
+      </div>
+    </section>
   </div>
 
   <script src="/admin/app.js"></script>

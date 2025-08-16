@@ -53,11 +53,3 @@ CREATE TABLE IF NOT EXISTS attendance (
   notes TEXT,
   UNIQUE (student_id, on_date)
 );
-CREATE TABLE IF NOT EXISTS instructors (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  first_name TEXT NOT NULL,
-  last_name TEXT NOT NULL,
-  email TEXT UNIQUE,
-  phone TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);  

@@ -1,17 +1,19 @@
-# =========================
-# Peaceful Academy — Netlify config
-# =========================
-
 # Netlify configuration for Peaceful Fields Academy with Neon (Postgres)
 [build]
-  publish = "admin"
+  publish = "."
 
 [functions]
+  directory = "admin/netlify/functions"
   node_bundler = "esbuild"
   external_node_modules = ["@netlify/neon"]
   included_files = ["admin/sql/schema.sql"]
 
-# Admin UI lives under /admin
+# Route /admin to the admin SPA
+[[redirects]]
+  from = "/admin"
+  to = "/admin/index.html"
+  status = 200
+
 [[redirects]]
   from = "/admin/*"
   to = "/admin/index.html"
