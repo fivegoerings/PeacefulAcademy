@@ -2,3 +2,15 @@
 [functions]
   node_bundler = "esbuild"
   external_node_modules = ["@netlify/neon"]
+
+
+# Netlify configuration for Peaceful Academy with Neon (Postgres)
+[functions]
+  node_bundler = "esbuild"
+  external_node_modules = ["@netlify/neon"]
+
+# Redirects: send root traffic to splash.html
+[[redirects]]
+  from = "/"
+  to = "/splash.html"
+  status = 200
