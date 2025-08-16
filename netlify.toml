@@ -1,10 +1,4 @@
-[build]
-  publish = "."
-  command = ""
-
-[[headers]]
-  for = "/*"
-  [headers.values]
-    Referrer-Policy = "strict-origin-when-cross-origin"
-    X-Content-Type-Options = "nosniff"
-    X-Frame-Options = "SAMEORIGIN"
+# Netlify configuration for Peaceful Academy with Neon (Postgres)
+[functions]
+  node_bundler = "esbuild"
+  external_node_modules = ["@netlify/neon"]
