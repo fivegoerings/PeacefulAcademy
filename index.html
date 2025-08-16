@@ -1,47 +1,40 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>Peaceful Academy — Kansas City, Missouri</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="Missouri-compliant homeschool hours, courses, portfolio tracker with Netlify Forms + PWA." />
-  <link rel="manifest" href="./manifest.webmanifest">
-  <meta name="theme-color" content="#0b1226">
-  <style>
-    /* (styles trimmed down for brevity; still sleek and readable) */
-    :root{--bg:#0f172a;--card:#0b1226;--ink:#e5e7eb;--muted:#94a3b8;--border:#1f2937;--accent:#22c55e;--accent2:#06b6d4;--danger:#ef4444;--ok:#10b981}
-    *{box-sizing:border-box}html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto}
-    .wrap{max-width:1100px;margin:0 auto;padding:24px}
-    .topbar{position:sticky;top:0;z-index:3;background:rgba(15,23,42,.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
-    nav{display:flex;gap:.5rem;flex-wrap:wrap}
-    nav a{padding:.5rem .8rem;border-radius:999px;border:1px solid var(--border);background:#0a1123;color:inherit;text-decoration:none}
-    nav a.active{background:linear-gradient(135deg,#1e293b,#0b1226)}
-    h1{font-size:1.4rem;margin:.6rem 0 .2rem} h2{font-size:1.15rem;margin:.2rem 0 .6rem;color:#d1d5db}
-    .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1rem}
-    .grid{display:grid;gap:1rem}.two{grid-template-columns:1fr 1fr}.three{grid-template-columns:repeat(3,1fr)}@media(max-width:800px){.two,.three{grid-template-columns:1fr}}
-    label{font-weight:600}.row{display:flex;gap:1rem;flex-wrap:wrap;align-items:center}
-    input,select,textarea,button{font:inherit;color:inherit}
-    input,select,textarea{width:100%;background:#0b1226;border:1px solid var(--border);border-radius:10px;padding:.55rem .7rem}
-    button{border:1px solid var(--border);background:#0a1123;border-radius:10px;padding:.55rem .9rem;cursor:pointer}
-    button.primary{background:linear-gradient(135deg,#0ea5e9,#22c55e);border:none;color:white}
-    button.ghost{background:transparent;border:1px dashed var(--border)}
-    button.danger{background:var(--danger);border:none;color:white}
-    table{width:100%;border-collapse:collapse}th,td{padding:.5rem;border-bottom:1px solid var(--border);text-align:left}tr:hover td{background:#0c142a}
-    .right{text-align:right}.muted{color:var(--muted)}.hide{display:none !important}.num{font-weight:800;font-size:1.6rem}
-    .bar{height:10px;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:#0a1123}.bar>span{display:block;height:100%;background:linear-gradient(90deg,#22c55e,#06b6d4)}
-    .gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}.tile{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:#0a1123}
-    .pill{padding:.25rem .5rem;border-radius:999px;border:1px solid var(--border)}
-    footer{margin:3rem 0 2rem;color:var(--muted);text-align:center}
-    /* Diploma print styles */
-    @media print{
-      nav, .controls, .no-print{display:none !important}
-      .diploma-page{box-shadow:none;border:8px double #d1d5db;margin:0;padding:2in;background:white;color:black}
-      body{background:white}
-    }
-    .diploma-page{background:linear-gradient(180deg,#ffffff,#f8fafc);color:#111827;border:8px double #d1d5db;border-radius:12px;padding:48px;position:relative}
-    .watermark{position:absolute;inset:0;opacity:0.06;background:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox=\"0 0 700 600\"><path d=\"M476 26c60 27 110 80 148 152 36 69 48 164 21 234-21 54-68 90-124 124-59 36-135 32-208 35-79 3-159 14-220-13C36 529 8 469 4 404c-4-60 22-126 62-188 40-62 94-121 169-162C309 12 398-1 476 26z\" fill=\"%230ea5e9\"/></svg>') center/contain no-repeat;pointer-events:none}
-    .fancy{font-family: Georgia, 'Times New Roman', serif}
-  </style>
+<meta charset="utf-8" />
+<title>Peaceful Academy — Kansas City, Missouri</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="description" content="Missouri-compliant homeschool hours, courses, portfolio tracker with Netlify Forms, Neon DB, and PWA." />
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="theme-color" content="#0b1226">
+<style>
+:root{--bg:#0f172a;--card:#0b1226;--ink:#e5e7eb;--muted:#94a3b8;--border:#1f2937;--accent:#22c55e;--accent2:#06b6d4;--danger:#ef4444;--ok:#10b981}
+*{box-sizing:border-box}html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto}
+.wrap{max-width:1100px;margin:0 auto;padding:24px}
+.topbar{position:sticky;top:0;z-index:3;background:rgba(15,23,42,.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+nav{display:flex;gap:.5rem;flex-wrap:wrap}
+nav a{padding:.5rem .8rem;border-radius:999px;border:1px solid var(--border);background:#0a1123;color:inherit;text-decoration:none}
+nav a.active{background:linear-gradient(135deg,#1e293b,#0b1226)}
+h1{font-size:1.4rem;margin:.6rem 0 .2rem} h2{font-size:1.15rem;margin:.2rem 0 .6rem;color:#d1d5db}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1rem}
+.grid{display:grid;gap:1rem}.two{grid-template-columns:1fr 1fr}.three{grid-template-columns:repeat(3,1fr)}@media(max-width:800px){.two,.three{grid-template-columns:1fr}}
+label{font-weight:600}.row{display:flex;gap:1rem;flex-wrap:wrap;align-items:center}
+input,select,textarea,button{font:inherit;color:inherit}
+input,select,textarea{width:100%;background:#0b1226;border:1px solid var(--border);border-radius:10px;padding:.55rem .7rem}
+button{border:1px solid var(--border);background:#0a1123;border-radius:10px;padding:.55rem .9rem;cursor:pointer}
+button.primary{background:linear-gradient(135deg,#0ea5e9,#22c55e);border:none;color:white}
+button.ghost{background:transparent;border:1px dashed var(--border)}
+button.danger{background:var(--danger);border:none;color:white}
+table{width:100%;border-collapse:collapse}th,td{padding:.5rem;border-bottom:1px solid var(--border);text-align:left}tr:hover td{background:#0c142a}
+.right{text-align:right}.muted{color:var(--muted)}.hide{display:none !important}.num{font-weight:800;font-size:1.6rem}
+.bar{height:10px;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:#0a1123}.bar>span{display:block;height:100%;background:linear-gradient(90deg,#22c55e,#06b6d4)}
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}.tile{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:#0a1123}
+.pill{padding:.25rem .5rem;border-radius:999px;border:1px solid var(--border)}
+footer{margin:3rem 0 2rem;color:var(--muted);text-align:center}
+.diploma-page{background:linear-gradient(180deg,#ffffff,#f8fafc);color:#111827;border:8px double #d1d5db;border-radius:12px;padding:48px;position:relative}
+.watermark{position:absolute;inset:0;opacity:0.06;background:url('assets/icon.svg') center/60% no-repeat;pointer-events:none}
+@media print{ nav,.no-print{display:none !important} .diploma-page{box-shadow:none} body{background:white}}
+</style>
 </head>
 <body>
 <header class="topbar">
@@ -62,81 +55,36 @@
   </div>
 </header>
 
-<!-- Netlify "registration" forms (hidden) -->
+<!-- Netlify hidden forms to enable Netlify Forms UI -->
 <form name="log-entry" data-netlify="true" netlify-honeypot="bot-field" hidden>
-  <input type="text" name="bot-field" />
-  <input type="text" name="student" />
-  <input type="text" name="course" />
-  <input type="text" name="subject" />
-  <input type="text" name="date" />
-  <input type="text" name="hours" />
-  <input type="text" name="location" />
-  <input type="text" name="notes" />
+  <input type="text" name="bot-field" /><input type="text" name="student" /><input type="text" name="course" /><input type="text" name="subject" /><input type="text" name="date" /><input type="text" name="hours" /><input type="text" name="location" /><input type="text" name="notes" />
 </form>
 <form name="student" data-netlify="true" netlify-honeypot="bot-field" hidden>
-  <input type="text" name="bot-field" />
-  <input type="text" name="name" />
-  <input type="text" name="dob" />
-  <input type="text" name="grade" />
-  <input type="text" name="startYear" />
-  <input type="text" name="notes" />
+  <input type="text" name="bot-field" /><input type="text" name="name" /><input type="text" name="dob" /><input type="text" name="grade" /><input type="text" name="startYear" /><input type="text" name="notes" />
 </form>
 <form name="course" data-netlify="true" netlify-honeypot="bot-field" hidden>
-  <input type="text" name="bot-field" />
-  <input type="text" name="title" />
-  <input type="text" name="subject" />
-  <input type="text" name="description" />
+  <input type="text" name="bot-field" /><input type="text" name="title" /><input type="text" name="subject" /><input type="text" name="description" />
 </form>
 <form name="portfolio-upload" data-netlify="true" enctype="multipart/form-data" netlify-honeypot="bot-field" hidden>
-  <input type="text" name="bot-field" />
-  <input type="text" name="student" />
-  <input type="text" name="course" />
-  <input type="text" name="date" />
-  <input type="text" name="title" />
-  <input type="text" name="tags" />
-  <input type="text" name="description" />
-  <input type="file" name="file" />
+  <input type="text" name="bot-field" /><input type="text" name="student" /><input type="text" name="course" /><input type="text" name="date" /><input type="text" name="title" /><input type="text" name="tags" /><input type="text" name="description" /><input type="file" name="file" />
 </form>
 
 <main class="wrap">
-  <!-- DASHBOARD -->
   <section id="view-dashboard" class="view">
     <div class="grid two">
       <div class="card">
         <h2>Progress</h2>
         <div class="row">
-          <div style="flex:1" class="card">
-            <div class="muted">Total Hours (1000)</div>
-            <div class="num" id="kpiTotal">0</div>
-            <div class="bar"><span id="barTotal" style="width:0%"></span></div>
-          </div>
-          <div style="flex:1" class="card">
-            <div class="muted">Core (600)</div>
-            <div class="num" id="kpiCore">0</div>
-            <div class="bar"><span id="barCore" style="width:0%"></span></div>
-          </div>
-          <div style="flex:1" class="card">
-            <div class="muted">Core @ Home (400)</div>
-            <div class="num" id="kpiHome">0</div>
-            <div class="bar"><span id="barHome" style="width:0%"></span></div>
-          </div>
+          <div style="flex:1" class="card"><div class="muted">Total Hours (1000)</div><div class="num" id="kpiTotal">0</div><div class="bar"><span id="barTotal" style="width:0%"></span></div></div>
+          <div style="flex:1" class="card"><div class="muted">Core (600)</div><div class="num" id="kpiCore">0</div><div class="bar"><span id="barCore" style="width:0%"></span></div></div>
+          <div style="flex:1" class="card"><div class="muted">Core @ Home (400)</div><div class="num" id="kpiHome">0</div><div class="bar"><span id="barHome" style="width:0%"></span></div></div>
         </div>
         <div class="row" style="margin-top:1rem">
-          <div style="flex:1">
-            <label>Student</label>
-            <select id="dashStudent"></select>
-          </div>
-          <div style="flex:1">
-            <label>Academic Year</label>
-            <select id="dashYear"></select>
-          </div>
+          <div style="flex:1"><label>Student</label><select id="dashStudent"></select></div>
+          <div style="flex:1"><label>Academic Year</label><select id="dashYear"></select></div>
         </div>
-        <table id="recentTable" style="margin-top:.8rem">
-          <thead><tr><th>Date</th><th>Course</th><th class="right">Hours</th><th>Loc</th><th>Notes</th></tr></thead>
-          <tbody></tbody>
-        </table>
+        <table id="recentTable" style="margin-top:.8rem"><thead><tr><th>Date</th><th>Course</th><th class="right">Hours</th><th>Loc</th><th>Notes</th></tr></thead><tbody></tbody></table>
       </div>
-
       <div class="card">
         <h2>Quick Add</h2>
         <div class="grid two">
@@ -147,18 +95,13 @@
           <div><label>Location</label><select id="qaLocation"><option value="home">Home</option><option value="offsite">Offsite</option></select></div>
           <div><label>Notes</label><input id="qaNotes" placeholder="Lesson, lab, trip…"></div>
         </div>
-        <div class="row" style="margin-top:.6rem">
-          <button class="primary" id="qaAdd">Add Hours</button>
-          <button class="ghost" id="qaToday">Today</button>
-        </div>
+        <div class="row" style="margin-top:.6rem"><button class="primary" id="qaAdd">Add Hours</button><button class="ghost" id="qaToday">Today</button></div>
       </div>
     </div>
   </section>
 
-  <!-- STUDENTS -->
   <section id="view-students" class="view hide">
-    <div class="card">
-      <h2>Students</h2>
+    <div class="card"><h2>Students</h2>
       <div class="grid two">
         <div class="card">
           <div class="grid two">
@@ -170,17 +113,13 @@
           <label>Notes</label><textarea id="stNotes" rows="3"></textarea>
           <div class="row" style="margin-top:.6rem"><button class="primary" id="stSave">Add Student</button><button class="ghost" id="stClear">Clear</button></div>
         </div>
-        <div>
-          <table id="stTable"><thead><tr><th>Name</th><th>DOB</th><th>Grade</th><th>Start</th><th></th></tr></thead><tbody></tbody></table>
-        </div>
+        <div><table id="stTable"><thead><tr><th>Name</th><th>DOB</th><th>Grade</th><th>Start</th><th></th></tr></thead><tbody></tbody></table></div>
       </div>
     </div>
   </section>
 
-  <!-- COURSES -->
   <section id="view-courses" class="view hide">
-    <div class="card">
-      <h2>Courses & Subjects</h2>
+    <div class="card"><h2>Courses & Subjects</h2>
       <div class="grid two">
         <div class="card">
           <div class="grid two">
@@ -196,13 +135,12 @@
         </div>
         <div><table id="coTable"><thead><tr><th>Course</th><th>Subject</th><th>Description</th><th></th></tr></thead><tbody></tbody></table></div>
       </div>
+      <div class="muted">Core subjects (Missouri): Reading, Language Arts, Mathematics, Science, Social Studies.</div>
     </div>
   </section>
 
-  <!-- LOG HOURS -->
   <section id="view-log" class="view hide">
-    <div class="card">
-      <h2>Daily Log</h2>
+    <div class="card"><h2>Daily Log</h2>
       <div class="grid three">
         <div><label>Student</label><select id="lgStudent"></select></div>
         <div><label>Course</label><select id="lgCourse"></select></div>
@@ -223,15 +161,12 @@
         </div>
         <div class="row"><button id="exportCSV">Export CSV</button><button id="exportJSON">Backup (JSON)</button><label class="pill muted">Import JSON <input id="importJSON" type="file" accept="application/json" style="display:none"></label></div>
       </div>
-
       <table id="lgTable"><thead><tr><th>Date</th><th>Student</th><th>Course</th><th>Subject</th><th class="right">Hours</th><th>Loc</th><th>Notes</th><th></th></tr></thead><tbody></tbody></table>
     </div>
   </section>
 
-  <!-- PORTFOLIO -->
   <section id="view-portfolio" class="view hide">
-    <div class="card">
-      <h2>Portfolio: Work Samples</h2>
+    <div class="card"><h2>Portfolio: Work Samples</h2>
       <div class="grid two">
         <div class="card">
           <div class="grid two">
@@ -244,7 +179,7 @@
           </div>
           <label>Description</label><textarea id="pfDesc" rows="3"></textarea>
           <div class="row" style="margin-top:.6rem"><button class="primary" id="pfSave">Add to Portfolio</button><button class="ghost" id="pfClear">Clear</button></div>
-          <div class="muted">Stored locally. Also submits a copy/metadata to Netlify Forms (optional file upload).</div>
+          <div class="muted">Files stored locally; metadata also saved to Netlify Forms and Neon.</div>
         </div>
         <div>
           <div class="row">
@@ -258,10 +193,8 @@
     </div>
   </section>
 
-  <!-- REPORTS -->
   <section id="view-reports" class="view hide">
-    <div class="card">
-      <h2>Annual Compliance Report</h2>
+    <div class="card"><h2>Annual Compliance Report</h2>
       <div class="grid three">
         <div><label>Student</label><select id="rpStudent"></select></div>
         <div><label>Academic Year</label><select id="rpYear"></select></div>
@@ -273,10 +206,8 @@
     </div>
   </section>
 
-  <!-- TRANSCRIPT (printable) -->
   <section id="view-transcript" class="view hide">
-    <div class="card">
-      <h2>High School Transcript (Printable)</h2>
+    <div class="card"><h2>High School Transcript (Printable)</h2>
       <div class="grid three">
         <div><label>Student</label><select id="trStudent"></select></div>
         <div><label>Include Years</label><select id="trYears" multiple size="4"></select></div>
@@ -288,14 +219,11 @@
       </div>
       <div class="row" style="margin-top:12px"><button id="trBuild" class="primary">Build Transcript</button><button id="trPrint">Print Transcript</button></div>
       <div id="trOut" style="margin-top:16px"></div>
-      <div class="muted">Tip: You can click the credit and grade cells to edit before printing; changes are saved locally.</div>
     </div>
   </section>
 
-  <!-- DIPLOMA (printable) -->
   <section id="view-diploma" class="view hide">
-    <div class="card">
-      <h2>Diploma Generator (Printable)</h2>
+    <div class="card"><h2>Diploma Generator (Printable)</h2>
       <div class="grid two">
         <div><label>Student</label><select id="dpStudent"></select></div>
         <div><label>Graduation Date</label><input type="date" id="dpDate"></div>
@@ -308,28 +236,29 @@
     </div>
   </section>
 
-  <!-- SETTINGS / HELP -->
-  <section id="view-settings" class="view hide"><div class="card"><h2>Settings & Backups</h2>
-    <div class="grid two">
-      <div class="card">
-        <div class="grid two">
-          <div><label>School Name</label><input id="scName" value="Peaceful Academy of Kansas City, Missouri"></div>
-          <div><label>Phone</label><input id="scPhone"></div>
-          <div><label>Address</label><input id="scAddress" placeholder="Street, Kansas City, MO"></div>
-          <div><label>Year Starts</label><select id="scYearStart"><option value="07-01" selected>July 1</option><option value="08-01">August 1</option><option value="09-01">September 1</option></select></div>
+  <section id="view-settings" class="view hide">
+    <div class="card"><h2>Settings & Backups</h2>
+      <div class="grid two">
+        <div class="card">
+          <div class="grid two">
+            <div><label>School Name</label><input id="scName" value="Peaceful Academy of Kansas City, Missouri"></div>
+            <div><label>Phone</label><input id="scPhone"></div>
+            <div><label>Address</label><input id="scAddress" placeholder="Street, Kansas City, MO"></div>
+            <div><label>Year Starts</label><select id="scYearStart"><option value="07-01" selected>July 1</option><option value="08-01">August 1</option><option value="09-01">September 1</option></select></div>
+          </div>
+          <div class="row" style="margin-top:.6rem"><button class="primary" id="scSave">Save</button><button class="ghost" id="scReset">Reset</button></div>
         </div>
-        <div class="row" style="margin-top:.6rem"><button class="primary" id="scSave">Save</button><button class="ghost" id="scReset">Reset</button></div>
-      </div>
-      <div class="card">
-        <h3 style="margin-top:0">Data</h3>
-        <div class="row">
-          <button id="scExportAll">Export ALL (JSON)</button>
-          <label class="pill muted">Import ALL <input type="file" id="scImportAll" accept="application/json" style="display:none"></label>
-          <button class="danger" id="scWipe">Erase Everything</button>
+        <div class="card">
+          <h3 style="margin-top:0">Data</h3>
+          <div class="row">
+            <button id="scExportAll">Export ALL (JSON)</button>
+            <label class="pill muted">Import ALL <input type="file" id="scImportAll" accept="application/json" style="display:none"></label>
+            <button class="danger" id="scWipe">Erase Everything</button>
+          </div>
         </div>
       </div>
     </div>
-  </div></section>
+  </section>
 
   <section id="view-help" class="view hide"><div class="card">
     <h2>Help & Missouri Notes</h2>
@@ -337,7 +266,7 @@
       <li>Track at least <strong>1,000</strong> hours per student, with <strong>600 core</strong> in Reading/Language Arts/Math/Social Studies/Science and <strong>400 core @ home</strong>.</li>
       <li>Maintain a plan book/diary (Daily Log), a portfolio of work (Portfolio), and evaluations/assessments (attach notes/files).</li>
       <li>School year defaults to <strong>July 1 – June 30</strong>. Adjust in Settings if needed.</li>
-      <li>This app works offline (PWA) and syncs entries to Netlify Forms for backup/audit trail.</li>
+      <li>This app works offline (PWA), mirrors to Netlify Forms, and writes to Neon Postgres via Netlify Functions.</li>
     </ul>
   </div></section>
 </main>
@@ -345,451 +274,181 @@
 <footer>© <span id="yearNow"></span> Peaceful Academy • Kansas City, MO</footer>
 
 <script>
-/* ---------------- PWA registration ---------------- */
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', ()=> navigator.serviceWorker.register('./sw.js'));
-}
+if ('serviceWorker' in navigator) { window.addEventListener('load', ()=> navigator.serviceWorker.register('./sw.js')); }
 
-/* ---------------- Utilities ---------------- */
 const $ = s=>document.querySelector(s), $$ = s=>Array.from(document.querySelectorAll(s));
 const fmt = new Intl.NumberFormat(undefined,{maximumFractionDigits:2});
 const todayISO = ()=> new Date().toISOString().slice(0,10);
 const CORE = new Set(['Reading','Language Arts','Mathematics','Science','Social Studies']);
 
-/* ---------------- Settings ---------------- */
+/* Settings & year helpers */
 function getSettings(){ return Object.assign({name:'Peaceful Academy of Kansas City, Missouri',phone:'',address:'',yearStart:'07-01'}, JSON.parse(localStorage.getItem('pa_settings')||'{}'));}
 function setSettings(v){ localStorage.setItem('pa_settings', JSON.stringify(v)); renderSettings(); }
-function yearForDate(d){
-  const [Y,M,D] = d.split('-').map(Number);
-  const s = getSettings().yearStart; const anchor = new Date(Y, Number(s.slice(0,2))-1, Number(s.slice(3,5)));
-  const dt = new Date(d+'T12:00:00'); return dt>=anchor?Y:Y-1;
-}
+function yearForDate(d){ const [Y,M,D]=d.split('-').map(Number); const s=getSettings().yearStart; const anchor=new Date(Y, Number(s.slice(0,2))-1, Number(s.slice(3,5))); const dt=new Date(d+'T12:00:00'); return dt>=anchor?Y:Y-1; }
 function yearLabel(y){ return y+'–'+(y+1); }
 function currentAcademicStart(){ return yearForDate(todayISO()); }
 
-/* ---------------- IndexedDB ---------------- */
-let db; (function openDB(){
-  const req = indexedDB.open('peacefulAcademyDB',1);
-  req.onupgradeneeded = ev=>{
-    const db = ev.target.result;
-    db.createObjectStore('students',{keyPath:'id',autoIncrement:true});
-    db.createObjectStore('courses',{keyPath:'id',autoIncrement:true});
-    db.createObjectStore('logs',{keyPath:'id',autoIncrement:true});
-    db.createObjectStore('portfolio',{keyPath:'id',autoIncrement:true});
-    db.createObjectStore('files',{keyPath:'id',autoIncrement:true});
-  };
-  req.onsuccess = ()=>{ db=req.result; init(); };
-})();
+/* IndexedDB */
+let db; (function openDB(){ const req=indexedDB.open('peacefulAcademyDB',1); req.onupgradeneeded=e=>{const d=e.target.result; d.createObjectStore('students',{keyPath:'id',autoIncrement:true}); d.createObjectStore('courses',{keyPath:'id',autoIncrement:true}); d.createObjectStore('logs',{keyPath:'id',autoIncrement:true}); d.createObjectStore('portfolio',{keyPath:'id',autoIncrement:true}); d.createObjectStore('files',{keyPath:'id',autoIncrement:true});}; req.onsuccess=()=>{db=req.result; init();}; })();
 function tx(names,mode='readonly'){ return db.transaction(names,mode); }
-const DB = {
-  add:(s,o)=> new Promise((res,rej)=>{ const r=tx([s],'readwrite').objectStore(s).add(o); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);}),
-  put:(s,o)=> new Promise((res,rej)=>{ const r=tx([s],'readwrite').objectStore(s).put(o); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);}),
-  get:(s,k)=> new Promise((res,rej)=>{ const r=tx([s]).objectStore(s).get(k); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);}),
-  all:(s)=> new Promise((res,rej)=>{ const r=tx([s]).objectStore(s).getAll(); r.onsuccess=()=>res(r.result||[]); r.onerror=()=>rej(r.error);}),
-  del:(s,k)=> new Promise((res,rej)=>{ const r=tx([s],'readwrite').objectStore(s).delete(k); r.onsuccess=()=>res(); r.onerror=()=>rej(r.error);})
-};
+const DB={ add:(s,o)=>new Promise((res,rej)=>{const r=tx([s],'readwrite').objectStore(s).add(o); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error)}), put:(s,o)=>new Promise((res,rej)=>{const r=tx([s],'readwrite').objectStore(s).put(o); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error)}), get:(s,k)=>new Promise((res,rej)=>{const r=tx([s]).objectStore(s).get(k); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error)}), all:(s)=>new Promise((res,rej)=>{const r=tx([s]).objectStore(s).getAll(); r.onsuccess=()=>res(r.result||[]); r.onerror=()=>rej(r.error)}), del:(s,k)=>new Promise((res,rej)=>{const r=tx([s],'readwrite').objectStore(s).delete(k); r.onsuccess=()=>res(); r.onerror=()=>rej(r.error)}) };
 
-/* ---------------- Netlify Forms helpers ---------------- */
+/* Netlify forms */
 function encode(data){ return Object.keys(data).map(k=> encodeURIComponent(k)+'='+encodeURIComponent(data[k])).join('&'); }
-async function netlifySubmit(formName, data){
-  try{
-    await fetch('/', {
-      method: 'POST',
-      headers: {'Content-Type':'application/x-www-form-urlencoded'},
-      body: encode(Object.assign({'form-name': formName, 'bot-field':''}, data))
-    });
-  }catch(e){ console.warn('Netlify submit failed (offline?):', e); }
-}
-async function netlifySubmitFormData(formName, formData){
-  try{
-    formData.append('form-name', formName);
-    formData.append('bot-field','');
-    await fetch('/', { method:'POST', body:formData });
-  }catch(e){ console.warn('Netlify file submit failed:', e); }
-}
+async function netlifySubmit(formName, data){ try{ await fetch('/', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body: encode(Object.assign({'form-name': formName, 'bot-field':''}, data)) }); } catch(e){ console.warn('Netlify submit failed', e);} }
+async function netlifySubmitFormData(formName, fd){ try{ fd.append('form-name', formName); fd.append('bot-field',''); await fetch('/', { method:'POST', body:fd }); }catch(e){ console.warn('Netlify file submit failed', e);} }
 
-/* ---------------- Renderers ---------------- */
+/* Neon helper */
+async function saveToNeon(kind, data){ try{ await fetch('/.netlify/functions/db', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ action: kind + '.insert', data }) }); } catch(e){ console.warn('Neon save failed', e); }}
+
+/* Lists & renders */
 async function listStudents(){ return await DB.all('students'); }
 async function listCourses(){ return await DB.all('courses'); }
 async function listLogs(){ return await DB.all('logs'); }
 async function listPortfolio(){ return await DB.all('portfolio'); }
 
+function show(view){ $$('.view').forEach(v=>v.classList.add('hide')); $('#view-'+view).classList.remove('hide'); $$('#nav a').forEach(a=>a.classList.remove('active')); $(`#nav a[href="#${view}"]`)?.classList.add('active'); }
+window.addEventListener('hashchange', ()=>{ const v=(location.hash||'#dashboard').slice(1); show(v); if(v==='dashboard') renderDashboard(); if(v==='students') renderStudents(); if(v==='courses') renderCourses(); if(v==='log') renderLogsTable(); if(v==='portfolio') renderPortfolio(); if(v==='reports') renderReports(); if(v==='settings') renderSettings(); });
+
 async function renderStudents(){
   const students = await listStudents();
-  const tbody = $('#stTable tbody'); if(tbody){ tbody.innerHTML=''; students.forEach(s=>{
-    const tr=document.createElement('tr');
-    tr.innerHTML = `<td>${s.name}</td><td>${s.dob||''}</td><td>${s.grade||''}</td><td>${s.startYear||''}</td><td class="right"><button class="stDel" data-id="${s.id}">Delete</button></td>`;
-    tbody.appendChild(tr);
-  });}
+  const tb = $('#stTable tbody'); if(tb){ tb.innerHTML=''; students.forEach(s=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>${s.name}</td><td>${s.dob||''}</td><td>${s.grade||''}</td><td>${s.startYear||''}</td><td class="right"><button class="stDel" data-id="${s.id}">Delete</button></td>`; tb.appendChild(tr); });}
   const opts = students.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
-  ['dashStudent','qaStudent','lgStudent','lgStudentFilter','pfStudent','pfStudentFilter','rpStudent','trStudent','dpStudent'].forEach(id=>{
-    const el = $('#'+id); if(!el) return;
-    const prev = el.value; el.innerHTML = (id.endsWith('Filter')?'<option value="">All</option>':'') + opts; if(prev) el.value=prev;
-  });
+  ['dashStudent','qaStudent','lgStudent','lgStudentFilter','pfStudent','pfStudentFilter','rpStudent','trStudent','dpStudent'].forEach(id=>{ const el=$('#'+id); if(!el) return; const prev=el.value; el.innerHTML=(id.endsWith('Filter')?'<option value="">All</option>':'')+opts; if(prev) el.value=prev; });
 }
 async function renderCourses(){
-  const courses = await listCourses();
-  const tbody = $('#coTable tbody'); if(tbody){ tbody.innerHTML=''; courses.forEach(c=>{
-    const tr=document.createElement('tr');
-    tr.innerHTML = `<td>${c.title}</td><td>${c.subject}</td><td class="muted">${c.description||''}</td><td class="right"><button class="coDel" data-id="${c.id}">Delete</button></td>`;
-    tbody.appendChild(tr);
-  });}
-  const opts = courses.map(c=>`<option value="${c.id}">${c.title}</option>`).join('');
-  ['qaCourse','lgCourse','pfCourse'].forEach(id=>{ const el=$('#'+id); if(el){ const prev=el.value; el.innerHTML=opts; if(prev) el.value=prev; }});
+  const courses=await listCourses(); const tb=$('#coTable tbody'); if(tb){ tb.innerHTML=''; courses.forEach(c=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>${c.title}</td><td>${c.subject}</td><td class="muted">${c.description||''}</td><td class="right"><button class="coDel" data-id="${c.id}">Delete</button></td>`; tb.appendChild(tr);});}
+  const opts=courses.map(c=>`<option value="${c.id}">${c.title}</option>`).join(''); ['qaCourse','lgCourse','pfCourse'].forEach(id=>{ const el=$('#'+id); if(el){ const prev=el.value; el.innerHTML=opts; if(prev) el.value=prev; }});
 }
-function academicYears(logs){
-  const ys = new Set(logs.map(l=>yearForDate(l.date))); if(!ys.size) ys.add(currentAcademicStart()); return Array.from(ys).sort((a,b)=>b-a);
-}
+function academicYears(logs){ const ys=new Set(logs.map(l=>yearForDate(l.date))); if(!ys.size) ys.add(currentAcademicStart()); return Array.from(ys).sort((a,b)=>b-a); }
 async function renderYearSelectors(){
-  const logs = await listLogs(); const years = academicYears(logs);
-  const set = (id, all=false)=>{ const el=$('#'+id); if(!el) return; const prev=el.value; el.innerHTML=(all?'<option value="">All</option>':'')+years.map(y=>`<option value="${y}">${yearLabel(y)}</option>`).join(''); el.value=prev||years[0]; };
-  set('dashYear'); set('lgYearFilter', true); set('pfYearFilter', true); set('rpYear');
-  const stStart = $('#stStart'); if(stStart){ stStart.innerHTML = years.slice().reverse().map(y=>`<option value="${y}">${yearLabel(y)}</option>`).join(''); }
-  const trYears = $('#trYears'); if(trYears){ trYears.innerHTML = years.map(y=>`<option value="${y}" selected>${yearLabel(y)}</option>`).join(''); }
+  const logs=await listLogs(); const years=academicYears(logs);
+  const set=(id,all=false)=>{ const el=$('#'+id); if(!el) return; const prev=el.value; el.innerHTML=(all?'<option value="">All</option>':'')+years.map(y=>`<option value="${y}">${yearLabel(y)}</option>`).join(''); el.value=prev||years[0]; };
+  set('dashYear'); set('lgYearFilter', true); set('pfYearFilter', true); set('rpYear'); const stStart=$('#stStart'); if(stStart){ stStart.innerHTML=years.slice().reverse().map(y=>`<option value="${y}">${yearLabel(y)}</option>`).join(''); } const trYears=$('#trYears'); if(trYears){ trYears.innerHTML=years.map(y=>`<option value="${y}" selected>${yearLabel(y)}</option>`).join(''); }
 }
-
 async function renderDashboard(){
-  const [logs,courses,students] = await Promise.all([listLogs(), listCourses(), listStudents()]);
-  await renderYearSelectors(); await renderStudents(); await renderCourses();
-  const sId = Number($('#dashStudent').value || (students[0]?.id||0));
-  $('#dashStudent').value = sId||''; const yStart = Number($('#dashYear').value) || currentAcademicStart();
-  const filtered = logs.filter(l=> l.studentId===sId && yearForDate(l.date)===yStart);
-  const cMap = new Map(courses.map(c=>[c.id,c]));
-  let total=0, core=0, homeCore=0;
-  filtered.forEach(l=>{
-    const subj = cMap.get(l.courseId)?.subject;
-    const hrs = Number(l.hours)||0; total+=hrs;
-    if (CORE.has(subj)){ core+=hrs; if(l.location==='home') homeCore+=hrs; }
-  });
-  $('#kpiTotal').textContent=fmt.format(total); $('#kpiCore').textContent=fmt.format(core); $('#kpiHome').textContent=fmt.format(homeCore);
-  $('#barTotal').style.width=Math.min(100,(total/1000)*100)+'%'; $('#barCore').style.width=Math.min(100,(core/600)*100)+'%'; $('#barHome').style.width=Math.min(100,(homeCore/400)*100)+'%';
-  const recent = filtered.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,10);
-  const tb = $('#recentTable tbody'); tb.innerHTML=''; recent.forEach(r=>{
-    const c=cMap.get(r.courseId);
-    const tr=document.createElement('tr'); tr.innerHTML=`<td>${r.date}</td><td>${c?.title||''}</td><td class="right">${fmt.format(r.hours)}</td><td>${r.location==='home'?'Home':'Offsite'}</td><td class="muted">${r.notes||''}</td>`; tb.appendChild(tr);
-  });
+  const [logs,courses,students]=await Promise.all([listLogs(), listCourses(), listStudents()]); await renderYearSelectors(); await renderStudents(); await renderCourses();
+  const sId=Number($('#dashStudent').value || (students[0]?.id||0)); $('#dashStudent').value=sId||''; const yStart=Number($('#dashYear').value)||currentAcademicStart();
+  const filtered=logs.filter(l=> l.studentId===sId && yearForDate(l.date)===yStart); const cMap=new Map(courses.map(c=>[c.id,c]));
+  let total=0, core=0, home=0; filtered.forEach(l=>{ const subj=cMap.get(l.courseId)?.subject; const hrs=Number(l.hours)||0; total+=hrs; if(CORE.has(subj)){ core+=hrs; if(l.location==='home') home+=hrs; }});
+  $('#kpiTotal').textContent=fmt.format(total); $('#kpiCore').textContent=fmt.format(core); $('#kpiHome').textContent=fmt.format(home);
+  $('#barTotal').style.width=Math.min(100,(total/1000)*100)+'%'; $('#barCore').style.width=Math.min(100,(core/600)*100)+'%'; $('#barHome').style.width=Math.min(100,(home/400)*100)+'%';
+  const recent = filtered.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,10); const tb=$('#recentTable tbody'); tb.innerHTML=''; recent.forEach(r=>{ const c=cMap.get(r.courseId); const tr=document.createElement('tr'); tr.innerHTML=`<td>${r.date}</td><td>${c?.title||''}</td><td class="right">${fmt.format(r.hours)}</td><td>${r.location==='home'?'Home':'Offsite'}</td><td class="muted">${r.notes||''}</td>`; tb.appendChild(tr); });
   $('#qaStudent').value=sId||''; $('#qaCourse').value=courses[0]?.id||''; $('#qaDate').value=todayISO();
 }
 async function renderLogsTable(){
-  const [logs,courses,students] = await Promise.all([listLogs(), listCourses(), listStudents()]);
-  const subjF = $('#lgSubjectFilter').value; const y = $('#lgYearFilter').value; const s = $('#lgStudentFilter').value;
-  const cMap = new Map(courses.map(c=>[c.id,c])); const sMap=new Map(students.map(st=>[st.id,st]));
-  const filtered = logs.filter(l=> (!y || yearForDate(l.date)==Number(y)) && (!s || l.studentId==Number(s)) && (!subjF || cMap.get(l.courseId)?.subject===subjF)).sort((a,b)=>b.date.localeCompare(a.date));
-  const tb = $('#lgTable tbody'); tb.innerHTML=''; filtered.forEach(l=>{
-    const c=cMap.get(l.courseId), st=sMap.get(l.studentId);
-    const tr=document.createElement('tr'); tr.innerHTML = `<td>${l.date}</td><td>${st?.name||''}</td><td>${c?.title||''}</td><td>${c?.subject||''}</td><td class="right">${fmt.format(l.hours)}</td><td>${l.location==='home'?'Home':'Offsite'}</td><td class="muted">${l.notes||''}</td><td class="right"><button class="lgDel" data-id="${l.id}">Delete</button></td>`; tb.appendChild(tr);
-  });
+  const [logs,courses,students]=await Promise.all([listLogs(), listCourses(), listStudents()]);
+  const subjF=$('#lgSubjectFilter').value; const y=$('#lgYearFilter').value; const s=$('#lgStudentFilter').value; const cMap=new Map(courses.map(c=>[c.id,c])); const sMap=new Map(students.map(x=>[x.id,x]));
+  const filtered=logs.filter(l=> (!y||yearForDate(l.date)==Number(y)) && (!s||l.studentId==Number(s)) && (!subjF||cMap.get(l.courseId)?.subject===subjF)).sort((a,b)=>b.date.localeCompare(a.date));
+  const tb=$('#lgTable tbody'); tb.innerHTML=''; filtered.forEach(l=>{ const c=cMap.get(l.courseId), st=sMap.get(l.studentId); const tr=document.createElement('tr'); tr.innerHTML=`<td>${l.date}</td><td>${st?.name||''}</td><td>${c?.title||''}</td><td>${c?.subject||''}</td><td class="right">${fmt.format(l.hours)}</td><td>${l.location==='home'?'Home':'Offsite'}</td><td class="muted">${l.notes||''}</td><td class="right"><button class="lgDel" data-id="${l.id}">Delete</button></td>`; tb.appendChild(tr); });
 }
 async function renderPortfolio(){
-  const [items,courses,students] = await Promise.all([listPortfolio(), listCourses(), listStudents()]);
-  const y=$('#pfYearFilter').value, s=$('#pfStudentFilter').value, subj=$('#pfSubjectFilter').value;
-  const cMap = new Map(courses.map(c=>[c.id,c])); const sMap = new Map(students.map(st=>[st.id,st]));
-  const filtered = items.filter(p=> (!y || yearForDate(p.date)==Number(y)) && (!s || p.studentId==Number(s)) && (!subj || cMap.get(p.courseId)?.subject===subj)).sort((a,b)=>b.date.localeCompare(a.date));
-  const gal = $('#pfGallery'); gal.innerHTML='';
-  for (const p of filtered){
-    const c=cMap.get(p.courseId), st=sMap.get(p.studentId); const file = p.fileId ? await DB.get('files', p.fileId) : null;
-    const url = file ? URL.createObjectURL(file.blob) : '';
-    const isImg = file && file.type.startsWith('image/');
-    const div = document.createElement('div'); div.className='tile';
-    div.innerHTML = `<div style="height:140px;display:flex;align-items:center;justify-content:center;background:#0a1123">${file?(isImg?`<img src="${url}" style="width:100%;height:140px;object-fit:cover">`:`<div class="muted">File: ${file.name||file.type}</div>`):'<div class="muted">No file</div>'}</div>
-    <div style="padding:.6rem"><div><strong>${p.title||'(untitled)'}</strong></div><div class="muted">${p.date} • ${st?.name||''} • ${c?.title||''}</div><div style="font-size:.92rem">${p.desc||''}</div>
-    <div class="row" style="margin-top:.5rem;justify-content:space-between"><div class="muted">${(p.tags||[]).join(', ')}</div><div class="row">${file?`<a download="${(p.title||'portfolio')}" href="${url}">Download</a>`:''}<button class="pfDel" data-id="${p.id}">Delete</button></div></div></div>`;
-    gal.appendChild(div);
-  }
-}
+  const [items,courses,students]=await Promise.all([listPortfolio(), listCourses(), listStudents()]); const y=$('#pfYearFilter').value, s=$('#pfStudentFilter').value, subj=$('#pfSubjectFilter').value; const cMap=new Map(courses.map(c=>[c.id,c])); const sMap=new Map(students.map(x=>[x.id,x]));
+  const filtered=items.filter(p=> (!y||yearForDate(p.date)==Number(y)) && (!s||p.studentId==Number(s)) && (!subj||cMap.get(p.courseId)?.subject===subj)).sort((a,b)=>b.date.localeCompare(a.date));
+  const gal=$('#pfGallery'); gal.innerHTML=''; for(const p of filtered){ const c=cMap.get(p.courseId), st=sMap.get(p.studentId); const file=p.fileId?await DB.get('files', p.fileId):null; const url=file?URL.createObjectURL(file.blob):''; const isImg = file && file.type.startsWith('image/'); const div=document.createElement('div'); div.className='tile'; div.innerHTML=`<div style="height:140px;display:flex;align-items:center;justify-content:center;background:#0a1123">${file?(isImg?`<img src="${url}" style="width:100%;height:140px;object-fit:cover">`:`<div class="muted">File: ${file.name||file.type}</div>`):'<div class="muted">No file</div>'}</div><div style="padding:.6rem"><div><strong>${p.title||'(untitled)'}</strong></div><div class="muted">${p.date} • ${st?.name||''} • ${c?.title||''}</div><div style="font-size:.92rem">${p.desc||''}</div><div class="row" style="margin-top:.5rem;justify-content:space-between"><div class="muted">${(p.tags||[]).join(', ')}</div><div class="row">${file?`<a download="${(p.title||'portfolio')}" href="${url}">Download</a>`:''}<button class="pfDel" data-id="${p.id}">Delete</button></div></div></div>`; gal.appendChild(div);} }
 async function renderReports(){
-  const [logs,courses] = await Promise.all([listLogs(), listCourses()]);
-  const sId = Number($('#rpStudent').value); const yStart = Number($('#rpYear').value); const groupBy = $('#rpGroupBy').value;
-  const cMap = new Map(courses.map(c=>[c.id,c])); const filtered = logs.filter(l=> l.studentId===sId && yearForDate(l.date)===yStart);
-  const totals={total:0,core:0,homeCore:0}; const groups=new Map();
-  function addG(k,hrs,home){ const o=groups.get(k)||{hours:0,home:0}; o.hours+=hrs; if(home) o.home+=hrs; groups.set(k,o); }
-  filtered.forEach(l=>{
-    const hrs=Number(l.hours)||0; const subj=cMap.get(l.courseId)?.subject; totals.total+=hrs;
-    const isCore = CORE.has(subj); const homeCore = isCore && l.location==='home'; if(isCore) totals.core+=hrs; if(homeCore) totals.homeCore+=hrs;
-    let key=''; if(groupBy==='subject') key=subj||'(none)'; else if(groupBy==='course') key=cMap.get(l.courseId)?.title||'(none)'; else key=l.date.slice(0,7);
-    addG(key,hrs,homeCore);
-  });
+  const [logs,courses]=await Promise.all([listLogs(), listCourses()]); const sId=Number($('#rpStudent').value); const yStart=Number($('#rpYear').value); const groupBy=$('#rpGroupBy').value; const cMap=new Map(courses.map(c=>[c.id,c])); const filtered=logs.filter(l=> l.studentId===sId && yearForDate(l.date)===yStart);
+  const totals={total:0,core:0,home:0}, groups=new Map(); function addG(k,hrs,home){ const o=groups.get(k)||{hours:0,home:0}; o.hours+=hrs; if(home) o.home+=hrs; groups.set(k,o); }
+  filtered.forEach(l=>{ const hrs=Number(l.hours)||0; const subj=cMap.get(l.courseId)?.subject; totals.total+=hrs; const isCore=CORE.has(subj); const home = isCore && l.location==='home'; if(isCore) totals.core+=hrs; if(home) totals.home+=hrs; let key=''; if(groupBy==='subject') key=subj||'(none)'; else if(groupBy==='course') key=cMap.get(l.courseId)?.title||'(none)'; else key=l.date.slice(0,7); addG(key,hrs,home); });
   const mk=(label,val,goal)=>`<div class="card"><div class="muted">${label} (goal ${goal})</div><div class="num">${fmt.format(val)}</div><div class="bar"><span style="width:${Math.min(100,(val/goal)*100)}%"></span></div></div>`;
-  $('#rpSummary').innerHTML = mk('Total Hours',totals.total,1000)+mk('Core Hours',totals.core,600)+mk('Core @ Home',totals.homeCore,400);
-  const tb=$('#rpTable tbody'); tb.innerHTML=''; Array.from(groups.entries()).sort((a,b)=>b[1].hours-a[1].hours).forEach(([k,v])=>{
-    const tr=document.createElement('tr'); tr.innerHTML=`<td>${k}</td><td class="right">${fmt.format(v.hours)}</td><td class="right">${fmt.format(v.home)}</td>`; tb.appendChild(tr);
-  });
+  $('#rpSummary').innerHTML = mk('Total Hours',totals.total,1000)+mk('Core Hours',totals.core,600)+mk('Core @ Home',totals.home,400);
+  const tb=$('#rpTable tbody'); tb.innerHTML=''; Array.from(groups.entries()).sort((a,b)=>b[1].hours-a[1].hours).forEach(([k,v])=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>${k}</td><td class="right">${fmt.format(v.hours)}</td><td class="right">${fmt.format(v.home)}</td>`; tb.appendChild(tr); });
 }
 
-/* ---------------- Transcript builder ---------------- */
-function getTranscriptOverrides(){ return JSON.parse(localStorage.getItem('pa_transcript')||'{}'); }
-function setTranscriptOverrides(v){ localStorage.setItem('pa_transcript', JSON.stringify(v)); }
-function gradePoint(letter){
-  const map={'A+':4,'A':4,'A-':3.7,'B+':3.3,'B':3,'B-':2.7,'C+':2.3,'C':2,'C-':1.7,'D+':1.3,'D':1,'F':0};
-  return map[letter] ?? null;
-}
-async function buildTranscript(){
-  const [logs,courses,students] = await Promise.all([listLogs(), listCourses(), listStudents()]);
-  const sId = Number($('#trStudent').value); if(!sId){ alert('Choose a student'); return; }
-  const years = Array.from($('#trYears').selectedOptions).map(o=>Number(o.value));
-  const scale = Number($('#trScale').value)||120;
-  const cMap=new Map(courses.map(c=>[c.id,c]));
-  const st = students.find(s=>s.id===sId);
-  const filtered = logs.filter(l=> l.studentId===sId && years.includes(yearForDate(l.date)));
-  // Sum hours by course + year
-  const by = new Map(); // key: courseId|year -> {hours, subject, title, year}
-  filtered.forEach(l=>{
-    const y=yearForDate(l.date), key=l.courseId+'|'+y; const c=cMap.get(l.courseId);
-    const o = by.get(key)||{hours:0, subject:c?.subject, title:c?.title, year:y}; o.hours += Number(l.hours)||0; by.set(key,o);
-  });
-  const rows = Array.from(by.values()).sort((a,b)=> (a.year-b.year)||a.title.localeCompare(b.title));
-  const ov = getTranscriptOverrides(); ov[sId]=ov[sId]||{};
-  // HTML
-  let html = `<div class="card" style="background:white;color:#111827">
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <div><div style="font-size:1.5rem;font-weight:800">Peaceful Academy • Kansas City, MO</div><div class="muted">Official High School Transcript</div></div>
-      <div class="muted">Issued: ${$('#trIssue').value||todayISO()}</div>
-    </div><hr>
-    <div class="grid three">
-      <div><strong>Student</strong><div>${st?.name||''}</div></div>
-      <div><strong>DOB</strong><div>${st?.dob||''}</div></div>
-      <div><strong>Address</strong><div>${getSettings().address||'On file'}</div></div>
-    </div>
-    <table style="width:100%;border-collapse:collapse;margin-top:10px">
-    <thead><tr><th style="text-align:left">Year</th><th style="text-align:left">Course</th><th style="text-align:left">Subject</th>
-      <th class="right">Hours</th><th class="right">Credits</th><th class="right">Grade</th><th class="right">Pts</th></tr></thead><tbody>`;
-  let totalCredits=0, totalPts=0, gradedCredits=0;
-  for (const r of rows){
-    const key=r.year+'|'+r.title;
-    const rec = ov[sId][key] || {credit: (r.hours/scale).toFixed(2), grade: ''};
-    ov[sId][key]=rec;
-    const gp = gradePoint(rec.grade);
-    const pts = gp!=null? gp*Number(rec.credit) : '';
-    if (gp!=null){ totalPts+=gp*Number(rec.credit); gradedCredits+=Number(rec.credit); }
-    totalCredits += Number(rec.credit);
-    html += `<tr>
-      <td>${yearLabel(r.year)}</td>
-      <td>${r.title}</td>
-      <td>${r.subject||''}</td>
-      <td class="right">${fmt.format(r.hours)}</td>
-      <td class="right" contenteditable="true" data-tr-key="${key}" data-tr-field="credit">${rec.credit}</td>
-      <td class="right" contenteditable="true" data-tr-key="${key}" data-tr-field="grade">${rec.grade||''}</td>
-      <td class="right">${pts===''?'':fmt.format(pts)}</td>
-    </tr>`;
-  }
-  const gpa = gradedCredits? (totalPts/gradedCredits).toFixed(2) : '—';
-  html += `</tbody></table>
-    <div class="row" style="justify-content:flex-end;margin-top:8px">
-      <div class="card" style="background:#f1f5f9;color:#111827">
-        <div><strong>Total Credits:</strong> ${fmt.format(totalCredits)}</div>
-        <div><strong>Cumulative GPA:</strong> ${gpa}</div>
-      </div>
-    </div>
-    <div class="row" style="margin-top:16px;justify-content:space-between">
-      <div>Administrator: ${$('#trAdmin').value||''}</div>
-      <div>Signature: _____________________________</div>
-    </div>
-  </div>`;
-  $('#trOut').innerHTML = html;
-  // Save edits on blur
-  $('#trOut').addEventListener('blur', (e)=>{
-    const td = e.target.closest('[contenteditable]'); if(!td) return;
-    const key = td.getAttribute('data-tr-key'); const field = td.getAttribute('data-tr-field');
-    ov[sId][key] = ov[sId][key]||{}; ov[sId][key][field] = td.textContent.trim();
-    setTranscriptOverrides(ov);
-    // rebuild to refresh totals
-    buildTranscript();
-  }, {once:true});
-}
-
-/* ---------------- Diploma generator ---------------- */
-async function buildDiploma(){
-  const stId=Number($('#dpStudent').value); if(!stId){ alert('Choose a student'); return; }
-  const st=(await listStudents()).find(s=>s.id===stId);
-  const school=getSettings().name; const date=$('#dpDate').value||todayISO(); const place=$('#dpPlace').value||'Kansas City, Missouri';
-  const tA=$('#dpTitleA').value||'Administrator'; const tB=$('#dpTitleB').value||'Parent/Guardian';
-  const html = `<div class="diploma-page">
-    <div class="watermark"></div>
-    <div class="fancy" style="text-align:center">
-      <div style="font-size:2rem;font-weight:700">${school}</div>
-      <div style="margin-top:8px;font-size:1rem;letter-spacing:.08em">Kansas City, Missouri</div>
-      <div style="margin-top:24px;font-size:1.4rem">Diploma of High School Graduation</div>
-      <div style="margin-top:24px">This certifies that</div>
-      <div style="margin-top:6px;font-size:2.2rem;font-weight:800">${st?.name||''}</div>
-      <div style="margin-top:6px">has satisfactorily completed a course of study prescribed for graduation and is hereby awarded this diploma.</div>
-      <div style="margin-top:6px">Given at ${place}, this ${date}.</div>
-    </div>
-    <div class="row" style="margin-top:48px;justify-content:space-between">
-      <div style="text-align:center;flex:1">
-        <div style="height:48px;border-bottom:1px solid #1f2937;margin:0 24px"></div>
-        <div class="muted">${tA}</div>
-      </div>
-      <div style="text-align:center;flex:1">
-        <div style="height:48px;border-bottom:1px solid #1f2937;margin:0 24px"></div>
-        <div class="muted">${tB}</div>
-      </div>
-    </div>
-  </div>`;
-  $('#dpOut').innerHTML = html;
-}
-
-/* ---------------- Events & Actions ---------------- */
-function show(view){
-  $$('.view').forEach(v=>v.classList.add('hide'));
-  $('#view-'+view).classList.remove('hide');
-  $$('#nav a').forEach(a=>a.classList.remove('active'));
-  $(`#nav a[href="#${view}"]`)?.classList.add('active');
-}
-
-window.addEventListener('hashchange', ()=>{
-  const v = (location.hash||'#dashboard').slice(1);
-  show(v);
-  if (v==='dashboard') renderDashboard();
-  if (v==='students') renderStudents();
-  if (v==='courses') renderCourses();
-  if (v==='log') renderLogsTable();
-  if (v==='portfolio') renderPortfolio();
-  if (v==='reports') renderReports();
-  if (v==='transcript') {/* wait for user click to build */}
-  if (v==='diploma') {/* wait for preview */}
-  if (v==='settings') renderSettings();
-});
-
-function renderSettings(){
-  const s=getSettings();
-  $('#scName').value=s.name; $('#scPhone').value=s.phone; $('#scAddress').value=s.address; $('#scYearStart').value=s.yearStart;
-  $('#yearNow').textContent=new Date().getFullYear();
-}
-
-/* Settings buttons */
-$('#scSave')?.addEventListener('click', ()=>{
-  setSettings({ name:$('#scName').value.trim(), phone:$('#scPhone').value.trim(), address:$('#scAddress').value.trim(), yearStart:$('#scYearStart').value });
-  alert('Saved.');
-  renderDashboard(); renderLogsTable(); renderPortfolio(); renderReports();
-});
+/* Events */
+function renderSettings(){ const s=getSettings(); $('#scName').value=s.name; $('#scPhone').value=s.phone; $('#scAddress').value=s.address; $('#scYearStart').value=s.yearStart; $('#yearNow').textContent=new Date().getFullYear(); }
+$('#scSave')?.addEventListener('click', ()=>{ setSettings({ name:$('#scName').value.trim(), phone:$('#scPhone').value.trim(), address:$('#scAddress').value.trim(), yearStart:$('#scYearStart').value }); alert('Saved.'); renderDashboard(); renderLogsTable(); renderPortfolio(); renderReports(); });
 $('#scReset')?.addEventListener('click', ()=>{ if(confirm('Reset to defaults?')) setSettings({name:'Peaceful Academy of Kansas City, Missouri',phone:'',address:'',yearStart:'07-01'}); });
-$('#scExportAll')?.addEventListener('click', async()=>{
-  const blob = new Blob([JSON.stringify({settings:getSettings(),students:await listStudents(),courses:await listCourses(),logs:await listLogs(),portfolio:await listPortfolio()},null,2)],{type:'application/json'});
-  const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:'peaceful-academy-backup.json'}); a.click();
-});
-$('#scImportAll')?.addEventListener('change', async(e)=>{
-  const f=e.target.files?.[0]; if(!f) return; if(!confirm('Import will REPLACE existing data. Continue?')) return;
-  const data=JSON.parse(await f.text());
-  await Promise.all(['students','courses','logs','portfolio','files'].map(s=>new Promise((res,rej)=>{ const r=tx([s],'readwrite').objectStore(s).clear(); r.onsuccess=()=>res(); r.onerror=()=>rej(r.error);})));
-  if (data.settings) setSettings(data.settings);
-  for(const s of (data.students||[])) await DB.add('students', s);
-  for(const c of (data.courses||[])) await DB.add('courses', c);
-  for(const l of (data.logs||[])) await DB.add('logs', l);
-  for(const p of (data.portfolio||[])) await DB.add('portfolio', p);
-  alert('Imported.'); renderDashboard(); renderStudents(); renderCourses(); renderLogsTable(); renderPortfolio(); renderReports();
-});
-$('#scWipe')?.addEventListener('click', async()=>{
-  if(!confirm('Erase ALL data?')) return;
-  await Promise.all(['students','courses','logs','portfolio','files'].map(s=>new Promise((res,rej)=>{ const r=tx([s],'readwrite').objectStore(s).clear(); r.onsuccess=()=>res(); r.onerror=()=>rej(r.error);})));
-  alert('Cleared.');
-  renderDashboard(); renderStudents(); renderCourses(); renderLogsTable(); renderPortfolio(); renderReports();
-});
+$('#scExportAll')?.addEventListener('click', async()=>{ const blob=new Blob([JSON.stringify({settings:getSettings(),students:await listStudents(),courses:await listCourses(),logs:await listLogs(),portfolio:await listPortfolio()},null,2)],{type:'application/json'}); const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:'peaceful-academy-backup.json'}); a.click(); });
+$('#scImportAll')?.addEventListener('change', async(e)=>{ const f=e.target.files?.[0]; if(!f) return; if(!confirm('Import will REPLACE existing data. Continue?')) return; const data=JSON.parse(await f.text()); await Promise.all(['students','courses','logs','portfolio','files'].map(s=>new Promise((res,rej)=>{ const r=tx([s],'readwrite').objectStore(s).clear(); r.onsuccess=()=>res(); r.onerror=()=>rej(r.error);}))); if(data.settings) setSettings(data.settings); for(const s of (data.students||[])) await DB.add('students', s); for(const c of (data.courses||[])) await DB.add('courses', c); for(const l of (data.logs||[])) await DB.add('logs', l); for(const p of (data.portfolio||[])) await DB.add('portfolio', p); alert('Imported.'); renderDashboard(); renderStudents(); renderCourses(); renderLogsTable(); renderPortfolio(); renderReports(); });
+$('#scWipe')?.addEventListener('click', async()=>{ if(!confirm('Erase ALL data?')) return; await Promise.all(['students','courses','logs','portfolio','files'].map(s=>new Promise((res,rej)=>{ const r=tx([s],'readwrite').objectStore(s).clear(); r.onsuccess=()=>res(); r.onerror=()=>rej(r.error);}))); alert('Cleared.'); renderDashboard(); renderStudents(); renderCourses(); renderLogsTable(); renderPortfolio(); renderReports(); });
 
-/* Add students/courses */
-$('#stSave')?.addEventListener('click', async()=>{
-  const obj={ name:$('#stName').value.trim(), dob:$('#stDob').value||'', grade:$('#stGrade').value.trim(), startYear:Number($('#stStart').value)||currentAcademicStart(), notes:$('#stNotes').value.trim() };
-  if(!obj.name){ alert('Name required'); return; }
-  await DB.add('students', obj);
-  await netlifySubmit('student', {name:obj.name, dob:obj.dob, grade:obj.grade, startYear:String(obj.startYear), notes:obj.notes});
-  $('#stName').value=''; $('#stDob').value=''; $('#stGrade').value=''; $('#stNotes').value='';
-  renderStudents(); renderYearSelectors(); renderDashboard();
-});
+/* Students */
+document.body.addEventListener('click', async(e)=>{ if(e.target.classList.contains('stDel')){ await DB.del('students', Number(e.target.dataset.id)); renderStudents(); renderDashboard(); renderLogsTable(); renderPortfolio(); renderReports(); } });
+$('#stSave')?.addEventListener('click', async()=>{ const obj={ name:$('#stName').value.trim(), dob:$('#stDob').value||'', grade:$('#stGrade').value.trim(), startYear:Number($('#stStart').value)||currentAcademicStart(), notes:$('#stNotes').value.trim() }; if(!obj.name){ alert('Name required'); return; } await DB.add('students', obj); await netlifySubmit('student', {name:obj.name, dob:obj.dob, grade:obj.grade, startYear:String(obj.startYear), notes:obj.notes}); await saveToNeon('student', {name:obj.name, dob:obj.dob, grade:obj.grade, startYear:obj.startYear, notes:obj.notes}); $('#stName').value=''; $('#stDob').value=''; $('#stGrade').value=''; $('#stNotes').value=''; renderStudents(); renderYearSelectors(); renderDashboard(); });
 $('#stClear')?.addEventListener('click', ()=>{$$('#view-students input, #view-students textarea').forEach(el=>el.value='')});
-document.body.addEventListener('click', async(e)=>{
-  if(e.target.classList.contains('stDel')){ await DB.del('students', Number(e.target.dataset.id)); renderStudents(); renderDashboard(); renderLogsTable(); renderPortfolio(); renderReports(); }
-});
 
-$('#coSave')?.addEventListener('click', async()=>{
-  const obj={ title:$('#coTitle').value.trim(), subject:$('#coSubject').value, description:$('#coDesc').value.trim() };
-  if(!obj.title){ alert('Title required'); return; }
-  await DB.add('courses', obj);
-  await netlifySubmit('course', obj);
-  $('#coTitle').value=''; $('#coDesc').value=''; renderCourses(); renderDashboard();
-});
+/* Courses */
+document.body.addEventListener('click', async(e)=>{ if(e.target.classList.contains('coDel')){ await DB.del('courses', Number(e.target.dataset.id)); renderCourses(); renderLogsTable(); renderDashboard(); renderPortfolio(); renderReports(); } });
+$('#coSave')?.addEventListener('click', async()=>{ const obj={ title:$('#coTitle').value.trim(), subject:$('#coSubject').value, description:$('#coDesc').value.trim() }; if(!obj.title){ alert('Title required'); return; } await DB.add('courses', obj); await netlifySubmit('course', obj); await saveToNeon('course', obj); $('#coTitle').value=''; $('#coDesc').value=''; renderCourses(); renderDashboard(); });
 $('#coClear')?.addEventListener('click', ()=>{$$('#view-courses input, #view-courses textarea').forEach(el=>el.value='')});
-document.body.addEventListener('click', async(e)=>{
-  if(e.target.classList.contains('coDel')){ await DB.del('courses', Number(e.target.dataset.id)); renderCourses(); renderLogsTable(); renderDashboard(); renderPortfolio(); renderReports(); }
-});
 
-/* Logging */
+/* Logs */
 $('#qaToday')?.addEventListener('click', ()=> $('#qaDate').value=todayISO());
 $('#lgToday2')?.addEventListener('click', ()=> $('#lgDate').value=todayISO());
 $('#qaAdd')?.addEventListener('click', async()=>{
   const obj={ studentId:Number($('#qaStudent').value), courseId:Number($('#qaCourse').value), date:$('#qaDate').value||todayISO(), hours:Number($('#qaHours').value), location:$('#qaLocation').value, notes:$('#qaNotes').value.trim() };
   if(!obj.studentId||!obj.courseId||!obj.hours){ alert('Student, course, hours required'); return; }
   await DB.add('logs', obj);
-  // Netlify capture
-  const [courses,students] = await Promise.all([listCourses(), listStudents()]);
-  const c = courses.find(c=>c.id===obj.courseId), s = students.find(s=>s.id===obj.studentId);
+  const [courses,students]=await Promise.all([listCourses(), listStudents()]); const c=courses.find(x=>x.id===obj.courseId), s=students.find(x=>x.id===obj.studentId);
   await netlifySubmit('log-entry', { student:s?.name||String(obj.studentId), course:c?.title||String(obj.courseId), subject:c?.subject||'', date:obj.date, hours:String(obj.hours), location:obj.location, notes:obj.notes });
+  await saveToNeon('log', { studentId: obj.studentId, studentName: s?.name||String(obj.studentId), courseId: obj.courseId, courseTitle: c?.title||String(obj.courseId), subject: c?.subject||'', date: obj.date, hours: obj.hours, location: obj.location, notes: obj.notes });
   $('#qaHours').value=''; $('#qaNotes').value=''; renderDashboard(); renderLogsTable(); renderReports();
 });
 $('#lgAdd')?.addEventListener('click', async()=>{
   const obj={ studentId:Number($('#lgStudent').value), courseId:Number($('#lgCourse').value), date:$('#lgDate').value||todayISO(), hours:Number($('#lgHours').value), location:$('#lgLocation').value, notes:$('#lgNotes').value.trim() };
   if(!obj.studentId||!obj.courseId||!obj.hours){ alert('Student, course, hours required'); return; }
   await DB.add('logs', obj);
-  const [courses,students] = await Promise.all([listCourses(), listStudents()]);
-  const c = courses.find(c=>c.id===obj.courseId), s = students.find(s=>s.id===obj.studentId);
+  const [courses,students]=await Promise.all([listCourses(), listStudents()]); const c=courses.find(x=>x.id===obj.courseId), s=students.find(x=>x.id===obj.studentId);
   await netlifySubmit('log-entry', { student:s?.name||String(obj.studentId), course:c?.title||String(obj.courseId), subject:c?.subject||'', date:obj.date, hours:String(obj.hours), location:obj.location, notes:obj.notes });
+  await saveToNeon('log', { studentId: obj.studentId, studentName: s?.name||String(obj.studentId), courseId: obj.courseId, courseTitle: c?.title||String(obj.courseId), subject: c?.subject||'', date: obj.date, hours: obj.hours, location: obj.location, notes: obj.notes });
   $('#lgHours').value=''; $('#lgNotes').value=''; renderLogsTable(); renderDashboard(); renderReports();
 });
-document.body.addEventListener('click', async(e)=>{
-  if(e.target.classList.contains('lgDel')){ await DB.del('logs', Number(e.target.dataset.id)); renderLogsTable(); renderDashboard(); renderReports(); }
-});
-/* Export/Import */
-$('#exportCSV')?.addEventListener('click', async()=>{
-  const [logs,courses,students] = await Promise.all([listLogs(), listCourses(), listStudents()]);
-  const cMap=new Map(courses.map(c=>[c.id,c])); const sMap=new Map(students.map(s=>[s.id,s]));
-  const y=$('#lgYearFilter').value;
-  const rows=[['date','student','course','subject','hours','location','notes']];
-  for(const l of logs){ if(y && yearForDate(l.date)!=Number(y)) continue; const c=cMap.get(l.courseId), s=sMap.get(l.studentId); rows.push([l.date, s?.name||'', c?.title||'', c?.subject||'', String(l.hours), l.location, (l.notes||'').replace(/\n/g,' ')]); }
-  const csv = rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
-  const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob([csv],{type:'text/csv'})),download:'logs.csv'}); a.click();
-});
-$('#exportJSON')?.addEventListener('click', async()=>{
-  const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob([JSON.stringify({logs:await listLogs()},null,2)],{type:'application/json'})),download:'logs.json'}); a.click();
-});
-$('#importJSON')?.addEventListener('change', async(e)=>{
-  const f=e.target.files?.[0]; if(!f) return; const data=JSON.parse(await f.text()); if(!Array.isArray(data.logs)){ alert('Invalid'); return; } for(const l of data.logs) await DB.add('logs', l); alert('Imported'); renderLogsTable(); renderDashboard(); renderReports();
-});
+document.body.addEventListener('click', async(e)=>{ if(e.target.classList.contains('lgDel')){ await DB.del('logs', Number(e.target.dataset.id)); renderLogsTable(); renderDashboard(); renderReports(); } });
+$('#exportCSV')?.addEventListener('click', async()=>{ const [logs,courses,students]=await Promise.all([listLogs(), listCourses(), listStudents()]); const cMap=new Map(courses.map(c=>[c.id,c])); const sMap=new Map(students.map(s=>[s.id,s])); const y=$('#lgYearFilter').value; const rows=[['date','student','course','subject','hours','location','notes']]; for(const l of logs){ if(y && yearForDate(l.date)!=Number(y)) continue; const c=cMap.get(l.courseId), st=sMap.get(l.studentId); rows.push([l.date, st?.name||'', c?.title||'', c?.subject||'', String(l.hours), l.location, (l.notes||'').replace(/\n/g,' ')]);} const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n'); const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob([csv],{type:'text/csv'})),download:'logs.csv'}); a.click(); });
+$('#exportJSON')?.addEventListener('click', async()=>{ const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob([JSON.stringify({logs:await listLogs()},null,2)],{type:'application/json'})),download:'logs.json'}); a.click(); });
+$('#importJSON')?.addEventListener('change', async(e)=>{ const f=e.target.files?.[0]; if(!f) return; const data=JSON.parse(await f.text()); if(!Array.isArray(data.logs)){ alert('Invalid'); return; } for(const l of data.logs) await DB.add('logs', l); alert('Imported'); renderLogsTable(); renderDashboard(); renderReports(); });
 
 /* Portfolio */
 async function fileToBlob(file){ return file.slice(0,file.size,file.type); }
 $('#pfSave')?.addEventListener('click', async()=>{
-  const file = $('#pfFile').files[0] || null; let fileId=null;
-  if(file){ const blob=await fileToBlob(file); fileId = await DB.add('files', {blob, type:file.type, name:file.name, size:file.size}); }
+  const file=$('#pfFile').files[0]||null; let fileId=null;
+  if(file){ const blob=await fileToBlob(file); fileId=await DB.add('files', {blob, type:file.type, name:file.name, size:file.size}); }
   const obj={ studentId:Number($('#pfStudent').value), courseId:Number($('#pfCourse').value), date:$('#pfDate').value||todayISO(), title:$('#pfTitle').value.trim(), desc:$('#pfDesc').value.trim(), tags:$('#pfTags').value.split(',').map(t=>t.trim()).filter(Boolean), fileId };
   if(!obj.studentId||!obj.courseId){ alert('Student and course required'); return; }
   await DB.add('portfolio', obj);
-  // Netlify: file + metadata
-  const [courses,students] = await Promise.all([listCourses(), listStudents()]);
-  const c=courses.find(x=>x.id===obj.courseId), s=students.find(x=>x.id===obj.studentId);
-  const fd = new FormData();
-  fd.append('student', s?.name||String(obj.studentId));
-  fd.append('course', c?.title||String(obj.courseId));
-  fd.append('date', obj.date); fd.append('title', obj.title); fd.append('tags', (obj.tags||[]).join(', ')); fd.append('description', obj.desc);
-  if (file) fd.append('file', file, file.name);
-  await netlifySubmitFormData('portfolio-upload', fd);
-  ['pfTitle','pfDesc','pfTags'].forEach(id=>$('#'+id).value=''); $('#pfFile').value='';
-  renderPortfolio();
+  const [courses,students]=await Promise.all([listCourses(), listStudents()]); const c=courses.find(x=>x.id===obj.courseId), s=students.find(x=>x.id===obj.studentId);
+  const fd=new FormData(); fd.append('student', s?.name||String(obj.studentId)); fd.append('course', c?.title||String(obj.courseId)); fd.append('date', obj.date); fd.append('title', obj.title); fd.append('tags', (obj.tags||[]).join(', ')); fd.append('description', obj.desc); if(file) fd.append('file', file, file.name); await netlifySubmitFormData('portfolio-upload', fd);
+  await saveToNeon('portfolio', { studentId: obj.studentId, studentName: s?.name||String(obj.studentId), courseId: obj.courseId, courseTitle: c?.title||String(obj.courseId), subject: c?.subject||'', date: obj.date, title: obj.title, tags: obj.tags, description: obj.desc, fileName: (file? file.name : null), fileType: (file? file.type : null), fileSize: (file? file.size : null) });
+  ['pfTitle','pfDesc','pfTags'].forEach(id=>$('#'+id).value=''); $('#pfFile').value=''; renderPortfolio();
 });
-document.body.addEventListener('click', async(e)=>{
-  if(e.target.classList.contains('pfDel')){
-    const id=Number(e.target.dataset.id); const item=await DB.get('portfolio', id); if(item?.fileId) await DB.del('files', item.fileId);
-    await DB.del('portfolio', id); renderPortfolio();
-  }
-});
+$('#pfClear')?.addEventListener('click', ()=>{ ['pfTitle','pfDesc','pfTags','pfFile'].forEach(id=>$('#'+id).value=''); });
+document.body.addEventListener('click', async(e)=>{ if(e.target.classList.contains('pfDel')){ const id=Number(e.target.dataset.id); const item=await DB.get('portfolio', id); if(item?.fileId) await DB.del('files', item.fileId); await DB.del('portfolio', id); renderPortfolio(); } });
 
-/* Transcript & Diploma events */
+/* Transcript */
+function gradePoint(letter){ const map={'A+':4,'A':4,'A-':3.7,'B+':3.3,'B':3,'B-':2.7,'C+':2.3,'C':2,'C-':1.7,'D+':1.3,'D':1,'F':0}; return map[letter] ?? null; }
+function getTranscriptOverrides(){ return JSON.parse(localStorage.getItem('pa_transcript')||'{}'); }
+function setTranscriptOverrides(v){ localStorage.setItem('pa_transcript', JSON.stringify(v)); }
+async function buildTranscript(){
+  const [logs,courses,students]=await Promise.all([listLogs(), listCourses(), listStudents()]); const sId=Number($('#trStudent').value); if(!sId){ alert('Choose a student'); return; } const years=Array.from($('#trYears').selectedOptions).map(o=>Number(o.value)); const scale=Number($('#trScale').value)||120; const cMap=new Map(courses.map(c=>[c.id,c])); const st=students.find(s=>s.id===sId); const filtered=logs.filter(l=> l.studentId===sId && years.includes(yearForDate(l.date)));
+  const by=new Map(); filtered.forEach(l=>{ const y=yearForDate(l.date), key=l.courseId+'|'+y; const c=cMap.get(l.courseId); const o=by.get(key)||{hours:0, subject:c?.subject, title:c?.title, year:y}; o.hours+=Number(l.hours)||0; by.set(key,o); });
+  const rows=Array.from(by.values()).sort((a,b)=> (a.year-b.year)||a.title.localeCompare(b.title)); const ov=getTranscriptOverrides(); ov[sId]=ov[sId]||{};
+  let html=`<div class="card" style="background:white;color:#111827"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:1.5rem;font-weight:800">Peaceful Academy • Kansas City, MO</div><div class="muted">Official High School Transcript</div></div><div class="muted">Issued: ${$('#trIssue').value||todayISO()}</div></div><hr><div class="grid three"><div><strong>Student</strong><div>${st?.name||''}</div></div><div><strong>DOB</strong><div>${st?.dob||''}</div></div><div><strong>Address</strong><div>${getSettings().address||'On file'}</div></div></div><table style="width:100%;border-collapse:collapse;margin-top:10px"><thead><tr><th style="text-align:left">Year</th><th style="text-align:left">Course</th><th style="text-align:left">Subject</th><th class="right">Hours</th><th class="right">Credits</th><th class="right">Grade</th><th class="right">Pts</th></tr></thead><tbody>`;
+  let totalCredits=0, totalPts=0, gradedCredits=0;
+  for(const r of rows){ const key=r.year+'|'+r.title; const rec=ov[sId][key] || {credit:(r.hours/scale).toFixed(2), grade:''}; ov[sId][key]=rec; const gp=gradePoint(rec.grade); const pts=gp!=null? gp*Number(rec.credit) : ''; if(gp!=null){ totalPts+=gp*Number(rec.credit); gradedCredits+=Number(rec.credit);} totalCredits+=Number(rec.credit);
+    html += `<tr><td>${yearLabel(r.year)}</td><td>${r.title}</td><td>${r.subject||''}</td><td class="right">${fmt.format(r.hours)}</td><td class="right" contenteditable="true" data-tr-key="${key}" data-tr-field="credit">${rec.credit}</td><td class="right" contenteditable="true" data-tr-key="${key}" data-tr-field="grade">${rec.grade||''}</td><td class="right">${pts===''?'':fmt.format(pts)}</td></tr>`; }
+  const gpa=gradedCredits? (totalPts/gradedCredits).toFixed(2) : '—';
+  html += `</tbody></table><div class="row" style="justify-content:flex-end;margin-top:8px"><div class="card" style="background:#f1f5f9;color:#111827"><div><strong>Total Credits:</strong> ${fmt.format(totalCredits)}</div><div><strong>Cumulative GPA:</strong> ${gpa}</div></div></div><div class="row" style="margin-top:16px;justify-content:space-between"><div>Administrator: ${$('#trAdmin').value||''}</div><div>Signature: _____________________________</div></div></div>`;
+  $('#trOut').innerHTML=html;
+  $('#trOut').addEventListener('blur',(e)=>{ const td=e.target.closest('[contenteditable]'); if(!td) return; const key=td.getAttribute('data-tr-key'); const field=td.getAttribute('data-tr-field'); ov[sId][key]=ov[sId][key]||{}; ov[sId][key][field]=td.textContent.trim(); setTranscriptOverrides(ov); buildTranscript(); }, {once:true});
+}
 $('#trBuild')?.addEventListener('click', buildTranscript);
 $('#trPrint')?.addEventListener('click', ()=>window.print());
+
+/* Diploma */
+async function buildDiploma(){ const stId=Number($('#dpStudent').value); if(!stId){ alert('Choose a student'); return; } const st=(await listStudents()).find(s=>s.id===stId); const school=getSettings().name; const date=$('#dpDate').value||todayISO(); const place=$('#dpPlace').value||'Kansas City, Missouri'; const tA=$('#dpTitleA').value||'Administrator'; const tB=$('#dpTitleB').value||'Parent/Guardian'; const html=`<div class="diploma-page"><div class="watermark"></div><div style="text-align:center;font-family:Georgia,serif"><div style="font-size:2rem;font-weight:700">${school}</div><div style="margin-top:8px;font-size:1rem;letter-spacing:.08em">Kansas City, Missouri</div><div style="margin-top:24px;font-size:1.4rem">Diploma of High School Graduation</div><div style="margin-top:24px">This certifies that</div><div style="margin-top:6px;font-size:2.2rem;font-weight:800">${st?.name||''}</div><div style="margin-top:6px">has satisfactorily completed a course of study prescribed for graduation and is hereby awarded this diploma.</div><div style="margin-top:6px">Given at ${place}, this ${date}.</div></div><div class="row" style="margin-top:48px;justify-content:space-between"><div style="text-align:center;flex:1"><div style="height:48px;border-bottom:1px solid #1f2937;margin:0 24px"></div><div class="muted">${tA}</div></div><div style="text-align:center;flex:1"><div style="height:48px;border-bottom:1px solid #1f2937;margin:0 24px"></div><div class="muted">${tB}</div></div></div></div>`; $('#dpOut').innerHTML=html; }
 $('#dpPreview')?.addEventListener('click', buildDiploma);
 $('#dpPrint')?.addEventListener('click', ()=>window.print());
 
-/* Init */
+/* Filters & misc */
+['dashStudent','dashYear','lgYearFilter','lgStudentFilter','lgSubjectFilter'].forEach(id=>{ document.getElementById(id)?.addEventListener('change', ()=>{ if(id.startsWith('dash')) renderDashboard(); else renderLogsTable(); }); });
+['pfYearFilter','pfStudentFilter','pfSubjectFilter'].forEach(id=>{ document.getElementById(id)?.addEventListener('change', renderPortfolio); });
+['rpStudent','rpYear','rpGroupBy'].forEach(id=>{ document.getElementById(id)?.addEventListener('change', renderReports); });
+$('#rpPrint')?.addEventListener('click', ()=>window.print());
+
 async function init(){
-  $('#qaDate').value=todayISO(); $('#lgDate').value=todayISO(); $('#pfDate').value=todayISO();
   if (!location.hash) location.hash = '#dashboard';
+  $('#qaDate').value=todayISO(); $('#lgDate').value=todayISO(); $('#pfDate').value=todayISO();
   await renderStudents(); await renderCourses(); await renderYearSelectors(); await renderDashboard();
 }
 </script>
