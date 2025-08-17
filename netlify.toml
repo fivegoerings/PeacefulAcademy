@@ -8,6 +8,12 @@
   external_node_modules = ["@netlify/neon"]
   included_files = ["admin/sql/schema.sql"]
 
+
+[[redirects]]
+  from = "/.netlify/functions/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
 # Route /admin to the admin SPA
 [[redirects]]
   from = "/admin"
