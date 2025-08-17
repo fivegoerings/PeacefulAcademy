@@ -10,8 +10,8 @@
 
 
 [[redirects]]
-  from = "/.netlify/functions/*"
-  to = "/.netlify/functions/:splat"
+  from = "/netlify/functions/*"
+  to = "/netlify/functions/:splat"
   status = 200
 
 # Route /admin to the admin SPA
