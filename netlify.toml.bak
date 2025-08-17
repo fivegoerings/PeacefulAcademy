@@ -6,17 +6,21 @@
   directory = "admin/netlify/functions"
   node_bundler = "esbuild"
   external_node_modules = ["@netlify/neon","argon2","jose","zod","nanoid"]
-  # Remove included_files unless the file really exists at this path:
-  # included_files = ["admin/sql/schema.sql"]
+  included_files = ["admin/sql/schema.sql"]
 
-# Route /admin to your SPA entry
+
+[[redirects]]
+  from = "/netlify/functions/*"
+  to = "/netlify/functions/:splat"
+  status = 200
+
+# Route /admin to the admin SPA
 [[redirects]]
   from = "/admin"
-  to   = "/admin/index.html"
+  to = "/admin/index.html"
   status = 200
 
 [[redirects]]
   from = "/admin/*"
-  to   = "/admin/index.html"
+  to = "/admin/index.html"
   status = 200
-
