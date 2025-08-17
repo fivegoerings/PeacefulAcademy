@@ -28,7 +28,7 @@ async function ensureSchemaLoaded() {
 export default async (request: Request) => {
   try {
     const url = new URL(request.url);
-    const path = url.pathname.replace(/^\\/\\.netlify\\/functions\\/api/, "");
+    const path = url.pathname.replace(/\.netlify\/functions\/api/, "");
     const parts = path.split("/").filter(Boolean);
 
     if (parts[0] === "health") { /* return health JSON */ }
