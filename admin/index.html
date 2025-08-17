@@ -2,103 +2,211 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
+  <meta http-equiv="x-ua-compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Peaceful Admin</title>
+
+  <title>Peaceful Fields Admin</title>
+
+  <!-- Favicons (optional) -->
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+  <!-- Styles -->
   <link rel="stylesheet" href="/admin/style.css" />
 </head>
 <body>
-  <header>
+  <header role="banner">
     <h1>Peaceful Fields Admin</h1>
-    <nav>
-      <button class="tab active" data-tab="monitor">DB Monitor</button>
-      <button class="tab" data-tab="students">Students</button>
-      <button class="tab" data-tab="courses">Courses</button>
-      <button class="tab" data-tab="enrollments">Enrollments</button>
+    <nav aria-label="Primary">
+      <button class="tab active" data-tab="monitor" type="button" aria-controls="monitor" aria-selected="true">DB Monitor</button>
+      <button class="tab" data-tab="students" type="button" aria-controls="students" aria-selected="false">Students</button>
+      <button class="tab" data-tab="courses" type="button" aria-controls="courses" aria-selected="false">Courses</button>
+      <button class="tab" data-tab="enrollments" type="button" aria-controls="enrollments" aria-selected="false">Enrollments</button>
     </nav>
   </header>
 
-  <div class="wrap">
+  <main class="wrap" role="main">
     <!-- Monitor -->
-    <section id="monitor" class="active">
-      <div class="card">
-        <div class="row"><h3>Connection Health</h3><span id="health" class="muted">—</span></div>
-        <pre id="healthJson" class="muted"></pre>
+    <section id="monitor" class="active" aria-labelledby="monitor-heading">
+      <h2 id="monitor-heading">Database Monitor</h2>
+
+      <div class="card" aria-live="polite">
+        <div class="row">
+          <h3>Connection Health</h3>
+          <span id="health" class="muted" aria-atomic="true">—</span>
+        </div>
+        <pre id="healthJson" class="muted" aria-label="Health response JSON"></pre>
       </div>
+
       <div class="card">
-        <div class="row"><h3>Row Counts</h3><button id="refreshStats">Refresh</button></div>
-        <table>
-          <thead><tr><th>Table</th><th>Rows</th></tr></thead>
+        <div class="row">
+          <h3 id="row-counts">Row Counts</h3>
+          <button id="refreshStats" type="button" aria-describedby="row-counts">Refresh</button>
+        </div>
+        <table aria-describedby="row-counts">
+          <caption class="visually-hidden">Database table row counts</caption>
+          <thead>
+            <tr>
+              <th scope="col">Table</th>
+              <th scope="col">Rows</th>
+            </tr>
+          </thead>
           <tbody id="statsBody"></tbody>
         </table>
       </div>
     </section>
 
     <!-- Students -->
-    <section id="students">
+    <section id="students" hidden aria-labelledby="students-heading">
+      <h2 id="students-heading">Students</h2>
+
       <div class="card">
         <h3>Add Student</h3>
-        <form id="studentForm" class="inline">
-          <input name="first_name" placeholder="First name" required />
-          <input name="last_name" placeholder="Last name" required />
-          <input name="birth_date" type="date" />
-          <input name="email" placeholder="Email" />
-          <input name="phone" placeholder="Phone" />
+        <form id="studentForm" class="inline" autocomplete="on" novalidate>
+          <label class="visually-hidden" for="sf-first">First name</label>
+          <input id="sf-first" name="first_name" placeholder="First name" required autocomplete="given-name" />
+
+          <label class="visually-hidden" for="sf-last">Last name</label>
+          <input id="sf-last" name="last_name" placeholder="Last name" required autocomplete="family-name" />
+
+          <label class="visually-hidden" for="sf-dob">Birth date</label>
+          <input id="sf-dob" name="birth_date" type="date" autocomplete="bday" />
+
+          <label class="visually-hidden" for="sf-email">Email</label>
+          <input id="sf-email" name="email" type="email" inputmode="email" placeholder="Email" autocomplete="email" />
+
+          <label class="visually-hidden" for="sf-phone">Phone</label>
+          <input id="sf-phone" name="phone" type="tel" inputmode="tel" placeholder="Phone" autocomplete="tel" />
+
           <button type="submit">Create</button>
         </form>
       </div>
+
       <div class="card">
-        <div class="row"><h3>Students</h3><button id="reloadStudents">Reload</button></div>
-        <table>
-          <thead><tr><th>Name</th><th>DOB</th><th>Email</th><th>Phone</th><th>Actions</th></tr></thead>
+        <div class="row">
+          <h3 id="students-list">Students</h3>
+          <button id="reloadStudents" type="button" aria-describedby="students-list">Reload</button>
+        </div>
+        <table aria-describedby="students-list">
+          <caption class="visually-hidden">Student roster</caption>
+          <thead>
+            <tr>
+              <th scope="col">Name</th>
+              <th scope="col">DOB</th>
+              <th scope="col">Email</th>
+              <th scope="col">Phone</th>
+              <th scope="col">Actions</th>
+            </tr>
+          </thead>
           <tbody id="studentsBody"></tbody>
         </table>
       </div>
     </section>
 
     <!-- Courses -->
-    <section id="courses">
+    <section id="courses" hidden aria-labelledby="courses-heading">
+      <h2 id="courses-heading">Courses</h2>
+
       <div class="card">
         <h3>Add Course</h3>
-        <form id="courseForm" class="inline">
-          <input name="code" placeholder="Code (e.g., ENG9)" required />
-          <input name="title" placeholder="Title" required />
-          <input name="credits" type="number" step="0.5" placeholder="Credits" />
-          <input name="academic_year" type="number" placeholder="Year (e.g., 2025)" />
+        <form id="courseForm" class="inline" autocomplete="on" novalidate>
+          <label class="visually-hidden" for="cf-code">Course code</label>
+          <input id="cf-code" name="code" placeholder="Code (e.g., ENG9)" required autocomplete="off" />
+
+          <label class="visually-hidden" for="cf-title">Title</label>
+          <input id="cf-title" name="title" placeholder="Title" required autocomplete="off" />
+
+          <label class="visually-hidden" for="cf-credits">Credits</label>
+          <input id="cf-credits" name="credits" type="number" step="0.5" placeholder="Credits" inputmode="decimal" />
+
+          <label class="visually-hidden" for="cf-year">Academic year</label>
+          <input id="cf-year" name="academic_year" type="number" placeholder="Year (e.g., 2025)" inputmode="numeric" />
+
           <button type="submit">Create</button>
         </form>
       </div>
+
       <div class="card">
-        <div class="row"><h3>Courses</h3><button id="reloadCourses">Reload</button></div>
-        <table>
-          <thead><tr><th>Code</th><th>Title</th><th>Credits</th><th>Year</th><th>Actions</th></tr></thead>
+        <div class="row">
+          <h3 id="courses-list">Courses</h3>
+          <button id="reloadCourses" type="button" aria-describedby="courses-list">Reload</button>
+        </div>
+        <table aria-describedby="courses-list">
+          <caption class="visually-hidden">Course list</caption>
+          <thead>
+            <tr>
+              <th scope="col">Code</th>
+              <th scope="col">Title</th>
+              <th scope="col">Credits</th>
+              <th scope="col">Year</th>
+              <th scope="col">Actions</th>
+            </tr>
+          </thead>
           <tbody id="coursesBody"></tbody>
         </table>
       </div>
     </section>
 
     <!-- Enrollments -->
-    <section id="enrollments">
+    <section id="enrollments" hidden aria-labelledby="enrollments-heading">
+      <h2 id="enrollments-heading">Enrollments</h2>
+
       <div class="card">
         <h3>Create Enrollment</h3>
-        <form id="enrollForm" class="inline">
-          <select name="student_id" id="enrollStudent"></select>
-          <select name="course_id" id="enrollCourse"></select>
-          <input name="term" placeholder="Term (e.g., 2025-Fall)" />
-          <input name="start_date" type="date" />
-          <input name="end_date" type="date" />
+        <form id="enrollForm" class="inline" autocomplete="on" novalidate>
+          <label class="visually-hidden" for="ef-student">Student</label>
+          <select id="ef-student" name="student_id" required></select>
+
+          <label class="visually-hidden" for="ef-course">Course</label>
+          <select id="ef-course" name="course_id" required></select>
+
+          <label class="visually-hidden" for="ef-term">Term</label>
+          <input id="ef-term" name="term" placeholder="Term (e.g., 2025-Fall)" autocomplete="off" />
+
+          <label class="visually-hidden" for="ef-start">Start date</label>
+          <input id="ef-start" name="start_date" type="date" />
+
+          <label class="visually-hidden" for="ef-end">End date</label>
+          <input id="ef-end" name="end_date" type="date" />
+
           <button type="submit">Enroll</button>
         </form>
       </div>
+
       <div class="card">
-        <div class="row"><h3>Enrollments</h3><button id="reloadEnrollments">Reload</button></div>
-        <table>
-          <thead><tr><th>Student</th><th>Course</th><th>Term</th><th>Start</th><th>End</th></tr></thead>
+        <div class="row">
+          <h3 id="enrollments-list">Enrollments</h3>
+          <button id="reloadEnrollments" type="button" aria-describedby="enrollments-list">Reload</button>
+        </div>
+        <table aria-describedby="enrollments-list">
+          <caption class="visually-hidden">Enrollment list</caption>
+          <thead>
+            <tr>
+              <th scope="col">Student</th>
+              <th scope="col">Course</th>
+              <th scope="col">Term</th>
+              <th scope="col">Start</th>
+              <th scope="col">End</th>
+            </tr>
+          </thead>
           <tbody id="enrollBody"></tbody>
         </table>
       </div>
     </section>
-  </div>
+  </main>
 
-  <script src="/admin/app.js"></script>
+  <!-- App Script (deferred to end for perf) -->
+  <script src="/admin/app.js" defer></script>
+
+  <!-- Basic visually-hidden utility -->
+  <style>
+    .visually-hidden {
+      position: absolute !important;
+      height: 1px; width: 1px;
+      overflow: hidden; clip: rect(1px, 1px, 1px, 1px);
+      white-space: nowrap; border: 0; padding: 0; margin: -1px;
+    }
+  </style>
 </body>
 </html>
