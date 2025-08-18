@@ -1,10 +1,15 @@
 {
-  "devDependencies": {
-    "@types/node": "^24.3.0",
-    "drizzle-kit": "^0.31.4",
-    "drizzle-orm": "^0.44.4",
-    "typescript": "^5.9.2"
+  "name": "peaceful-academy",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=18" },
+
+  "scripts": {
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "netlify dev:exec drizzle-kit migrate",
+    "db:studio": "netlify dev:exec drizzle-kit studio"
   },
+
   "dependencies": {
     "@netlify/neon": "^0.1.0",
     "argon2": "^0.44.0",
@@ -13,9 +18,12 @@
     "postgres": "^3.4.7",
     "zod": "^4.0.17"
   },
-  "scripts": {
-    "db:generate": "drizzle-kit generate",
-    "db:migrate": "netlify dev:exec drizzle-kit migrate",
-    "db:studio": "netlify dev:exec drizzle-kit studio"
+
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "drizzle-kit": "^0.31.4",
+    "drizzle-orm": "^0.44.4",
+    "typescript": "^5.9.2"
   }
 }
+
