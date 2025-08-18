@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Peaceful Academy — Acellus Import</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="assets/acellus-import.css" />
+</head>
+<body>
+  <header class="page-header">
+    <h1>Acellus → Peaceful Academy (Manual Import)</h1>
+    <p>Enter the classes, hours, and grades you see in your Acellus parent dashboard.</p>
+  </header>
+
+  <main>
+    <!-- Student -->
+    <section class="card">
+      <h2>Student</h2>
+      <form id="student-form">
+        <div class="row">
+          <label>Student ID
+            <input name="student_id" required inputmode="text" autocomplete="off" />
+          </label>
+          <label>Student Name
+            <input name="student_name" required autocomplete="name" />
+          </label>
+        </div>
+        <div class="row">
+          <label>School Year (e.g., 2025–2026)
+            <input name="school_year" required />
+          </label>
+          <label>Term (Quarter/Semester)
+            <input name="term" placeholder="Fall 2025" />
+          </label>
+        </div>
+        <button type="submit">Save/Select Student</button>
+        <output id="student-status" role="status"></output>
+      </form>
+    </section>
+
+    <!-- Class/Hours entry -->
+    <section class="card">
+      <h2>Add Class / Hours</h2>
+      <form id="entry-form" novalidate>
+        <div class="row">
+          <label>Class Title (as in Acellus)
+            <input name="course_title" required />
+          </label>
+          <label>Category (Acellus)
+            <select name="acellus_category" required>
+              <option value="">— choose —</option>
+              <option>Language Arts</option>
+              <option>Science</option>
+              <option>Social Studies</option>
+              <option>Math</option>
+              <option>Fine Arts</option>
+              <option>Social Emotional</option>
+              <option>Elective</option>
+              <option>PE/Health</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="row">
+          <label>Date (MM/DD/YYYY)
+            <input name="date" type="date" required />
+          </label>
+          <label>Hours (decimal)
+            <input name="hours" type="number" step="0.25" min="0" required />
+          </label>
+          <label>Location
+            <select name="location">
+              <option value="Regular">Regular</option>
+              <option value="Field Trip">Field Trip</option>
+              <option value="Co-op">Co-op</option>
+              <option value="Online">Online</option>
+            </select>
+          </label>
+        </div>
+
+        <details class="inline-details">
+          <summary>Optional grade/credit</summary>
+          <div class="row">
+            <label>Percent Grade
+              <input name="percent" type="number" min="0" max="100" step="0.1" />
+            </label>
+            <label>Letter Grade
+              <input name="letter" placeholder="A, B+, C-…" />
+            </label>
+            <label>Credits (HS)
+              <input name="credits" type="number" step="0.25" min="0" />
+            </label>
+          </div>
+        </details>
+
+        <button type="submit">Add Entry</button>
+        <output id="entry-status" role="status"></output>
+      </form>
+    </section>
+
+    <!-- Live table -->
+    <section class="card">
+      <h2>Entries This Term</h2>
+      <div class="table-scroll">
+        <table id="entries-table" aria-live="polite">
+          <thead>
+            <tr>
+              <th>Date</th><th>Course</th><th>Cat</th><th>Core?</th><th>Hours</th><th>%</th><th>Letter</th><th>Credits</th><th></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+          <tfoot>
+            <tr>
+              <td colspan="4">Total Hours (All)</td>
+              <td id="total-hours">0</td>
+              <td colspan="4"></td>
+            </tr>
+            <tr>
+              <td colspan="4">Total Hours (Missouri Core)</td>
+              <td id="total-hours-core">0</td>
+              <td colspan="4"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <div class="actions">
+        <button id="sync-btn">Sync to Server</button>
+        <output id="sync-status" role="status"></output>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="js/acellus-import.js"></script>
+</body>
+</html>
