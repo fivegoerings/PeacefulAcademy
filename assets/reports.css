@@ -1,0 +1,43 @@
+:root{
+  --bg:#0b1226; --panel:#121a33; --text:#e7ecff; --muted:#98a1c0;
+  --accent:#5b8cff; --bar:#2a355a; --border:#1b2544; --btn:#1c2a57;
+}
+
+*{box-sizing:border-box}
+body.app{margin:0; background:var(--bg); color:var(--text); font:16px/1.5 system-ui,Segoe UI,Roboto,Arial}
+a{color:var(--text); text-decoration:none}
+.container{max-width:1100px; margin:24px auto; padding:0 16px}
+
+.app-header{padding:20px 16px; border-bottom:1px solid var(--border); background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(0,0,0,0))}
+.app-header h1{margin:0 0 12px 0; font-size:22px}
+.pill-nav a{display:inline-block; padding:8px 14px; margin:0 6px 6px 0; border-radius:999px; background:var(--panel); border:1px solid var(--border); color:var(--muted)}
+.pill-nav a.active{color:var(--text); border-color:var(--accent)}
+
+.card{background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:18px; margin-bottom:18px; box-shadow:0 6px 14px rgba(0,0,0,.25)}
+.card h2,.card h3{margin:0 0 12px 0}
+
+.grid{display:grid; gap:14px}
+.grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:900px){
+  .grid-3,.grid-2{grid-template-columns:1fr}
+}
+
+.field span{display:block; font-size:13px; color:var(--muted); margin-bottom:6px}
+select{width:100%; background:#0f1630; color:var(--text); border:1px solid var(--border); border-radius:10px; padding:10px}
+
+.metric{background:#0f1630; border:1px solid var(--border); border-radius:12px; padding:12px}
+.metric-head{display:flex; align-items:center; justify-content:space-between; gap:10px}
+.metric-head span{color:var(--muted); font-size:14px}
+.metric-head strong{font-size:28px; font-weight:700}
+.bar{height:10px; background:var(--bar); border-radius:999px; overflow:hidden; margin-top:10px}
+.bar span{display:block; height:100%; background:var(--accent); width:0%; transition:width .35s ease}
+
+.actions{margin-top:12px}
+.btn{background:var(--btn); color:var(--text); border:1px solid var(--border); padding:10px 14px; border-radius:10px; cursor:pointer}
+.btn:hover{filter:brightness(1.1)}
+
+#hoursTable{width:100%; border-collapse:collapse; margin-top:6px; font-size:14px}
+#hoursTable th,#hoursTable td{border-bottom:1px solid var(--border); padding:8px 6px; text-align:left}
+#hoursTable th{color:var(--muted); font-weight:600}
+
