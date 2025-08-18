@@ -20,3 +20,8 @@
   to   = "/admin/index.html"
   status = 200
 
+# Pretty path for the Netlify Function
+[[redirects]]
+  from = "/api/acellus-import"
+  to = "/.netlify/functions/acellus-import"
+  status = 200
