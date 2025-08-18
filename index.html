@@ -5,17 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Peaceful Academy (KC, MO) — Homeschool Records</title>
 
-  <!-- Optional: your PWA manifest and icons -->
   <link rel="manifest" href="/manifest.webmanifest" />
   <meta name="theme-color" content="#0b1226" />
 
-  <!-- Global styles (if you have one) -->
   <link rel="stylesheet" href="/assets/app.css" />
-
-  <!-- Reports view styling -->
   <link rel="stylesheet" href="/assets/reports.css" />
   <style>
-    /* Minimal layout styling if /assets/app.css isn't present */
     :root{
       --bg:#0b1226; --panel:#121a33; --text:#e7ecff; --muted:#98a1c0;
       --border:#1b2544;
@@ -46,7 +41,7 @@
   </header>
 
   <main>
-    <!-- ========== DASHBOARD (placeholder) ========== -->
+    <!-- DASHBOARD -->
     <section id="dashboardView" data-route="dashboard">
       <div class="card">
         <h2>Dashboard</h2>
@@ -54,22 +49,22 @@
       </div>
     </section>
 
-    <!-- ========== STUDENTS (placeholder) ========== -->
+    <!-- STUDENTS -->
     <section id="studentsView" data-route="students" hidden>
       <div class="card"><h2>Students</h2><p>Students view content…</p></div>
     </section>
 
-    <!-- ========== COURSES (placeholder) ========== -->
+    <!-- COURSES -->
     <section id="coursesView" data-route="courses" hidden>
       <div class="card"><h2>Courses</h2><p>Courses view content…</p></div>
     </section>
 
-    <!-- ========== LOG HOURS (placeholder) ========== -->
+    <!-- LOG HOURS -->
     <section id="logView" data-route="log" hidden>
       <div class="card"><h2>Log Hours</h2><p>Log Hours view content…</p></div>
     </section>
 
-    <!-- ========== REPORTS (UPDATED) ========== -->
+    <!-- REPORTS (UPDATED WITH NON-CORE) -->
     <section id="reportsView" data-route="reports" hidden>
       <section class="card">
         <h2>Annual Compliance Report</h2>
@@ -95,7 +90,6 @@
           </label>
         </div>
 
-        <!-- Metrics -->
         <div class="grid grid-2 metrics">
           <div class="metric">
             <div class="metric-head">
@@ -142,28 +136,28 @@
       </section>
     </section>
 
-    <!-- ========== TRANSCRIPT (placeholder) ========== -->
+    <!-- TRANSCRIPT -->
     <section id="transcriptView" data-route="transcript" hidden>
       <div class="card"><h2>Transcript</h2><p>Transcript view content…</p></div>
     </section>
 
-    <!-- ========== DIPLOMA (placeholder) ========== -->
+    <!-- DIPLOMA -->
     <section id="diplomaView" data-route="diploma" hidden>
       <div class="card"><h2>Diploma</h2><p>Diploma view content…</p></div>
     </section>
 
-    <!-- ========== SETTINGS (placeholder) ========== -->
+    <!-- SETTINGS -->
     <section id="settingsView" data-route="settings" hidden>
       <div class="card"><h2>Settings</h2><p>Settings view content…</p></div>
     </section>
 
-    <!-- ========== HELP (placeholder) ========== -->
+    <!-- HELP -->
     <section id="helpView" data-route="help" hidden>
       <div class="card"><h2>Help</h2><p>Help view content…</p></div>
     </section>
   </main>
 
-  <!-- Tiny hash router (remove if you already have one) -->
+  <!-- Tiny hash router -->
   <script>
     (function () {
       const routes = Array.from(document.querySelectorAll('[data-route]'));
@@ -180,7 +174,7 @@
     }());
   </script>
 
-  <!-- Reports logic (fetches data, computes Non-Core, renders table/bars) -->
+  <!-- Reports logic -->
   <script type="module" src="/assets/reports.js"></script>
 </body>
 </html>

@@ -20,8 +20,8 @@ const els = {
   coreHome: document.getElementById('coreHomeHours'),
   coreHomeBar: document.getElementById('coreHomeBar'),
 
-  nonCore: document.getElementById('nonCoreHours'),          // NEW
-  nonCoreBar: document.getElementById('nonCoreBar'),         // NEW
+  nonCore: document.getElementById('nonCoreHours'),
+  nonCoreBar: document.getElementById('nonCoreBar'),
 
   hoursTableWrap: document.getElementById('hoursTableWrap'),
   printBtn: document.getElementById('printBtn'),
@@ -41,11 +41,9 @@ async function init() {
 
 // Fetch options for student & year (adapt to your APIs)
 async function hydrateFilters() {
-  // Students
   const students = await api('/api/students/list');
   populateSelect(els.student, students.map(s => ({ value: s.id, label: s.name })));
 
-  // Years
   const years = await api('/api/years/list');
   populateSelect(els.year, years.map(y => ({ value: y.id, label: y.label })));
 }
@@ -60,24 +58,19 @@ async function loadAndRender() {
   const yearId = els.year.value;
   const groupBy = els.groupBy.value;
 
-  // Replace with your existing endpoint if different
   const data = await api(`/api/reports/annual?studentId=${encodeURIComponent(studentId)}&yearId=${encodeURIComponent(yearId)}&groupBy=${encodeURIComponent(groupBy)}`);
 
-  // Expected minimal shape; adjust mapping if your API differs
   const total = safeNum(data?.totals?.totalHours);
   const core = safeNum(data?.totals?.coreHours);
   const coreHome = safeNum(data?.totals?.coreAtHomeHours);
 
-  // NEW: compute non-core; cannot be negative
   const nonCore = Math.max(0, total - core);
 
-  // Render headline metrics
   renderMetric(els.total, els.totalBar, total, GOALS.total);
   renderMetric(els.core, els.coreBar, core, GOALS.core);
   renderMetric(els.coreHome, els.coreHomeBar, coreHome, GOALS.coreHome);
-  renderMetric(els.nonCore, els.nonCoreBar, nonCore, GOALS.nonCore); // NEW
+  renderMetric(els.nonCore, els.nonCoreBar, nonCore, GOALS.nonCore);
 
-  // Render tabular breakdown
   renderBreakdownTable(data?.breakdown ?? [], groupBy);
 }
 
@@ -94,7 +87,7 @@ function renderBreakdownTable(rows, groupBy) {
   if (!Array.isArray(rows) || rows.length === 0) {
     els.hoursTableWrap.innerHTML = `<p style="color:#98a1c0;margin:8px 0">No hours logged yet for the selected filters.</p>`;
     return;
-    }
+  }
 
   const headers = ['Group', 'Total', 'Core', 'Core @ Home', 'Non-Core'];
   const table = document.createElement('table');
@@ -131,5 +124,5 @@ async function api(path) {
 }
 const clamp = (n, min, max) => Math.min(Math.max(n, min), max);
 const safeNum = (n) => Number.isFinite(+n) ? +n : 0;
-function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c])); }
+function escapeHtml(s){ return String(s).replace(/[&<>\"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;','\\'':'&#39;'}[c])); }
 
