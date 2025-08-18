@@ -1,27 +1,11 @@
-# Netlify configuration for Peaceful Fields Academy with Neon (Postgres)
-[build]
-  publish = "."
-
+# Netlify configuration for Peaceful Academy with Neon (Postgres)
 [functions]
-  directory = "admin/netlify/functions"
   node_bundler = "esbuild"
-  external_node_modules = ["@netlify/neon","argon2","jose","zod","nanoid"]
-  # Remove included_files unless the file really exists at this path:
-  # included_files = ["admin/sql/schema.sql"]
+  external_node_modules = ["@netlify/neon"]
 
-# Route /admin to your SPA entry
+# Redirects: send root traffic to app.html
 [[redirects]]
-  from = "/admin"
-  to   = "/admin/index.html"
+  from = "/"
+  to = "/app.html"
   status = 200
 
-[[redirects]]
-  from = "/admin/*"
-  to   = "/admin/index.html"
-  status = 200
-
-# Pretty path for the Netlify Function
-[[redirects]]
-  from = "/api/acellus-import"
-  to = "/.netlify/functions/acellus-import"
-  status = 200

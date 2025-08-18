@@ -1,40 +1,16 @@
 {
-  "name": "Peaceful Academy (KC, MO) \u2014 Homeschool Records",
+  "name": "Peaceful Academy (KC, MO) — Homeschool Records",
   "short_name": "Peaceful Academy",
-  "start_url": "app.html",
+  "start_url": "/app.html",
   "display": "standalone",
   "background_color": "#0b1226",
   "theme_color": "#0b1226",
   "description": "Missouri-compliant homeschool hours, courses, and portfolio tracker.",
   "icons": [
-    {
-      "src": "assets/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "assets/icon-256.png",
-      "sizes": "256x256",
-      "type": "image/png"
-    },
-    {
-      "src": "assets/icon-384.png",
-      "sizes": "384x384",
-      "type": "image/png"
-    },
-    {
-      "src": "assets/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "./assets/icon.svg",
-      "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    }
+    { "src": "assets/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "assets/icon-256.png", "sizes": "256x256", "type": "image/png" },
+    { "src": "assets/icon-384.png", "sizes": "384x384", "type": "image/png" },
+    { "src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png" }
   ]
 }
-
 
