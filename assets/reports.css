@@ -3,6 +3,11 @@
   --accent:#5b8cff; --bar:#2a355a; --border:#1b2544; --btn:#1c2a57;
 }
 
+:root[data-theme="light"]{
+  --bg:#f6f7fb; --panel:#ffffff; --text:#0b1226; --muted:#4b5675;
+  --accent:#5b8cff; --bar:#e6ebff; --border:#e1e6f4; --btn:#eef2ff;
+}
+
 *{box-sizing:border-box}
 body.app{margin:0; background:var(--bg); color:var(--text); font:16px/1.5 system-ui,Segoe UI,Roboto,Arial}
 a{color:var(--text); text-decoration:none}
@@ -24,9 +29,9 @@ a{color:var(--text); text-decoration:none}
 }
 
 .field span{display:block; font-size:13px; color:var(--muted); margin-bottom:6px}
-select{width:100%; background:#0f1630; color:var(--text); border:1px solid var(--border); border-radius:10px; padding:10px}
+select{width:100%; background:var(--panel); color:var(--text); border:1px solid var(--border); border-radius:10px; padding:10px}
 
-.metric{background:#0f1630; border:1px solid var(--border); border-radius:12px; padding:12px}
+.metric{background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:12px}
 .metric-head{display:flex; align-items:center; justify-content:space-between; gap:10px}
 .metric-head span{color:var(--muted); font-size:14px}
 .metric-head strong{font-size:28px; font-weight:700}

@@ -8,21 +8,71 @@
   <link rel="manifest" href="/manifest.webmanifest" />
   <meta name="theme-color" content="#0b1226" />
 
-  <link rel="stylesheet" href="/assets/app.css" />
   <link rel="stylesheet" href="/assets/reports.css" />
   <style>
     :root{
       --bg:#0b1226; --panel:#121a33; --text:#e7ecff; --muted:#98a1c0;
       --border:#1b2544;
     }
+    :root[data-theme="light"]{
+      --bg:#f6f7fb; --panel:#ffffff; --text:#0b1226; --muted:#4b5675;
+      --border:#e1e6f4;
+    }
     body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,Segoe UI,Roboto,Arial}
     header{padding:16px;border-bottom:1px solid var(--border)}
     .brand{margin:0 0 8px 0}
-    nav a{display:inline-block;margin-right:10px;color:var(--muted);text-decoration:none;padding:6px 10px;border:1px solid var(--border);border-radius:999px;background:#111632}
+    nav a{display:inline-block;margin-right:10px;color:var(--muted);text-decoration:none;padding:6px 10px;border:1px solid var(--border);border-radius:999px;background:var(--panel)}
     nav a.active{color:var(--text);border-color:#5b8cff}
     main{max-width:1100px;margin:20px auto;padding:0 16px}
     [hidden]{display:none !important}
   </style>
+
+  <!-- Theme handling -->
+  <script>
+    (function(){
+      const THEME_KEY = 'appTheme';
+      const LIGHT_BG = '#f6f7fb';
+      const DARK_BG = '#0b1226';
+      const themeMeta = document.querySelector('meta[name="theme-color"]');
+
+      function getStoredTheme(){
+        try { return localStorage.getItem(THEME_KEY) || 'system'; } catch { return 'system'; }
+      }
+      function setStoredTheme(val){
+        try { localStorage.setItem(THEME_KEY, val); } catch {}
+      }
+      const mql = window.matchMedia('(prefers-color-scheme: dark)');
+      function applyTheme(mode){
+        const root = document.documentElement;
+        let effective = mode;
+        if(mode === 'system') effective = mql.matches ? 'dark' : 'light';
+        if(effective === 'light') {
+          root.setAttribute('data-theme','light');
+          if(themeMeta) themeMeta.setAttribute('content', LIGHT_BG);
+        } else {
+          root.removeAttribute('data-theme');
+          if(themeMeta) themeMeta.setAttribute('content', DARK_BG);
+        }
+      }
+      function initTheme(){
+        const mode = getStoredTheme();
+        applyTheme(mode);
+        if(mql.addEventListener){
+          mql.addEventListener('change', () => { if(getStoredTheme()==='system') applyTheme('system'); });
+        } else if(mql.addListener){
+          mql.addListener(() => { if(getStoredTheme()==='system') applyTheme('system'); });
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+          const select = document.getElementById('themeSelect');
+          if(select){
+            select.value = mode;
+            select.addEventListener('change', () => { const v = select.value; setStoredTheme(v); applyTheme(v); });
+          }
+        });
+      }
+      initTheme();
+    }());
+  </script>
 </head>
 <body>
   <header>
@@ -148,7 +198,19 @@
 
     <!-- SETTINGS -->
     <section id="settingsView" data-route="settings" hidden>
-      <div class="card"><h2>Settings</h2><p>Settings view content…</p></div>
+      <div class="card">
+        <h2>Settings</h2>
+        <div class="grid grid-3">
+          <label class="field">
+            <span>Theme</span>
+            <select id="themeSelect" aria-label="Theme">
+              <option value="system">System</option>
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+            </select>
+          </label>
+        </div>
+      </div>
     </section>
 
     <!-- HELP -->
