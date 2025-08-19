@@ -124,5 +124,13 @@ async function api(path) {
 }
 const clamp = (n, min, max) => Math.min(Math.max(n, min), max);
 const safeNum = (n) => Number.isFinite(+n) ? +n : 0;
-function escapeHtml(s){ return String(s).replace(/[&<>\"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;','\\'':'&#39;'}[c])); }
+function escapeHtml(s) {
+  return String(s).replace(/[&<>\"']/g, (c) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  })[c]);
+}
 

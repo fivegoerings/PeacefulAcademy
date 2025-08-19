@@ -23,6 +23,22 @@ export async function handler(event) {
       return json({ stats: { students:s.n, courses:c.n, logs:l.n, portfolio:p.n } });
     }
 
+    // simple lists for UI filters
+    if (path.includes('/students/list')) {
+      // Replace with real query when available
+      return json([
+        { id: 'student-1', name: 'Student One' },
+        { id: 'student-2', name: 'Student Two' }
+      ]);
+    }
+    if (path.includes('/years/list')) {
+      // Replace with real query when available
+      return json([
+        { id: '2024', label: '2024-2025' },
+        { id: '2023', label: '2023-2024' }
+      ]);
+    }
+
     if (path.includes('/reports/yearly')) {
       const { studentId, year } = event.queryStringParameters || {};
       const rows = await sql`

@@ -21,9 +21,19 @@
   node_bundler = "esbuild"
   external_node_modules = ["@netlify/neon"]
 
-# Redirects: send root traffic to app.html
+# Redirects
 [[redirects]]
   from = "/"
-  to = "/app.html"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/api/reports/annual"
+  to = "/.netlify/functions/reports-annual"
+  status = 200
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
   status = 200
 
