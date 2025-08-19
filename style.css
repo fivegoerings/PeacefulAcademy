@@ -6,19 +6,31 @@
   --primary: #2563eb;
   --grad-a: #0ea5e9;
   --grad-b: #6366f1;
+  --text: #e2e8f0;
+}
+:root[data-theme="light"]{
+  --bg: #f6f7fb;
+  --card: #ffffff;
+  --muted: #475569;
+  --ring: #dbe3f1;
+  --primary: #2563eb;
+  --grad-a: #60a5fa;
+  --grad-b: #93c5fd;
+  --text: #0f172a;
 }
 *{box-sizing:border-box}
 html,body{height:100%}
 body{
   margin:0;
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
-  color: #e2e8f0;
+  color: var(--text);
   background:
     radial-gradient(1200px 800px at 20% -10%, rgba(99,102,241,.14), transparent 60%),
     radial-gradient(1200px 800px at 120% 10%, rgba(14,165,233,.12), transparent 60%),
     var(--bg);
 }
 a{color:#93c5fd}
+:root[data-theme="light"] a{color:#2563eb}
 .container{
   max-width: 900px; margin: 0 auto; padding: 32px;
   display:grid; gap:28px; align-content:center; min-height:100%;

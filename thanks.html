@@ -5,6 +5,38 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Thanks — Peaceful Fields Academy</title>
   <link rel="stylesheet" href="/style.css">
+  <meta name="theme-color" content="#0b1226" />
+  <script>
+    (function(){
+      const THEME_KEY = 'appTheme';
+      const LIGHT_BG = '#f6f7fb';
+      const DARK_BG = '#0f172a';
+      const themeMeta = document.querySelector('meta[name="theme-color"]');
+      function getStoredTheme(){
+        try { return localStorage.getItem(THEME_KEY) || 'system'; } catch { return 'system'; }
+      }
+      function apply(mode){
+        const mql = window.matchMedia('(prefers-color-scheme: dark)');
+        const root = document.documentElement;
+        let effective = mode;
+        if(mode === 'system') effective = mql.matches ? 'dark' : 'light';
+        if(effective === 'light') {
+          root.setAttribute('data-theme','light');
+          if(themeMeta) themeMeta.setAttribute('content', LIGHT_BG);
+        } else {
+          root.removeAttribute('data-theme');
+          if(themeMeta) themeMeta.setAttribute('content', DARK_BG);
+        }
+      }
+      apply(getStoredTheme());
+      const mql = window.matchMedia('(prefers-color-scheme: dark)');
+      if(mql.addEventListener){
+        mql.addEventListener('change', () => { if(getStoredTheme()==='system') apply('system'); });
+      } else if(mql.addListener){
+        mql.addListener(() => { if(getStoredTheme()==='system') apply('system'); });
+      }
+    }());
+  </script>
 </head>
 <body>
   <main class="container">
