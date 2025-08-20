@@ -1,18 +1,105 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-<rect width="512" height="512" rx="48" fill="#0b1226"/>
-<g stroke="#22c55e" stroke-width="24" stroke-linecap="round" fill="none">
-  <path d="M256 96 L256 416"/>
-  <path d="M256 160 L208 120"/>
-  <path d="M256 200 L208 160"/>
-  <path d="M256 240 L208 200"/>
-  <path d="M256 280 L208 240"/>
-  <path d="M256 320 L208 280"/>
-  <path d="M256 360 L208 320"/>
-  <path d="M256 160 L304 120"/>
-  <path d="M256 200 L304 160"/>
-  <path d="M256 240 L304 200"/>
-  <path d="M256 280 L304 240"/>
-  <path d="M256 320 L304 280"/>
-  <path d="M256 360 L304 320"/>
-</g>
+  <!-- Background -->
+  <rect width="512" height="512" rx="48" fill="#0b1226"/>
+  
+  <!-- Gradient definitions -->
+  <defs>
+    <linearGradient id="bookGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#22c55e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#06b6d4;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="capGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f59e0b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ef4444;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Book -->
+  <g transform="translate(256, 280)">
+    <!-- Book spine -->
+    <rect x="-8" y="-120" width="16" height="240" rx="8" fill="url(#bookGradient)"/>
+    
+    <!-- Book pages -->
+    <rect x="-80" y="-120" width="72" height="240" rx="8" fill="#ffffff" opacity="0.95"/>
+    <rect x="8" y="-120" width="72" height="240" rx="8" fill="#ffffff" opacity="0.95"/>
+    
+    <!-- Book cover -->
+    <rect x="-80" y="-120" width="160" height="240" rx="8" fill="url(#bookGradient)" opacity="0.8"/>
+    
+    <!-- Book title lines -->
+    <rect x="-60" y="-100" width="40" height="4" rx="2" fill="#ffffff" opacity="0.8"/>
+    <rect x="-60" y="-90" width="60" height="4" rx="2" fill="#ffffff" opacity="0.6"/>
+    <rect x="-60" y="-80" width="50" height="4" rx="2" fill="#ffffff" opacity="0.6"/>
+    
+    <!-- Page lines -->
+    <rect x="-70" y="-60" width="60" height="2" rx="1" fill="#374151" opacity="0.3"/>
+    <rect x="-70" y="-50" width="55" height="2" rx="1" fill="#374151" opacity="0.3"/>
+    <rect x="-70" y="-40" width="65" height="2" rx="1" fill="#374151" opacity="0.3"/>
+    <rect x="-70" y="-30" width="50" height="2" rx="1" fill="#374151" opacity="0.3"/>
+    <rect x="-70" y="-20" width="60" height="2" rx="1" fill="#374151" opacity="0.3"/>
+    <rect x="-70" y="-10" width="45" height="2" rx="1" fill="#374151" opacity="0.3"/>
+    <rect x="-70" y="0" width="55" height="2" rx="1" fill="#374151" opacity="0.3"/>
+    <rect x="-70" y="10" width="60" height="2" rx="1" fill="#374151" opacity="0.3"/>
+    <rect x="-70" y="20" width="50" height="2" rx="1" fill="#374151" opacity="0.3"/>
+    <rect x="-70" y="30" width="65" height="2" rx="1" fill="#374151" opacity="0.3"/>
+    <rect x="-70" y="40" width="55" height="2" rx="1" fill="#374151" opacity="0.3"/>
+    <rect x="-70" y="50" width="60" height="2" rx="1" fill="#374151" opacity="0.3"/>
+    <rect x="-70" y="60" width="45" height="2" rx="1" fill="#374151" opacity="0.3"/>
+    <rect x="-70" y="70" width="55" height="2" rx="1" fill="#374151" opacity="0.3"/>
+    <rect x="-70" y="80" width="50" height="2" rx="1" fill="#374151" opacity="0.3"/>
+    <rect x="-70" y="90" width="60" height="2" rx="1" fill="#374151" opacity="0.3"/>
+    <rect x="-70" y="100" width="55" height="2" rx="1" fill="#374151" opacity="0.3"/>
+    
+    <!-- Right page lines -->
+    <rect x="10" y="-60" width="60" height="2" rx="1" fill="#374151" opacity="0.3"/>
+    <rect x="10" y="-50" width="55" height="2" rx="1" fill="#374151" opacity="0.3"/>
+    <rect x="10" y="-40" width="65" height="2" rx="1" fill="#374151" opacity="0.3"/>
+    <rect x="10" y="-30" width="50" height="2" rx="1" fill="#374151" opacity="0.3"/>
+    <rect x="10" y="-20" width="60" height="2" rx="1" fill="#374151" opacity="0.3"/>
+    <rect x="10" y="-10" width="45" height="2" rx="1" fill="#374151" opacity="0.3"/>
+    <rect x="10" y="0" width="55" height="2" rx="1" fill="#374151" opacity="0.3"/>
+    <rect x="10" y="10" width="60" height="2" rx="1" fill="#374151" opacity="0.3"/>
+    <rect x="10" y="20" width="50" height="2" rx="1" fill="#374151" opacity="0.3"/>
+    <rect x="10" y="30" width="65" height="2" rx="1" fill="#374151" opacity="0.3"/>
+    <rect x="10" y="40" width="55" height="2" rx="1" fill="#374151" opacity="0.3"/>
+    <rect x="10" y="50" width="60" height="2" rx="1" fill="#374151" opacity="0.3"/>
+    <rect x="10" y="60" width="45" height="2" rx="1" fill="#374151" opacity="0.3"/>
+    <rect x="10" y="70" width="55" height="2" rx="1" fill="#374151" opacity="0.3"/>
+    <rect x="10" y="80" width="50" height="2" rx="1" fill="#374151" opacity="0.3"/>
+    <rect x="10" y="90" width="60" height="2" rx="1" fill="#374151" opacity="0.3"/>
+    <rect x="10" y="100" width="55" height="2" rx="1" fill="#374151" opacity="0.3"/>
+  </g>
+  
+  <!-- Graduation Cap -->
+  <g transform="translate(256, 120)">
+    <!-- Cap base -->
+    <ellipse cx="0" cy="0" rx="80" ry="20" fill="url(#capGradient)"/>
+    
+    <!-- Cap top -->
+    <path d="M -60 0 Q 0 -40 60 0" stroke="url(#capGradient)" stroke-width="8" fill="none" stroke-linecap="round"/>
+    
+    <!-- Tassel -->
+    <circle cx="0" cy="-35" r="3" fill="#fbbf24"/>
+    <path d="M 0 -35 L 0 -55" stroke="#fbbf24" stroke-width="2" fill="none"/>
+    <path d="M 0 -55 L -8 -65" stroke="#fbbf24" stroke-width="2" fill="none"/>
+    <path d="M 0 -55 L 8 -65" stroke="#fbbf24" stroke-width="2" fill="none"/>
+    <path d="M 0 -55 L 0 -75" stroke="#fbbf24" stroke-width="2" fill="none"/>
+  </g>
+  
+  <!-- Peaceful elements - small leaves -->
+  <g transform="translate(100, 80)">
+    <path d="M 0 0 Q 8 -8 16 0 Q 8 8 0 0" fill="#22c55e" opacity="0.7"/>
+  </g>
+  <g transform="translate(412, 100)">
+    <path d="M 0 0 Q 8 -8 16 0 Q 8 8 0 0" fill="#06b6d4" opacity="0.7"/>
+  </g>
+  <g transform="translate(380, 380)">
+    <path d="M 0 0 Q 8 -8 16 0 Q 8 8 0 0" fill="#22c55e" opacity="0.7"/>
+  </g>
+  <g transform="translate(120, 400)">
+    <path d="M 0 0 Q 8 -8 16 0 Q 8 8 0 0" fill="#06b6d4" opacity="0.7"/>
+  </g>
+  
+  <!-- Academy text -->
+  <text x="256" y="480" text-anchor="middle" fill="#22c55e" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="600" opacity="0.8">ACADEMY</text>
 </svg>

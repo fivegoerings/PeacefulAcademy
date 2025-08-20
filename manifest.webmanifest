@@ -1,7 +1,7 @@
 {
   "name": "Peaceful Academy (KC, MO) \u2014 Homeschool Records",
   "short_name": "Peaceful Academy",
-  "start_url": "splash.html",
+  "start_url": "index.html",
   "display": "standalone",
   "background_color": "#0b1226",
   "theme_color": "#0b1226",
