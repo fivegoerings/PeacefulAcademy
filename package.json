@@ -9,7 +9,10 @@
     "deploy": "netlify deploy --prod",
     "functions:dev": "netlify dev --functions",
     "functions:build": "netlify functions:build",
-    "test": "echo 'No tests specified' && exit 0"
+    "test": "echo 'No tests specified' && exit 0",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "netlify dev:exec drizzle-kit migrate",
+    "db:studio": "netlify dev:exec drizzle-kit studio"
   },
   "keywords": [
     "homeschool",
@@ -23,7 +26,7 @@
   "author": "Peaceful Fields Academy",
   "license": "MIT",
   "dependencies": {
-    "@netlify/neon": "^1.0.0"
+    "@neondatabase/serverless": "^1.0.1"
   },
   "devDependencies": {
     "@netlify/functions": "^2.0.0",
