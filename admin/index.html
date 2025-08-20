@@ -18,7 +18,12 @@
 <body>
   <header role="banner">
     <h1>Peaceful Fields Admin</h1>
-    <nav aria-label="Primary">
+    <button class="hamburger" type="button" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="nav-menu">
+      <span class="hamburger-line"></span>
+      <span class="hamburger-line"></span>
+      <span class="hamburger-line"></span>
+    </button>
+    <nav id="nav-menu" aria-label="Primary" class="nav-menu">
       <button class="tab active" data-tab="monitor" type="button" aria-controls="monitor" aria-selected="true">DB Monitor</button>
       <button class="tab" data-tab="students" type="button" aria-controls="students" aria-selected="false">Students</button>
       <button class="tab" data-tab="courses" type="button" aria-controls="courses" aria-selected="false">Courses</button>

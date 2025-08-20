@@ -19,9 +19,21 @@
 *{box-sizing:border-box}html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto}
 .wrap{max-width:1100px;margin:0 auto;padding:24px}
 .topbar{position:sticky;top:0;z-index:3;background:rgba(15,23,42,.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+.topbar .wrap{display:flex;justify-content:space-between;align-items:center}
+.hamburger{display:none;flex-direction:column;gap:4px;background:none;border:none;cursor:pointer;padding:8px}
+.hamburger span{width:24px;height:3px;background:var(--ink);border-radius:2px;transition:all 0.3s ease}
+.hamburger.active span:nth-child(1){transform:rotate(45deg) translate(6px,6px)}
+.hamburger.active span:nth-child(2){opacity:0}
+.hamburger.active span:nth-child(3){transform:rotate(-45deg) translate(6px,-6px)}
 nav{display:flex;gap:.5rem;flex-wrap:wrap}
-nav a{padding:.5rem .8rem;border-radius:999px;border:1px solid var(--border);background:#0a1123;color:inherit;text-decoration:none}
+nav a{padding:.5rem .8rem;border-radius:999px;border:1px solid var(--border);background:#0a1123;color:inherit;text-decoration:none;transition:all 0.2s ease}
 nav a.active{background:linear-gradient(135deg,#1e293b,#0b1226)}
+@media(max-width:768px){
+  .hamburger{display:flex}
+  nav{position:absolute;top:100%;left:0;right:0;background:rgba(15,23,42,.95);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);flex-direction:column;padding:1rem;transform:translateY(-100%);opacity:0;visibility:hidden;transition:all 0.3s ease}
+  nav.active{transform:translateY(0);opacity:1;visibility:visible}
+  nav a{border-radius:8px;margin-bottom:0.5rem}
+}
 h1{font-size:1.4rem;margin:.6rem 0 .2rem} h2{font-size:1.15rem;margin:.2rem 0 .6rem;color:#d1d5db}
 .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1rem}
 .grid{display:grid;gap:1rem}.two{grid-template-columns:1fr 1fr}.three{grid-template-columns:repeat(3,1fr)}@media(max-width:800px){.two,.three{grid-template-columns:1fr}}
@@ -47,6 +59,11 @@ footer{margin:3rem 0 2rem;color:var(--muted);text-align:center}
 <header class="topbar">
   <div class="wrap">
     <h1>Peaceful Academy • Kansas City, MO</h1>
+    <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
     <nav id="nav">
       <a href="#dashboard" class="active">Dashboard</a>
       <a href="#students">Students</a>
@@ -855,6 +872,41 @@ $('#rpPrint')?.addEventListener('click', ()=>window.print());
 // Clean up object URLs when page unloads
 window.addEventListener('beforeunload', cleanupObjectUrls);
 
+// Hamburger menu functionality
+function initHamburgerMenu() {
+  const hamburger = $('#hamburger');
+  const nav = $('#nav');
+  
+  hamburger?.addEventListener('click', () => {
+    hamburger.classList.toggle('active');
+    nav.classList.toggle('active');
+  });
+  
+  // Close menu when clicking on a nav link
+  nav?.addEventListener('click', (e) => {
+    if (e.target.tagName === 'A') {
+      hamburger.classList.remove('active');
+      nav.classList.remove('active');
+    }
+  });
+  
+  // Close menu when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!hamburger.contains(e.target) && !nav.contains(e.target)) {
+      hamburger.classList.remove('active');
+      nav.classList.remove('active');
+    }
+  });
+  
+  // Close menu on window resize if screen becomes larger
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 768) {
+      hamburger.classList.remove('active');
+      nav.classList.remove('active');
+    }
+  });
+}
+
 // Enhanced initialization with error handling
 async function init(){
   try {
@@ -869,6 +921,9 @@ async function init(){
     await renderCourses(); 
     await renderYearSelectors(); 
     await renderDashboard();
+    
+    // Initialize hamburger menu
+    initHamburgerMenu();
     
     // Add loading states
     document.body.classList.add('loaded');
@@ -907,6 +962,33 @@ style.textContent = `
   /* Enhanced table hover effects */
   tr:hover {
     background: rgba(34, 197, 94, 0.05) !important;
+  }
+  
+  /* Hamburger menu improvements */
+  .hamburger:hover span {
+    background: var(--accent);
+  }
+  
+  .hamburger:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  
+  /* Smooth transitions for menu items */
+  nav a:hover {
+    background: rgba(34, 197, 94, 0.1);
+    border-color: var(--accent);
+  }
+  
+  /* Better mobile menu styling */
+  @media(max-width:768px) {
+    nav a:hover {
+      background: rgba(34, 197, 94, 0.15);
+    }
+    
+    .topbar .wrap h1 {
+      font-size: 1.2rem;
+    }
   }
 `;
 document.head.appendChild(style);

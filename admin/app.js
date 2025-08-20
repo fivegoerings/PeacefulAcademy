@@ -107,6 +107,15 @@ function initTabs() {
       if (targetSection) {
         targetSection.hidden = false;
       }
+      
+      // Close hamburger menu on mobile after tab selection
+      const hamburger = $('.hamburger');
+      const navMenu = $('#nav-menu');
+      if (hamburger && navMenu) {
+        hamburger.classList.remove('active');
+        navMenu.classList.remove('active');
+        hamburger.setAttribute('aria-expanded', 'false');
+      }
     });
   });
 }
@@ -333,6 +342,35 @@ async function addLog(formData) {
 function initEventListeners() {
   // Tab switching
   initTabs();
+  
+  // Hamburger menu
+  const hamburger = $('.hamburger');
+  const navMenu = $('#nav-menu');
+  
+  hamburger?.addEventListener('click', () => {
+    const isExpanded = hamburger.getAttribute('aria-expanded') === 'true';
+    hamburger.classList.toggle('active');
+    navMenu.classList.toggle('active');
+    hamburger.setAttribute('aria-expanded', !isExpanded);
+  });
+  
+  // Close menu when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!hamburger.contains(e.target) && !navMenu.contains(e.target)) {
+      hamburger.classList.remove('active');
+      navMenu.classList.remove('active');
+      hamburger.setAttribute('aria-expanded', 'false');
+    }
+  });
+  
+  // Close menu when pressing Escape
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      hamburger.classList.remove('active');
+      navMenu.classList.remove('active');
+      hamburger.setAttribute('aria-expanded', 'false');
+    }
+  });
   
   // Health and stats
   $('#refreshStats')?.addEventListener('click', loadStats);
