@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Peaceful Academy - Icon Preview</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #0f172a;
+            color: #e5e7eb;
+            margin: 0;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #22c55e;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .icon-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+        .icon-item {
+            background: #0b1226;
+            border: 1px solid #1f2937;
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+        .icon-item img {
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+        .icon-item h3 {
+            color: #22c55e;
+            margin: 0 0 0.5rem 0;
+        }
+        .icon-item p {
+            color: #94a3b8;
+            margin: 0;
+            font-size: 0.9rem;
+        }
+        .svg-preview {
+            background: #0b1226;
+            border: 1px solid #1f2937;
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .svg-preview svg {
+            max-width: 300px;
+            height: auto;
+        }
+        .info {
+            background: #0b1226;
+            border: 1px solid #1f2937;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .info h2 {
+            color: #22c55e;
+            margin-top: 0;
+        }
+        .color-palette {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+        .color-swatch {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .color-box {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            border: 1px solid #1f2937;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Peaceful Academy - Icon Assets Preview</h1>
+        
+        <div class="info">
+            <h2>Icon Design Overview</h2>
+            <p>The new icon design represents education and learning with:</p>
+            <ul>
+                <li><strong>Book:</strong> Symbolizes education and knowledge</li>
+                <li><strong>Graduation Cap:</strong> Represents academic achievement</li>
+                <li><strong>Peaceful Elements:</strong> Small leaves representing the "peaceful" nature</li>
+                <li><strong>Color Scheme:</strong> Professional and modern palette</li>
+            </ul>
+            
+            <div class="color-palette">
+                <div class="color-swatch">
+                    <div class="color-box" style="background: #0b1226;"></div>
+                    <span>Background: #0b1226</span>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-box" style="background: #22c55e;"></div>
+                    <span>Primary: #22c55e</span>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-box" style="background: #06b6d4;"></div>
+                    <span>Secondary: #06b6d4</span>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-box" style="background: #f59e0b;"></div>
+                    <span>Accent: #f59e0b</span>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-box" style="background: #ef4444;"></div>
+                    <span>Accent 2: #ef4444</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="svg-preview">
+            <h2>Master SVG Icon (512x512)</h2>
+            <img src="assets/icon.svg" alt="Peaceful Academy Icon" width="300">
+        </div>
+
+        <h2>PNG Icons for PWA</h2>
+        <div class="icon-grid">
+            <div class="icon-item">
+                <img src="assets/icon-192.png" alt="192x192 Icon" width="192">
+                <h3>192x192</h3>
+                <p>Standard PWA icon</p>
+            </div>
+            <div class="icon-item">
+                <img src="assets/icon-256.png" alt="256x256 Icon" width="256">
+                <h3>256x256</h3>
+                <p>High-resolution PWA icon</p>
+            </div>
+            <div class="icon-item">
+                <img src="assets/icon-384.png" alt="384x384 Icon" width="384">
+                <h3>384x384</h3>
+                <p>Large PWA icon</p>
+            </div>
+            <div class="icon-item">
+                <img src="assets/icon-512.png" alt="512x512 Icon" width="512">
+                <h3>512x512</h3>
+                <p>Maskable PWA icon</p>
+            </div>
+        </div>
+
+        <h2>Favicon Files</h2>
+        <div class="icon-grid">
+            <div class="icon-item">
+                <img src="favicon.svg" alt="SVG Favicon" width="32">
+                <h3>SVG Favicon</h3>
+                <p>32x32 scalable favicon</p>
+            </div>
+            <div class="icon-item">
+                <img src="apple-touch-icon.png" alt="Apple Touch Icon" width="180">
+                <h3>Apple Touch Icon</h3>
+                <p>180x180 for iOS devices</p>
+            </div>
+        </div>
+
+        <div class="info">
+            <h2>Next Steps</h2>
+            <p>To complete the icon setup:</p>
+            <ol>
+                <li>Install sharp: <code>npm install sharp</code></li>
+                <li>Generate optimized PNGs: <code>npm run generate-icons</code></li>
+                <li>Convert favicon.svg to favicon.ico using an online converter</li>
+                <li>Convert apple-touch-icon.svg to PNG format</li>
+            </ol>
+        </div>
+    </div>
+</body>
+</html>

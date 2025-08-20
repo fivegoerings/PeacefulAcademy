@@ -1,0 +1,55 @@
+{
+  "name": "peaceful-academy",
+  "version": "1.0.0",
+  "description": "A homeschool tracking application for Peaceful Fields Academy with Netlify functions and Neon database",
+  "main": "index.html",
+  "type": "module",
+  "scripts": {
+    "dev": "netlify dev",
+    "build": "echo 'Static site - no build required'",
+    "deploy": "netlify deploy --prod",
+    "functions:dev": "netlify dev --functions",
+    "functions:build": "netlify functions:build",
+    "test": "echo 'No tests specified' && exit 0",
+    "generate-icons": "node generate-icons.js",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio",
+    "lint": "echo 'No linter configured' && exit 0",
+    "format": "echo 'No formatter configured' && exit 0"
+  },
+  "keywords": [
+    "homeschool",
+    "education",
+    "tracking",
+    "netlify",
+    "neon",
+    "postgresql",
+    "static-site",
+    "pwa"
+  ],
+  "author": "Peaceful Fields Academy",
+  "license": "MIT",
+  "dependencies": {
+    "@neondatabase/serverless": "^1.0.1",
+    "sharp": "^0.33.0"
+  },
+  "devDependencies": {
+    "@netlify/functions": "^2.0.0",
+    "netlify-cli": "^17.0.0",
+    "drizzle-kit": "^0.20.0",
+    "drizzle-orm": "^0.29.0",
+    "@types/node": "^20.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fivegoerings/peaceful-academy.git"
+  },
+  "bugs": {
+    "url": "https://github.com/fivegoerings/peaceful-academy/issues"
+  },
+  "homepage": "https://peaceful-academy.netlify.app"
+}

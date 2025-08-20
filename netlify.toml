@@ -3,15 +3,13 @@
   publish = "."
 
 [functions]
-  directory = "admin/netlify/functions"
+  directory = "netlify/functions"
   node_bundler = "esbuild"
-  external_node_modules = ["@netlify/neon"]
-  included_files = ["admin/sql/schema.sql"]
-
+  external_node_modules = ["@neondatabase/serverless"]
 
 [[redirects]]
-  from = "/netlify/functions/*"
-  to = "/netlify/functions/:splat"
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
   status = 200
 
 # Route /admin to the admin SPA
