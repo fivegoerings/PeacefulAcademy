@@ -38,7 +38,7 @@ nav a.admin-link:hover{background:linear-gradient(135deg,#b91c1c,#991b1b)}
 }
 h1{font-size:1.4rem;margin:.6rem 0 .2rem} h2{font-size:1.15rem;margin:.2rem 0 .6rem;color:#d1d5db}
 .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1rem}
-.grid{display:grid;gap:1rem}.two{grid-template-columns:1fr 1fr}.three{grid-template-columns:repeat(3,1fr)}@media(max-width:800px){.two,.three{grid-template-columns:1fr}}
+.grid{display:grid;gap:1rem}.two{grid-template-columns:1fr 1fr}.three{grid-template-columns:repeat(3,1fr)}.four{grid-template-columns:repeat(4,1fr)}@media(max-width:800px){.two,.three,.four{grid-template-columns:1fr}}
 label{font-weight:600}.row{display:flex;gap:1rem;flex-wrap:wrap;align-items:center}
 input,select,textarea,button{font:inherit;color:inherit}
 input,select,textarea{width:100%;background:#0b1226;border:1px solid var(--border);border-radius:10px;padding:.55rem .7rem}
@@ -106,6 +106,7 @@ footer{margin:3rem 0 2rem;color:var(--muted);text-align:center}
           <div style="flex:1" class="card"><div class="muted">Total Hours (1000)</div><div class="num" id="kpiTotal">0</div><div class="bar"><span id="barTotal" style="width:0%"></span></div></div>
           <div style="flex:1" class="card"><div class="muted">Core (600)</div><div class="num" id="kpiCore">0</div><div class="bar"><span id="barCore" style="width:0%"></span></div></div>
           <div style="flex:1" class="card"><div class="muted">Core @ Home (400)</div><div class="num" id="kpiHome">0</div><div class="bar"><span id="barHome" style="width:0%"></span></div></div>
+          <div style="flex:1" class="card"><div class="muted">Non-Core</div><div class="num" id="kpiNonCore">0</div><div class="bar"><span id="barNonCore" style="width:0%"></span></div></div>
         </div>
         <div class="row" style="margin-top:1rem">
           <div style="flex:1"><label>Student</label><select id="dashStudent"></select></div>
@@ -233,8 +234,8 @@ footer{margin:3rem 0 2rem;color:var(--muted);text-align:center}
         <div><label>Academic Year</label><select id="rpYear"></select></div>
         <div><label>Group By</label><select id="rpGroupBy"><option value="subject">Subject</option><option value="course">Course</option><option value="month">Month</option></select></div>
       </div>
-      <div id="rpSummary" class="grid three" style="margin-top:12px"></div>
-      <table id="rpTable" style="margin-top:12px"><thead><tr><th>Group</th><th class="right">Hours</th><th class="right">Home (core)</th></tr></thead><tbody></tbody></table>
+              <div id="rpSummary" class="grid four" style="margin-top:12px"></div>
+      <table id="rpTable" style="margin-top:12px"><thead><tr><th>Group</th><th class="right">Hours</th><th class="right">Home (core)</th><th class="right">Non-Core</th></tr></thead><tbody></tbody></table>
       <div class="row" style="margin-top:12px"><button id="rpPrint">Print Report</button></div>
     </div>
   </section>
@@ -568,9 +569,9 @@ async function renderDashboard(){
   const [logs,courses,students]=await Promise.all([listLogs(), listCourses(), listStudents()]); await renderYearSelectors(); await renderStudents(); await renderCourses();
   const sId=Number($('#dashStudent').value || (students[0]?.id||0)); $('#dashStudent').value=sId||''; const yStart=Number($('#dashYear').value)||currentAcademicStart();
   const filtered=logs.filter(l=> l.studentId===sId && yearForDate(l.date)===yStart); const cMap=new Map(courses.map(c=>[c.id,c]));
-  let total=0, core=0, home=0; filtered.forEach(l=>{ const subj=cMap.get(l.courseId)?.subject; const hrs=Number(l.hours)||0; total+=hrs; if(CORE.has(subj)){ core+=hrs; if(l.location==='home') home+=hrs; }});
-  $('#kpiTotal').textContent=fmt.format(total); $('#kpiCore').textContent=fmt.format(core); $('#kpiHome').textContent=fmt.format(home);
-  $('#barTotal').style.width=Math.min(100,(total/1000)*100)+'%'; $('#barCore').style.width=Math.min(100,(core/600)*100)+'%'; $('#barHome').style.width=Math.min(100,(home/400)*100)+'%';
+  let total=0, core=0, home=0, nonCore=0; filtered.forEach(l=>{ const subj=cMap.get(l.courseId)?.subject; const hrs=Number(l.hours)||0; total+=hrs; if(CORE.has(subj)){ core+=hrs; if(l.location==='home') home+=hrs; } else { nonCore+=hrs; }});
+  $('#kpiTotal').textContent=fmt.format(total); $('#kpiCore').textContent=fmt.format(core); $('#kpiHome').textContent=fmt.format(home); $('#kpiNonCore').textContent=fmt.format(nonCore);
+  $('#barTotal').style.width=Math.min(100,(total/1000)*100)+'%'; $('#barCore').style.width=Math.min(100,(core/600)*100)+'%'; $('#barHome').style.width=Math.min(100,(home/400)*100)+'%'; $('#barNonCore').style.width=Math.min(100,(nonCore/400)*100)+'%';
   const recent = filtered.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,10); const tb=$('#recentTable tbody'); tb.innerHTML=''; recent.forEach(r=>{ const c=cMap.get(r.courseId); const tr=document.createElement('tr'); tr.innerHTML=`<td>${r.date}</td><td>${c?.title||''}</td><td class="right">${fmt.format(r.hours)}</td><td>${r.location==='home'?'Home':'Offsite'}</td><td class="muted">${r.notes||''}</td>`; tb.appendChild(tr); });
   $('#qaStudent').value=sId||''; $('#qaCourse').value=courses[0]?.id||''; $('#qaDate').value=todayISO();
 }
@@ -589,11 +590,11 @@ async function renderPortfolio(){
   const gal=$('#pfGallery'); gal.innerHTML=''; for(const p of filtered){ const c=cMap.get(p.courseId), st=sMap.get(p.studentId); const file=p.fileId?await DB.get('files', p.fileId):null; const url=file?getObjectUrl(p.fileId, file.blob):''; const isImg = file && file.type.startsWith('image/'); const div=document.createElement('div'); div.className='tile'; div.innerHTML=`<div style="height:140px;display:flex;align-items:center;justify-content:center;background:#0a1123">${file?(isImg?`<img src="${url}" style="width:100%;height:140px;object-fit:cover">`:`<div class="muted">File: ${file.name||file.type}</div>`):'<div class="muted">No file</div>'}</div><div style="padding:.6rem"><div><strong>${p.title||'(untitled)'}</strong></div><div class="muted">${p.date} • ${st?.name||''} • ${c?.title||''}</div><div style="font-size:.92rem">${p.desc||''}</div><div class="row" style="margin-top:.5rem;justify-content:space-between"><div class="muted">${(p.tags||[]).join(', ')}</div><div class="row">${file?`<a download="${(p.title||'portfolio')}" href="${url}">Download</a>`:''}<button class="pfDel" data-id="${p.id}">Delete</button></div></div></div>`; gal.appendChild(div);} }
 async function renderReports(){
   const [logs,courses]=await Promise.all([listLogs(), listCourses()]); const sId=Number($('#rpStudent').value); const yStart=Number($('#rpYear').value); const groupBy=$('#rpGroupBy').value; const cMap=new Map(courses.map(c=>[c.id,c])); const filtered=logs.filter(l=> l.studentId===sId && yearForDate(l.date)===yStart);
-  const totals={total:0,core:0,home:0}, groups=new Map(); function addG(k,hrs,home){ const o=groups.get(k)||{hours:0,home:0}; o.hours+=hrs; if(home) o.home+=hrs; groups.set(k,o); }
-  filtered.forEach(l=>{ const hrs=Number(l.hours)||0; const subj=cMap.get(l.courseId)?.subject; totals.total+=hrs; const isCore=CORE.has(subj); const home = isCore && l.location==='home'; if(isCore) totals.core+=hrs; if(home) totals.home+=hrs; let key=''; if(groupBy==='subject') key=subj||'(none)'; else if(groupBy==='course') key=cMap.get(l.courseId)?.title||'(none)'; else key=l.date.slice(0,7); addG(key,hrs,home); });
+  const totals={total:0,core:0,home:0,nonCore:0}, groups=new Map(); function addG(k,hrs,home,nonCore){ const o=groups.get(k)||{hours:0,home:0,nonCore:0}; o.hours+=hrs; if(home) o.home+=hrs; if(nonCore) o.nonCore+=hrs; groups.set(k,o); }
+  filtered.forEach(l=>{ const hrs=Number(l.hours)||0; const subj=cMap.get(l.courseId)?.subject; totals.total+=hrs; const isCore=CORE.has(subj); const home = isCore && l.location==='home'; const nonCore = !isCore; if(isCore) totals.core+=hrs; if(home) totals.home+=hrs; if(nonCore) totals.nonCore+=hrs; let key=''; if(groupBy==='subject') key=subj||'(none)'; else if(groupBy==='course') key=cMap.get(l.courseId)?.title||'(none)'; else key=l.date.slice(0,7); addG(key,hrs,home,nonCore); });
   const mk=(label,val,goal)=>`<div class="card"><div class="muted">${label} (goal ${goal})</div><div class="num">${fmt.format(val)}</div><div class="bar"><span style="width:${Math.min(100,(val/goal)*100)}%"></span></div></div>`;
-  $('#rpSummary').innerHTML = mk('Total Hours',totals.total,1000)+mk('Core Hours',totals.core,600)+mk('Core @ Home',totals.home,400);
-  const tb=$('#rpTable tbody'); tb.innerHTML=''; Array.from(groups.entries()).sort((a,b)=>b[1].hours-a[1].hours).forEach(([k,v])=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>${k}</td><td class="right">${fmt.format(v.hours)}</td><td class="right">${fmt.format(v.home)}</td>`; tb.appendChild(tr); });
+  $('#rpSummary').innerHTML = mk('Total Hours',totals.total,1000)+mk('Core Hours',totals.core,600)+mk('Core @ Home',totals.home,400)+mk('Non-Core Hours',totals.nonCore,400);
+  const tb=$('#rpTable tbody'); tb.innerHTML=''; Array.from(groups.entries()).sort((a,b)=>b[1].hours-a[1].hours).forEach(([k,v])=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>${k}</td><td class="right">${fmt.format(v.hours)}</td><td class="right">${fmt.format(v.home)}</td><td class="right">${fmt.format(v.nonCore)}</td>`; tb.appendChild(tr); });
 }
 
 /* Events */
