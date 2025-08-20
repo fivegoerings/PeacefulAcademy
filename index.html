@@ -46,6 +46,7 @@ button{border:1px solid var(--border);background:#0a1123;border-radius:10px;padd
 button.primary{background:linear-gradient(135deg,#0ea5e9,#22c55e);border:none;color:white}
 button.ghost{background:transparent;border:1px dashed var(--border)}
 button.danger{background:var(--danger);border:none;color:white}
+.admin-button:hover{background:linear-gradient(135deg,#b91c1c,#991b1b) !important;transform:translateY(-1px);box-shadow:0 4px 12px rgba(220,38,38,0.3)}
 table{width:100%;border-collapse:collapse}th,td{padding:.5rem;border-bottom:1px solid var(--border);text-align:left}tr:hover td{background:#0c142a}
 .right{text-align:right}.muted{color:var(--muted)}.hide{display:none !important}.num{font-weight:800;font-size:1.6rem}
 .bar{height:10px;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:#0a1123}.bar>span{display:block;height:100%;background:linear-gradient(90deg,#22c55e,#06b6d4)}
@@ -111,6 +112,11 @@ footer{margin:3rem 0 2rem;color:var(--muted);text-align:center}
           <div style="flex:1"><label>Academic Year</label><select id="dashYear"></select></div>
         </div>
         <table id="recentTable" style="margin-top:.8rem"><thead><tr><th>Date</th><th>Course</th><th class="right">Hours</th><th>Loc</th><th>Notes</th></tr></thead><tbody></tbody></table>
+        <div class="row" style="margin-top:1rem">
+          <button class="admin-button" onclick="window.open('./admin/index.html', '_blank')" style="background:linear-gradient(135deg,#dc2626,#b91c1c);border:none;color:white;padding:.75rem 1.5rem;border-radius:10px;font-weight:600;cursor:pointer;transition:all 0.2s ease;">
+            <span style="margin-right:8px;">⚙️</span>Open Admin Panel
+          </button>
+        </div>
       </div>
       <div class="card">
         <h2>Quick Add</h2>
