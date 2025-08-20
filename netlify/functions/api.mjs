@@ -1,4 +1,4 @@
-import { neon } from '@netlify/neon';
+import { neon } from '@neondatabase/serverless';
 
 export async function handler(event) {
   if (event.httpMethod === 'OPTIONS') {
