@@ -1,6 +1,4 @@
 import { neon } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-http';
-import { eq, sql, desc } from 'drizzle-orm';
 
 // Import schema manually since ES modules don't support relative imports in Netlify functions
 const schema = {
@@ -74,7 +72,6 @@ export async function handler(event) {
     }
 
     const sql = neon(process.env.NETLIFY_DATABASE_URL);
-    const db = drizzle(sql, { schema });
     const path = event.path || '';
 
     // Health check endpoint
