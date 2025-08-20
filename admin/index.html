@@ -7,10 +7,10 @@
 
   <title>Peaceful Fields Admin</title>
 
-  <!-- Favicons (optional) -->
-  <link rel="icon" href="/favicon.ico" sizes="any" />
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <!-- Favicons -->
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="../favicon.ico" sizes="any" />
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png" />
 
   <!-- Styles -->
   <link rel="stylesheet" href="/admin/style.css" />
@@ -22,13 +22,13 @@
       <button class="tab active" data-tab="monitor" type="button" aria-controls="monitor" aria-selected="true">DB Monitor</button>
       <button class="tab" data-tab="students" type="button" aria-controls="students" aria-selected="false">Students</button>
       <button class="tab" data-tab="courses" type="button" aria-controls="courses" aria-selected="false">Courses</button>
-      <button class="tab" data-tab="enrollments" type="button" aria-controls="enrollments" aria-selected="false">Enrollments</button>
+      <button class="tab" data-tab="logs" type="button" aria-controls="logs" aria-selected="false">Logs</button>
     </nav>
   </header>
 
   <main class="wrap" role="main">
     <!-- Monitor -->
-    <section id="monitor" class="active" aria-labelledby="monitor-heading">
+    <section id="monitor" aria-labelledby="monitor-heading">
       <h2 id="monitor-heading">Database Monitor</h2>
 
       <div class="card" aria-live="polite">
@@ -64,22 +64,25 @@
       <div class="card">
         <h3>Add Student</h3>
         <form id="studentForm" class="inline" autocomplete="on" novalidate>
-          <label class="visually-hidden" for="sf-first">First name</label>
+          <label for="sf-first">First name</label>
           <input id="sf-first" name="first_name" placeholder="First name" required autocomplete="given-name" />
 
-          <label class="visually-hidden" for="sf-last">Last name</label>
+          <label for="sf-last">Last name</label>
           <input id="sf-last" name="last_name" placeholder="Last name" required autocomplete="family-name" />
 
-          <label class="visually-hidden" for="sf-dob">Birth date</label>
+          <label for="sf-dob">Birth date</label>
           <input id="sf-dob" name="birth_date" type="date" autocomplete="bday" />
 
-          <label class="visually-hidden" for="sf-email">Email</label>
-          <input id="sf-email" name="email" type="email" inputmode="email" placeholder="Email" autocomplete="email" />
+          <label for="sf-grade">Grade</label>
+          <input id="sf-grade" name="grade" placeholder="e.g., 9th, 10th" autocomplete="off" />
 
-          <label class="visually-hidden" for="sf-phone">Phone</label>
-          <input id="sf-phone" name="phone" type="tel" inputmode="tel" placeholder="Phone" autocomplete="tel" />
+          <label for="sf-start-year">Start Year</label>
+          <input id="sf-start-year" name="start_year" type="number" placeholder="e.g., 2025" inputmode="numeric" />
 
-          <button type="submit">Create</button>
+          <label for="sf-notes">Notes</label>
+          <textarea id="sf-notes" name="notes" placeholder="Additional notes" rows="3"></textarea>
+
+          <button type="submit">Create Student</button>
         </form>
       </div>
 
@@ -94,8 +97,8 @@
             <tr>
               <th scope="col">Name</th>
               <th scope="col">DOB</th>
-              <th scope="col">Email</th>
-              <th scope="col">Phone</th>
+              <th scope="col">Grade</th>
+              <th scope="col">Start Year</th>
               <th scope="col">Actions</th>
             </tr>
           </thead>
@@ -111,19 +114,24 @@
       <div class="card">
         <h3>Add Course</h3>
         <form id="courseForm" class="inline" autocomplete="on" novalidate>
-          <label class="visually-hidden" for="cf-code">Course code</label>
-          <input id="cf-code" name="code" placeholder="Code (e.g., ENG9)" required autocomplete="off" />
+          <label for="cf-title">Title</label>
+          <input id="cf-title" name="title" placeholder="Course title" required autocomplete="off" />
 
-          <label class="visually-hidden" for="cf-title">Title</label>
-          <input id="cf-title" name="title" placeholder="Title" required autocomplete="off" />
+          <label for="cf-subject">Subject</label>
+          <select id="cf-subject" name="subject" required>
+            <option value="">Select subject</option>
+            <option value="Language Arts">Language Arts</option>
+            <option value="Reading">Reading</option>
+            <option value="Mathematics">Mathematics</option>
+            <option value="Science">Science</option>
+            <option value="Social Studies">Social Studies</option>
+            <option value="Elective">Elective</option>
+          </select>
 
-          <label class="visually-hidden" for="cf-credits">Credits</label>
-          <input id="cf-credits" name="credits" type="number" step="0.5" placeholder="Credits" inputmode="decimal" />
+          <label for="cf-description">Description</label>
+          <textarea id="cf-description" name="description" placeholder="Course description" rows="3"></textarea>
 
-          <label class="visually-hidden" for="cf-year">Academic year</label>
-          <input id="cf-year" name="academic_year" type="number" placeholder="Year (e.g., 2025)" inputmode="numeric" />
-
-          <button type="submit">Create</button>
+          <button type="submit">Create Course</button>
         </form>
       </div>
 
@@ -136,10 +144,10 @@
           <caption class="visually-hidden">Course list</caption>
           <thead>
             <tr>
-              <th scope="col">Code</th>
               <th scope="col">Title</th>
-              <th scope="col">Credits</th>
-              <th scope="col">Year</th>
+              <th scope="col">Subject</th>
+              <th scope="col">Description</th>
+              <th scope="col">Created</th>
               <th scope="col">Actions</th>
             </tr>
           </thead>
@@ -148,49 +156,62 @@
       </div>
     </section>
 
-    <!-- Enrollments -->
-    <section id="enrollments" hidden aria-labelledby="enrollments-heading">
-      <h2 id="enrollments-heading">Enrollments</h2>
+    <!-- Logs -->
+    <section id="logs" hidden aria-labelledby="logs-heading">
+      <h2 id="logs-heading">Logs</h2>
 
       <div class="card">
-        <h3>Create Enrollment</h3>
-        <form id="enrollForm" class="inline" autocomplete="on" novalidate>
-          <label class="visually-hidden" for="ef-student">Student</label>
-          <select id="ef-student" name="student_id" required></select>
+        <h3>Add Log Entry</h3>
+        <form id="logForm" class="inline" autocomplete="on" novalidate>
+          <label for="lf-student">Student</label>
+          <select id="lf-student" name="student_id" required>
+            <option value="">Select student</option>
+          </select>
 
-          <label class="visually-hidden" for="ef-course">Course</label>
-          <select id="ef-course" name="course_id" required></select>
+          <label for="lf-course">Course</label>
+          <select id="lf-course" name="course_id" required>
+            <option value="">Select course</option>
+          </select>
 
-          <label class="visually-hidden" for="ef-term">Term</label>
-          <input id="ef-term" name="term" placeholder="Term (e.g., 2025-Fall)" autocomplete="off" />
+          <label for="lf-date">Date</label>
+          <input id="lf-date" name="date" type="date" required />
 
-          <label class="visually-hidden" for="ef-start">Start date</label>
-          <input id="ef-start" name="start_date" type="date" />
+          <label for="lf-hours">Hours</label>
+          <input id="lf-hours" name="hours" type="number" step="0.25" min="0.25" max="24" placeholder="0.25" required />
 
-          <label class="visually-hidden" for="ef-end">End date</label>
-          <input id="ef-end" name="end_date" type="date" />
+          <label for="lf-location">Location</label>
+          <select id="lf-location" name="location" required>
+            <option value="home">Home</option>
+            <option value="offsite">Offsite</option>
+          </select>
 
-          <button type="submit">Enroll</button>
+          <label for="lf-notes">Notes</label>
+          <textarea id="lf-notes" name="notes" placeholder="Activity details" rows="3"></textarea>
+
+          <button type="submit">Add Log Entry</button>
         </form>
       </div>
 
       <div class="card">
         <div class="row">
-          <h3 id="enrollments-list">Enrollments</h3>
-          <button id="reloadEnrollments" type="button" aria-describedby="enrollments-list">Reload</button>
+          <h3 id="logs-list">Log Entries</h3>
+          <button id="reloadLogs" type="button" aria-describedby="logs-list">Reload</button>
         </div>
-        <table aria-describedby="enrollments-list">
-          <caption class="visually-hidden">Enrollment list</caption>
+        <table aria-describedby="logs-list">
+          <caption class="visually-hidden">Log entries</caption>
           <thead>
             <tr>
+              <th scope="col">Date</th>
               <th scope="col">Student</th>
               <th scope="col">Course</th>
-              <th scope="col">Term</th>
-              <th scope="col">Start</th>
-              <th scope="col">End</th>
+              <th scope="col">Subject</th>
+              <th scope="col">Hours</th>
+              <th scope="col">Location</th>
+              <th scope="col">Notes</th>
+              <th scope="col">Actions</th>
             </tr>
           </thead>
-          <tbody id="enrollBody"></tbody>
+          <tbody id="logsBody"></tbody>
         </table>
       </div>
     </section>
@@ -206,6 +227,67 @@
       height: 1px; width: 1px;
       overflow: hidden; clip: rect(1px, 1px, 1px, 1px);
       white-space: nowrap; border: 0; padding: 0; margin: -1px;
+    }
+    
+    .loading {
+      opacity: 0.7;
+      pointer-events: none;
+    }
+    
+    .btn-edit, .btn-delete {
+      padding: 4px 8px;
+      margin: 0 2px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background: #f8f8f8;
+      cursor: pointer;
+    }
+    
+    .btn-edit:hover {
+      background: #e3f2fd;
+      border-color: #2196f3;
+    }
+    
+    .btn-delete:hover {
+      background: #ffebee;
+      border-color: #f44336;
+    }
+    
+    form.inline {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+    
+    form.inline label {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    
+    form.inline input,
+    form.inline select,
+    form.inline textarea {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    
+    form.inline button {
+      grid-column: 1 / -1;
+      padding: 12px;
+      background: #123c69;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+    }
+    
+    form.inline button:hover {
+      background: #0d2b4a;
     }
   </style>
 </body>

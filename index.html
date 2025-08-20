@@ -3,10 +3,17 @@
 <head>
 <meta charset="utf-8" />
 <title>Peaceful Academy — Kansas City, Missouri</title>
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="description" content="Missouri-compliant homeschool hours, courses, portfolio tracker with Netlify Forms, Neon DB, and PWA." />
-<link rel="manifest" href="./manifest.webmanifest">
-<meta name="theme-color" content="#0b1226">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Missouri-compliant homeschool hours, courses, portfolio tracker with Netlify Forms, Neon DB, and PWA." />
+    <meta name="theme-color" content="#0b1226" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="manifest" href="./manifest.webmanifest">
+
+<!-- Favicons -->
+<link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+<link rel="icon" href="./favicon.ico" sizes="any" />
+<link rel="apple-touch-icon" href="./apple-touch-icon.png" />
 <style>
 :root{--bg:#0f172a;--card:#0b1226;--ink:#e5e7eb;--muted:#94a3b8;--border:#1f2937;--accent:#22c55e;--accent2:#06b6d4;--danger:#ef4444;--ok:#10b981}
 *{box-sizing:border-box}html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto}
@@ -282,10 +289,18 @@ const fmt = new Intl.NumberFormat(undefined,{maximumFractionDigits:2});
 // Fix timezone handling for dates
 const todayISO = ()=> {
   const now = new Date();
+  // Use local timezone to avoid date shifting issues
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');
   const day = String(now.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
+};
+
+// Enhanced date validation
+const isValidDate = (dateString) => {
+  if (!dateString) return false;
+  const date = new Date(dateString);
+  return !isNaN(date.getTime()) && date <= new Date();
 };
 
 const CORE = new Set(['Reading','Language Arts','Mathematics','Science','Social Studies']);
@@ -296,17 +311,29 @@ const objectUrlCache = new Map();
 // Input validation helpers
 function validateHours(hours) {
   const num = Number(hours);
-  return !isNaN(num) && num > 0 && num <= 24;
+  return !isNaN(num) && num >= 0.25 && num <= 24;
 }
 
 function validateDate(date) {
-  if (!date) return false;
-  const d = new Date(date);
-  return !isNaN(d.getTime()) && d <= new Date();
+  return isValidDate(date);
 }
 
 function validateRequired(value) {
   return value && value.trim().length > 0;
+}
+
+// Enhanced validation for student data
+function validateStudentData(data) {
+  const errors = [];
+  if (!validateRequired(data.name)) errors.push('Student name is required');
+  if (data.dob && !validateDate(data.dob)) errors.push('Invalid date of birth');
+  if (data.dob) {
+    const dob = new Date(data.dob);
+    const today = new Date();
+    const age = today.getFullYear() - dob.getFullYear();
+    if (age < 3 || age > 25) errors.push('Student age seems unrealistic');
+  }
+  return errors;
 }
 
 /* Settings & year helpers */
@@ -317,14 +344,83 @@ function yearLabel(y){ return y+'–'+(y+1); }
 function currentAcademicStart(){ return yearForDate(todayISO()); }
 
 /* IndexedDB */
-let db; (function openDB(){ const req=indexedDB.open('peacefulAcademyDB',1); req.onupgradeneeded=e=>{const d=e.target.result; d.createObjectStore('students',{keyPath:'id',autoIncrement:true}); d.createObjectStore('courses',{keyPath:'id',autoIncrement:true}); d.createObjectStore('logs',{keyPath:'id',autoIncrement:true}); d.createObjectStore('portfolio',{keyPath:'id',autoIncrement:true}); d.createObjectStore('files',{keyPath:'id',autoIncrement:true});}; req.onsuccess=()=>{db=req.result; init();}; req.onerror=(e)=>{console.error('IndexedDB error:', e);}; })();
+let db; 
+(function openDB(){ 
+  const req=indexedDB.open('peacefulAcademyDB',2); 
+  req.onupgradeneeded=e=>{
+    const d=e.target.result; 
+    // Create stores with better error handling
+    if (!d.objectStoreNames.contains('students')) {
+      d.createObjectStore('students',{keyPath:'id',autoIncrement:true}); 
+    }
+    if (!d.objectStoreNames.contains('courses')) {
+      d.createObjectStore('courses',{keyPath:'id',autoIncrement:true}); 
+    }
+    if (!d.objectStoreNames.contains('logs')) {
+      d.createObjectStore('logs',{keyPath:'id',autoIncrement:true}); 
+    }
+    if (!d.objectStoreNames.contains('portfolio')) {
+      d.createObjectStore('portfolio',{keyPath:'id',autoIncrement:true}); 
+    }
+    if (!d.objectStoreNames.contains('files')) {
+      d.createObjectStore('files',{keyPath:'id',autoIncrement:true}); 
+    }
+  }; 
+  req.onsuccess=()=>{db=req.result; init();}; 
+  req.onerror=(e)=>{console.error('IndexedDB error:', e); alert('Database error. Please refresh the page.');}; 
+})();
 function tx(names,mode='readonly'){ return db.transaction(names,mode); }
 const DB={ 
-  add:(s,o)=>new Promise((res,rej)=>{const r=tx([s],'readwrite').objectStore(s).add(o); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error)}), 
-  put:(s,o)=>new Promise((res,rej)=>{const r=tx([s],'readwrite').objectStore(s).put(o); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error)}), 
-  get:(s,k)=>new Promise((res,rej)=>{const r=tx([s]).objectStore(s).get(k); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error)}), 
-  all:(s)=>new Promise((res,rej)=>{const r=tx([s]).objectStore(s).getAll(); r.onsuccess=()=>res(r.result || []); r.onerror=()=>rej(r.error)}), 
-  del:(s,k)=>new Promise((res,rej)=>{const r=tx([s],'readwrite').objectStore(s).delete(k); r.onsuccess=()=>res(); r.onerror=()=>rej(r.error)}) 
+  add:(s,o)=>new Promise((res,rej)=>{
+    try {
+      const r=tx([s],'readwrite').objectStore(s).add(o); 
+      r.onsuccess=()=>res(r.result); 
+      r.onerror=(e)=>{console.error('DB add error:', e); rej(r.error);}
+    } catch(e) {
+      console.error('DB add exception:', e);
+      rej(e);
+    }
+  }), 
+  put:(s,o)=>new Promise((res,rej)=>{
+    try {
+      const r=tx([s],'readwrite').objectStore(s).put(o); 
+      r.onsuccess=()=>res(r.result); 
+      r.onerror=(e)=>{console.error('DB put error:', e); rej(r.error);}
+    } catch(e) {
+      console.error('DB put exception:', e);
+      rej(e);
+    }
+  }), 
+  get:(s,k)=>new Promise((res,rej)=>{
+    try {
+      const r=tx([s]).objectStore(s).get(k); 
+      r.onsuccess=()=>res(r.result); 
+      r.onerror=(e)=>{console.error('DB get error:', e); rej(r.error);}
+    } catch(e) {
+      console.error('DB get exception:', e);
+      rej(e);
+    }
+  }), 
+  all:(s)=>new Promise((res,rej)=>{
+    try {
+      const r=tx([s]).objectStore(s).getAll(); 
+      r.onsuccess=()=>res(r.result || []); 
+      r.onerror=(e)=>{console.error('DB all error:', e); rej(r.error);}
+    } catch(e) {
+      console.error('DB all exception:', e);
+      rej(e);
+    }
+  }), 
+  del:(s,k)=>new Promise((res,rej)=>{
+    try {
+      const r=tx([s],'readwrite').objectStore(s).delete(k); 
+      r.onsuccess=()=>res(); 
+      r.onerror=(e)=>{console.error('DB delete error:', e); rej(r.error);}
+    } catch(e) {
+      console.error('DB delete exception:', e);
+      rej(e);
+    }
+  }) 
 };
 
 // Clean up object URLs to prevent memory leaks
@@ -347,8 +443,72 @@ function getObjectUrl(fileId, blob) {
 
 /* Netlify forms */
 function encode(data){ return Object.keys(data).map(k=> encodeURIComponent(k)+'='+encodeURIComponent(data[k])).join('&'); }
-async function netlifySubmit(formName, data){ try{ await fetch('/', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body: encode(Object.assign({'form-name': formName, 'bot-field':''}, data)) }); } catch(e){ console.warn('Netlify submit failed', e);} }
-async function netlifySubmitFormData(formName, fd){ try{ fd.append('form-name', formName); fd.append('bot-field',''); await fetch('/', { method:'POST', body:fd }); }catch(e){ console.warn('Netlify file submit failed', e);} }
+async function netlifySubmit(formName, data){ 
+  try{ 
+    await fetch('/', { 
+      method:'POST', 
+      headers:{'Content-Type':'application/x-www-form-urlencoded'}, 
+      body: encode(Object.assign({'form-name': formName, 'bot-field':''}, data)) 
+    }); 
+  } catch(e){ 
+    console.warn('Netlify submit failed', e);
+  } 
+}
+async function netlifySubmitFormData(formName, fd){ 
+  try{ 
+    fd.append('form-name', formName); 
+    fd.append('bot-field',''); 
+    await fetch('/', { 
+      method:'POST', 
+      body:fd 
+    }); 
+  } catch(e){ 
+    console.warn('Netlify file submit failed', e);
+  } 
+}
+
+// Enhanced notification system
+function showNotification(message, type = 'info') {
+  const notification = document.createElement('div');
+  notification.className = `notification ${type}`;
+  notification.textContent = message;
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    border-radius: 8px;
+    color: white;
+    font-weight: 500;
+    z-index: 1000;
+    animation: slideIn 0.3s ease-out;
+    ${type === 'success' ? 'background: var(--ok);' : ''}
+    ${type === 'error' ? 'background: var(--danger);' : ''}
+    ${type === 'warning' ? 'background: #f59e0b;' : ''}
+    ${type === 'info' ? 'background: var(--accent2);' : ''}
+  `;
+  
+  document.body.appendChild(notification);
+  
+  setTimeout(() => {
+    notification.style.animation = 'slideOut 0.3s ease-in';
+    setTimeout(() => notification.remove(), 300);
+  }, 3000);
+}
+
+// Add notification animations
+const notificationStyle = document.createElement('style');
+notificationStyle.textContent = `
+  @keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  @keyframes slideOut {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(100%); opacity: 0; }
+  }
+`;
+document.head.appendChild(notificationStyle);
 
 /* Neon helper */
 async function saveToNeon(kind, data){ try{ await fetch('/.netlify/functions/db', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ action: kind + '.insert', data }) }); } catch(e){ console.warn('Neon save failed', e); }}
@@ -412,7 +572,26 @@ async function renderReports(){
 
 /* Events */
 function renderSettings(){ const s=getSettings(); $('#scName').value=s.name; $('#scPhone').value=s.phone; $('#scAddress').value=s.address; $('#scYearStart').value=s.yearStart; $('#yearNow').textContent=new Date().getFullYear(); }
-$('#scSave')?.addEventListener('click', ()=>{ setSettings({ name:$('#scName').value.trim(), phone:$('#scPhone').value.trim(), address:$('#scAddress').value.trim(), yearStart:$('#scYearStart').value }); alert('Saved.'); renderDashboard(); renderLogsTable(); renderPortfolio(); renderReports(); });
+$('#scSave')?.addEventListener('click', ()=>{
+  const settings = {
+    name: $('#scName').value.trim(),
+    phone: $('#scPhone').value.trim(),
+    address: $('#scAddress').value.trim(),
+    yearStart: $('#scYearStart').value
+  };
+  
+  if (!settings.name) {
+    showNotification('School name is required', 'error');
+    return;
+  }
+  
+  setSettings(settings);
+  showNotification('Settings saved successfully!', 'success');
+  renderDashboard(); 
+  renderLogsTable(); 
+  renderPortfolio(); 
+  renderReports(); 
+});
 $('#scReset')?.addEventListener('click', ()=>{ if(confirm('Reset to defaults?')) setSettings({name:'Peaceful Academy of Kansas City, Missouri',phone:'',address:'',yearStart:'07-01'}); });
 $('#scExportAll')?.addEventListener('click', async()=>{ const blob=new Blob([JSON.stringify({settings:getSettings(),students:await listStudents(),courses:await listCourses(),logs:await listLogs(),portfolio:await listPortfolio()},null,2)],{type:'application/json'}); const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:'peaceful-academy-backup.json'}); a.click(); });
 $('#scImportAll')?.addEventListener('change', async(e)=>{ const f=e.target.files?.[0]; if(!f) return; if(!confirm('Import will REPLACE existing data. Continue?')) return; const data=JSON.parse(await f.text()); await Promise.all(['students','courses','logs','portfolio','files'].map(s=>new Promise((res,rej)=>{ const r=tx([s],'readwrite').objectStore(s).clear(); r.onsuccess=()=>res(); r.onerror=()=>rej(r.error);}))); if(data.settings) setSettings(data.settings); for(const s of (data.students||[])) await DB.add('students', s); for(const c of (data.courses||[])) await DB.add('courses', c); for(const l of (data.logs||[])) await DB.add('logs', l); for(const p of (data.portfolio||[])) await DB.add('portfolio', p); alert('Imported.'); renderDashboard(); renderStudents(); renderCourses(); renderLogsTable(); renderPortfolio(); renderReports(); });
@@ -428,14 +607,24 @@ $('#stSave')?.addEventListener('click', async()=>{
     startYear:Number($('#stStart').value)||currentAcademicStart(), 
     notes:$('#stNotes').value.trim() 
   }; 
-  if(!validateRequired(obj.name)){ alert('Name is required'); return; }
-  if(obj.dob && !validateDate(obj.dob)){ alert('Please enter a valid date of birth'); return; }
   
-  await DB.add('students', obj);
-  await netlifySubmit('student', {name:obj.name, dob:obj.dob, grade:obj.grade, startYear:String(obj.startYear), notes:obj.notes});
-  await saveToNeon('student', {name:obj.name, dob:obj.dob, grade:obj.grade, startYear:obj.startYear, notes:obj.notes});
-  $('#stName').value=''; $('#stDob').value=''; $('#stGrade').value=''; $('#stNotes').value=''; 
-  renderStudents(); renderYearSelectors(); renderDashboard(); 
+  // Enhanced validation
+  const errors = validateStudentData(obj);
+  if(errors.length > 0) {
+    alert('Please fix the following errors:\n' + errors.join('\n'));
+    return;
+  }
+  
+  try {
+    await DB.add('students', obj);
+    await netlifySubmit('student', {name:obj.name, dob:obj.dob, grade:obj.grade, startYear:String(obj.startYear), notes:obj.notes});
+    await saveToNeon('student', {name:obj.name, dob:obj.dob, grade:obj.grade, startYear:obj.startYear, notes:obj.notes});
+    $('#stName').value=''; $('#stDob').value=''; $('#stGrade').value=''; $('#stNotes').value=''; 
+    renderStudents(); renderYearSelectors(); renderDashboard(); 
+  } catch(e) {
+    console.error('Error saving student:', e);
+    showNotification('Error saving student. Please try again.', 'error');
+  }
 });
 $('#stClear')?.addEventListener('click', ()=>{$$('#view-students input, #view-students textarea').forEach(el=>el.value='')});
 
@@ -447,14 +636,28 @@ $('#coSave')?.addEventListener('click', async()=>{
     subject:$('#coSubject').value, 
     description:$('#coDesc').value.trim() 
   }; 
-  if(!validateRequired(obj.title)){ alert('Course title is required'); return; }
-  if(!validateRequired(obj.subject)){ alert('Subject is required'); return; }
   
-  await DB.add('courses', obj);
-  await netlifySubmit('course', obj);
-  await saveToNeon('course', obj);
-  $('#coTitle').value=''; $('#coDesc').value=''; 
-  renderCourses(); renderDashboard(); 
+  // Enhanced validation
+  const errors = [];
+  if(!validateRequired(obj.title)) errors.push('Course title is required');
+  if(!validateRequired(obj.subject)) errors.push('Subject is required');
+  if(obj.title.length > 100) errors.push('Course title is too long (max 100 characters)');
+  
+  if(errors.length > 0) {
+    alert('Please fix the following errors:\n' + errors.join('\n'));
+    return;
+  }
+  
+  try {
+    await DB.add('courses', obj);
+    await netlifySubmit('course', obj);
+    await saveToNeon('course', obj);
+    $('#coTitle').value=''; $('#coDesc').value=''; 
+    renderCourses(); renderDashboard(); 
+  } catch(e) {
+    console.error('Error saving course:', e);
+    showNotification('Error saving course. Please try again.', 'error');
+  }
 });
 $('#coClear')?.addEventListener('click', ()=>{$$('#view-courses input, #view-courses textarea').forEach(el=>el.value='')});
 
@@ -472,16 +675,31 @@ $('#qaAdd')?.addEventListener('click', async()=>{
   };
   
   // Enhanced validation
-  if(!obj.studentId){ alert('Please select a student'); return; }
-  if(!obj.courseId){ alert('Please select a course'); return; }
-  if(!validateHours(obj.hours)){ alert('Please enter valid hours (0.25 to 24)'); return; }
-  if(!validateDate(obj.date)){ alert('Please enter a valid date'); return; }
+  const errors = [];
+  if(!obj.studentId){ errors.push('Please select a student'); }
+  if(!obj.courseId){ errors.push('Please select a course'); }
+  if(!validateHours(obj.hours)){ errors.push('Please enter valid hours (0.25 to 24)'); }
+  if(!validateDate(obj.date)){ errors.push('Please enter a valid date'); }
+  if(obj.notes.length > 500) { errors.push('Notes are too long (max 500 characters)'); }
   
-  await DB.add('logs', obj);
-  const [courses,students]=await Promise.all([listCourses(), listStudents()]); const c=courses.find(x=>x.id===obj.courseId), s=students.find(x=>x.id===obj.studentId);
-  await netlifySubmit('log-entry', { student:s?.name||String(obj.studentId), course:c?.title||String(obj.courseId), subject:c?.subject||'', date:obj.date, hours:String(obj.hours), location:obj.location, notes:obj.notes });
-  await saveToNeon('log', { studentId: obj.studentId, studentName: s?.name||String(obj.studentId), courseId: obj.courseId, courseTitle: c?.title||String(obj.courseId), subject: c?.subject||'', date: obj.date, hours: obj.hours, location: obj.location, notes: obj.notes });
-  $('#qaHours').value=''; $('#qaNotes').value=''; renderDashboard(); renderLogsTable(); renderReports();
+  if(errors.length > 0) {
+    alert('Please fix the following errors:\n' + errors.join('\n'));
+    return;
+  }
+  
+  try {
+    await DB.add('logs', obj);
+    const [courses,students]=await Promise.all([listCourses(), listStudents()]); 
+    const c=courses.find(x=>x.id===obj.courseId), s=students.find(x=>x.id===obj.studentId);
+    await netlifySubmit('log-entry', { student:s?.name||String(obj.studentId), course:c?.title||String(obj.courseId), subject:c?.subject||'', date:obj.date, hours:String(obj.hours), location:obj.location, notes:obj.notes });
+    await saveToNeon('log', { studentId: obj.studentId, studentName: s?.name||String(obj.studentId), courseId: obj.courseId, courseTitle: c?.title||String(obj.courseId), subject: c?.subject||'', date: obj.date, hours: obj.hours, location: obj.location, notes: obj.notes });
+    $('#qaHours').value=''; $('#qaNotes').value=''; 
+    renderDashboard(); renderLogsTable(); renderReports();
+    showNotification('Log entry added successfully!', 'success');
+  } catch(e) {
+    console.error('Error adding log entry:', e);
+    showNotification('Error adding log entry. Please try again.', 'error');
+  }
 });
 $('#lgAdd')?.addEventListener('click', async()=>{
   const obj={ 
@@ -494,16 +712,31 @@ $('#lgAdd')?.addEventListener('click', async()=>{
   };
   
   // Enhanced validation
-  if(!obj.studentId){ alert('Please select a student'); return; }
-  if(!obj.courseId){ alert('Please select a course'); return; }
-  if(!validateHours(obj.hours)){ alert('Please enter valid hours (0.25 to 24)'); return; }
-  if(!validateDate(obj.date)){ alert('Please enter a valid date'); return; }
+  const errors = [];
+  if(!obj.studentId){ errors.push('Please select a student'); }
+  if(!obj.courseId){ errors.push('Please select a course'); }
+  if(!validateHours(obj.hours)){ errors.push('Please enter valid hours (0.25 to 24)'); }
+  if(!validateDate(obj.date)){ errors.push('Please enter a valid date'); }
+  if(obj.notes.length > 500) { errors.push('Notes are too long (max 500 characters)'); }
   
-  await DB.add('logs', obj);
-  const [courses,students]=await Promise.all([listCourses(), listStudents()]); const c=courses.find(x=>x.id===obj.courseId), s=students.find(x=>x.id===obj.studentId);
-  await netlifySubmit('log-entry', { student:s?.name||String(obj.studentId), course:c?.title||String(obj.courseId), subject:c?.subject||'', date:obj.date, hours:String(obj.hours), location:obj.location, notes:obj.notes });
-  await saveToNeon('log', { studentId: obj.studentId, studentName: s?.name||String(obj.studentId), courseId: obj.courseId, courseTitle: c?.title||String(obj.courseId), subject: c?.subject||'', date: obj.date, hours: obj.hours, location: obj.location, notes: obj.notes });
-  $('#lgHours').value=''; $('#lgNotes').value=''; renderLogsTable(); renderDashboard(); renderReports();
+  if(errors.length > 0) {
+    alert('Please fix the following errors:\n' + errors.join('\n'));
+    return;
+  }
+  
+  try {
+    await DB.add('logs', obj);
+    const [courses,students]=await Promise.all([listCourses(), listStudents()]); 
+    const c=courses.find(x=>x.id===obj.courseId), s=students.find(x=>x.id===obj.studentId);
+    await netlifySubmit('log-entry', { student:s?.name||String(obj.studentId), course:c?.title||String(obj.courseId), subject:c?.subject||'', date:obj.date, hours:String(obj.hours), location:obj.location, notes:obj.notes });
+    await saveToNeon('log', { studentId: obj.studentId, studentName: s?.name||String(obj.studentId), courseId: obj.courseId, courseTitle: c?.title||String(obj.courseId), subject: c?.subject||'', date: obj.date, hours: obj.hours, location: obj.location, notes: obj.notes });
+    $('#lgHours').value=''; $('#lgNotes').value=''; 
+    renderLogsTable(); renderDashboard(); renderReports();
+    showNotification('Log entry added successfully!', 'success');
+  } catch(e) {
+    console.error('Error adding log entry:', e);
+    showNotification('Error adding log entry. Please try again.', 'error');
+  }
 });
 document.body.addEventListener('click', async(e)=>{ if(e.target.classList.contains('lgDel')){ await DB.del('logs', Number(e.target.dataset.id)); renderLogsTable(); renderDashboard(); renderReports(); } });
 $('#exportCSV')?.addEventListener('click', async()=>{ const [logs,courses,students]=await Promise.all([listLogs(), listCourses(), listStudents()]); const cMap=new Map(courses.map(c=>[c.id,c])); const sMap=new Map(students.map(s=>[s.id,s])); const y=$('#lgYearFilter').value; const rows=[['date','student','course','subject','hours','location','notes']]; for(const l of logs){ if(y && yearForDate(l.date)!=Number(y)) continue; const c=cMap.get(l.courseId), st=sMap.get(l.studentId); rows.push([l.date, st?.name||'', c?.title||'', c?.subject||'', String(l.hours), l.location, (l.notes||'').replace(/\n/g,' ')]);} const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n'); const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob([csv],{type:'text/csv'})),download:'logs.csv'}); a.click(); });
@@ -540,9 +773,19 @@ $('#pfClear')?.addEventListener('click', ()=>{ ['pfTitle','pfDesc','pfTags','pfF
 document.body.addEventListener('click', async(e)=>{ if(e.target.classList.contains('pfDel')){ const id=Number(e.target.dataset.id); const item=await DB.get('portfolio', id); if(item?.fileId) await DB.del('files', item.fileId); await DB.del('portfolio', id); renderPortfolio(); } });
 
 /* Transcript */
-function gradePoint(letter){ const map={'A+':4,'A':4,'A-':3.7,'B+':3.3,'B':3,'B-':2.7,'C+':2.3,'C':2,'C-':1.7,'D+':1.3,'D':1,'F':0}; return map[letter] ?? null; }
+function gradePoint(letter){ 
+  const map={'A+':4,'A':4,'A-':3.7,'B+':3.3,'B':3,'B-':2.7,'C+':2.3,'C':2,'C-':1.7,'D+':1.3,'D':1,'F':0}; 
+  return map[letter?.toUpperCase()] ?? null; 
+}
 function getTranscriptOverrides(){ return JSON.parse(localStorage.getItem('pa_transcript')||'{}'); }
 function setTranscriptOverrides(v){ localStorage.setItem('pa_transcript', JSON.stringify(v)); }
+
+// Enhanced transcript validation
+function validateGrade(grade) {
+  if (!grade) return true; // Empty grade is valid
+  const validGrades = ['A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'F'];
+  return validGrades.includes(grade.toUpperCase());
+}
 async function buildTranscript(){
   const [logs,courses,students]=await Promise.all([listLogs(), listCourses(), listStudents()]); const sId=Number($('#trStudent').value); if(!sId){ alert('Choose a student'); return; } const years=Array.from($('#trYears').selectedOptions).map(o=>Number(o.value)); const scale=Number($('#trScale').value)||120; const cMap=new Map(courses.map(c=>[c.id,c])); const st=students.find(s=>s.id===sId); const filtered=logs.filter(l=> l.studentId===sId && years.includes(yearForDate(l.date)));
   const by=new Map(); filtered.forEach(l=>{ const y=yearForDate(l.date), key=l.courseId+'|'+y; const c=cMap.get(l.courseId); const o=by.get(key)||{hours:0, subject:c?.subject, title:c?.title, year:y}; o.hours+=Number(l.hours)||0; by.set(key,o); });
@@ -568,12 +811,29 @@ function handleTranscriptEdit(e) {
   
   const key = td.getAttribute('data-tr-key');
   const field = td.getAttribute('data-tr-field');
+  const value = td.textContent.trim();
   const ov = getTranscriptOverrides();
   const sId = Number($('#trStudent').value);
   
+  // Validate input based on field type
+  if (field === 'grade' && value && !validateGrade(value)) {
+    alert('Invalid grade. Please use A+, A, A-, B+, B, B-, C+, C, C-, D+, D, or F');
+    buildTranscript(); // Rebuild to reset the invalid value
+    return;
+  }
+  
+  if (field === 'credit' && value) {
+    const credit = Number(value);
+    if (isNaN(credit) || credit < 0 || credit > 10) {
+      alert('Invalid credit value. Please enter a number between 0 and 10');
+      buildTranscript(); // Rebuild to reset the invalid value
+      return;
+    }
+  }
+  
   ov[sId] = ov[sId] || {};
   ov[sId][key] = ov[sId][key] || {};
-  ov[sId][key][field] = td.textContent.trim();
+  ov[sId][key][field] = value;
   setTranscriptOverrides(ov);
   buildTranscript();
 }
@@ -595,11 +855,61 @@ $('#rpPrint')?.addEventListener('click', ()=>window.print());
 // Clean up object URLs when page unloads
 window.addEventListener('beforeunload', cleanupObjectUrls);
 
+// Enhanced initialization with error handling
 async function init(){
-  if (!location.hash) location.hash = '#dashboard';
-  $('#qaDate').value=todayISO(); $('#lgDate').value=todayISO(); $('#pfDate').value=todayISO();
-  await renderStudents(); await renderCourses(); await renderYearSelectors(); await renderDashboard();
+  try {
+    if (!location.hash) location.hash = '#dashboard';
+    $('#qaDate').value=todayISO(); 
+    $('#lgDate').value=todayISO(); 
+    $('#pfDate').value=todayISO();
+    $('#trIssue').value=todayISO();
+    $('#dpDate').value=todayISO();
+    
+    await renderStudents(); 
+    await renderCourses(); 
+    await renderYearSelectors(); 
+    await renderDashboard();
+    
+    // Add loading states
+    document.body.classList.add('loaded');
+  } catch(e) {
+    console.error('Initialization error:', e);
+    alert('Error initializing application. Please refresh the page.');
+  }
 }
+
+// Add loading indicator styles
+const style = document.createElement('style');
+style.textContent = `
+  body:not(.loaded) { opacity: 0.7; }
+  .loading { opacity: 0.5; pointer-events: none; }
+  .error { color: var(--danger); }
+  .success { color: var(--ok); }
+  .warning { color: #f59e0b; }
+  
+  /* Enhanced form validation styles */
+  input:invalid, select:invalid, textarea:invalid {
+    border-color: var(--danger);
+  }
+  
+  /* Better focus states */
+  input:focus, select:focus, textarea:focus, button:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  
+  /* Improved button states */
+  button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  /* Enhanced table hover effects */
+  tr:hover {
+    background: rgba(34, 197, 94, 0.05) !important;
+  }
+`;
+document.head.appendChild(style);
 </script>
 </body>
 </html>
