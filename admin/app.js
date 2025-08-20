@@ -206,8 +206,9 @@ async function loadStudents() {
   }
 }
 
-async function addStudent(formData) {
+async function addStudent(form) {
   try {
+    const formData = new FormData(form);
     const studentData = {
       name: formData.get('first_name') + ' ' + formData.get('last_name'),
       dob: formData.get('birth_date') || null,
@@ -220,7 +221,7 @@ async function addStudent(formData) {
     
     if (result.ok) {
       showToast('Student added successfully', 'success');
-      formData.target.reset();
+      form.reset();
       await loadStudents();
     }
   } catch (error) {
@@ -260,8 +261,9 @@ async function loadCourses() {
   }
 }
 
-async function addCourse(formData) {
+async function addCourse(form) {
   try {
+    const formData = new FormData(form);
     const courseData = {
       title: formData.get('title'),
       subject: formData.get('subject'),
@@ -272,7 +274,7 @@ async function addCourse(formData) {
     
     if (result.ok) {
       showToast('Course added successfully', 'success');
-      formData.target.reset();
+      form.reset();
       await loadCourses();
     }
   } catch (error) {
@@ -315,8 +317,9 @@ async function loadLogs() {
   }
 }
 
-async function addLog(formData) {
+async function addLog(form) {
   try {
+    const formData = new FormData(form);
     const logData = {
       studentId: parseInt(formData.get('student_id')),
       courseId: parseInt(formData.get('course_id')),
@@ -330,7 +333,7 @@ async function addLog(formData) {
     
     if (result.ok) {
       showToast('Log entry added successfully', 'success');
-      formData.target.reset();
+      form.reset();
       await loadLogs();
     }
   } catch (error) {
