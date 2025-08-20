@@ -2,6 +2,53 @@
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
+// Robust form data extraction
+function getFormValue(form, fieldName) {
+  try {
+    const formData = new FormData(form);
+    const value = formData.get(fieldName);
+    if (value !== null && value !== undefined) {
+      return value;
+    }
+  } catch (error) {
+    console.warn(`FormData.get() failed for ${fieldName}:`, error);
+  }
+  
+  // Fallback to direct element access
+  const element = form.querySelector(`[name="${fieldName}"]`);
+  return element ? element.value : '';
+}
+
+// Debug function to test form data extraction
+function debugFormData(form) {
+  console.log('=== Form Data Debug ===');
+  console.log('Form element:', form);
+  
+  // Test FormData API
+  try {
+    const formData = new FormData(form);
+    console.log('FormData object created successfully');
+    
+    // Test getting all form data
+    const entries = [];
+    for (let [key, value] of formData.entries()) {
+      entries.push({ key, value });
+    }
+    console.log('FormData entries:', entries);
+  } catch (error) {
+    console.error('FormData API failed:', error);
+  }
+  
+  // Test direct element access
+  const elements = form.querySelectorAll('[name]');
+  console.log('Form elements with name attribute:', elements.length);
+  elements.forEach(el => {
+    console.log(`${el.name}: ${el.value}`);
+  });
+  
+  console.log('=== End Debug ===');
+}
+
 // API helper with error handling
 async function apiCall(endpoint, options = {}) {
   try {
@@ -28,18 +75,25 @@ async function apiCall(endpoint, options = {}) {
 // Database helper with error handling
 async function dbCall(action, data = {}) {
   try {
+    console.log(`Making database call: ${action}`, data);
+    
     const response = await fetch('/.netlify/functions/db', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action, data })
     });
     
+    console.log(`Database response status: ${response.status}`);
+    
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
+      console.error('Database error response:', errorData);
       throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
     }
     
-    return await response.json();
+    const result = await response.json();
+    console.log(`Database call successful: ${action}`, result);
+    return result;
   } catch (error) {
     console.error(`Database call failed for ${action}:`, error);
     throw error;
@@ -208,15 +262,24 @@ async function loadStudents() {
 
 async function addStudent(form) {
   try {
-    const formData = new FormData(form);
+    const firstName = getFormValue(form, 'first_name');
+    const lastName = getFormValue(form, 'last_name');
+    
     const studentData = {
-      name: formData.get('first_name') + ' ' + formData.get('last_name'),
-      dob: formData.get('birth_date') || null,
-      grade: formData.get('grade') || null,
-      startYear: formData.get('start_year') ? parseInt(formData.get('start_year')) : null,
-      notes: formData.get('notes') || null
+      name: firstName + ' ' + lastName,
+      dob: getFormValue(form, 'birth_date') || null,
+      grade: getFormValue(form, 'grade') || null,
+      startYear: getFormValue(form, 'start_year') ? parseInt(getFormValue(form, 'start_year')) : null,
+      notes: getFormValue(form, 'notes') || null
     };
     
+    // Validate required fields
+    if (!firstName.trim() || !lastName.trim()) {
+      showToast('First name and last name are required', 'error');
+      return;
+    }
+    
+    console.log('Adding student with data:', studentData);
     const result = await dbCall('student.insert', studentData);
     
     if (result.ok) {
@@ -225,6 +288,7 @@ async function addStudent(form) {
       await loadStudents();
     }
   } catch (error) {
+    console.error('Error adding student:', error);
     showToast(`Failed to add student: ${error.message}`, 'error');
   }
 }
@@ -263,13 +327,26 @@ async function loadCourses() {
 
 async function addCourse(form) {
   try {
-    const formData = new FormData(form);
+    // Debug form data
+    debugFormData(form);
+    
     const courseData = {
-      title: formData.get('title'),
-      subject: formData.get('subject'),
-      description: formData.get('description') || null
+      title: getFormValue(form, 'title'),
+      subject: getFormValue(form, 'subject'),
+      description: getFormValue(form, 'description') || null
     };
     
+    // Validate required fields
+    if (!courseData.title.trim()) {
+      showToast('Course title is required', 'error');
+      return;
+    }
+    if (!courseData.subject.trim()) {
+      showToast('Subject is required', 'error');
+      return;
+    }
+    
+    console.log('Adding course with data:', courseData);
     const result = await dbCall('course.insert', courseData);
     
     if (result.ok) {
@@ -278,6 +355,7 @@ async function addCourse(form) {
       await loadCourses();
     }
   } catch (error) {
+    console.error('Error adding course:', error);
     showToast(`Failed to add course: ${error.message}`, 'error');
   }
 }
@@ -319,16 +397,37 @@ async function loadLogs() {
 
 async function addLog(form) {
   try {
-    const formData = new FormData(form);
+    const studentId = getFormValue(form, 'student_id');
+    const courseId = getFormValue(form, 'course_id');
+    
     const logData = {
-      studentId: parseInt(formData.get('student_id')),
-      courseId: parseInt(formData.get('course_id')),
-      date: formData.get('date'),
-      hours: parseFloat(formData.get('hours')),
-      location: formData.get('location'),
-      notes: formData.get('notes') || null
+      studentId: parseInt(studentId),
+      courseId: parseInt(courseId),
+      date: getFormValue(form, 'date'),
+      hours: parseFloat(getFormValue(form, 'hours')),
+      location: getFormValue(form, 'location'),
+      notes: getFormValue(form, 'notes') || null
     };
     
+    // Validate required fields
+    if (!logData.studentId || isNaN(logData.studentId)) {
+      showToast('Please select a student', 'error');
+      return;
+    }
+    if (!logData.courseId || isNaN(logData.courseId)) {
+      showToast('Please select a course', 'error');
+      return;
+    }
+    if (!logData.date) {
+      showToast('Date is required', 'error');
+      return;
+    }
+    if (!logData.hours || isNaN(logData.hours) || logData.hours < 0.25) {
+      showToast('Valid hours are required (minimum 0.25)', 'error');
+      return;
+    }
+    
+    console.log('Adding log with data:', logData);
     const result = await dbCall('log.insert', logData);
     
     if (result.ok) {
@@ -337,6 +436,7 @@ async function addLog(form) {
       await loadLogs();
     }
   } catch (error) {
+    console.error('Error adding log:', error);
     showToast(`Failed to add log entry: ${error.message}`, 'error');
   }
 }
