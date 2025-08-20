@@ -278,8 +278,36 @@ if ('serviceWorker' in navigator) { window.addEventListener('load', ()=> navigat
 
 const $ = s=>document.querySelector(s), $$ = s=>Array.from(document.querySelectorAll(s));
 const fmt = new Intl.NumberFormat(undefined,{maximumFractionDigits:2});
-const todayISO = ()=> new Date().toISOString().slice(0,10);
+
+// Fix timezone handling for dates
+const todayISO = ()=> {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 const CORE = new Set(['Reading','Language Arts','Mathematics','Science','Social Studies']);
+
+// Cache for object URLs to prevent memory leaks
+const objectUrlCache = new Map();
+
+// Input validation helpers
+function validateHours(hours) {
+  const num = Number(hours);
+  return !isNaN(num) && num > 0 && num <= 24;
+}
+
+function validateDate(date) {
+  if (!date) return false;
+  const d = new Date(date);
+  return !isNaN(d.getTime()) && d <= new Date();
+}
+
+function validateRequired(value) {
+  return value && value.trim().length > 0;
+}
 
 /* Settings & year helpers */
 function getSettings(){ return Object.assign({name:'Peaceful Academy of Kansas City, Missouri',phone:'',address:'',yearStart:'07-01'}, JSON.parse(localStorage.getItem('pa_settings')||'{}'));}
@@ -289,9 +317,33 @@ function yearLabel(y){ return y+'–'+(y+1); }
 function currentAcademicStart(){ return yearForDate(todayISO()); }
 
 /* IndexedDB */
-let db; (function openDB(){ const req=indexedDB.open('peacefulAcademyDB',1); req.onupgradeneeded=e=>{const d=e.target.result; d.createObjectStore('students',{keyPath:'id',autoIncrement:true}); d.createObjectStore('courses',{keyPath:'id',autoIncrement:true}); d.createObjectStore('logs',{keyPath:'id',autoIncrement:true}); d.createObjectStore('portfolio',{keyPath:'id',autoIncrement:true}); d.createObjectStore('files',{keyPath:'id',autoIncrement:true});}; req.onsuccess=()=>{db=req.result; init();}; })();
+let db; (function openDB(){ const req=indexedDB.open('peacefulAcademyDB',1); req.onupgradeneeded=e=>{const d=e.target.result; d.createObjectStore('students',{keyPath:'id',autoIncrement:true}); d.createObjectStore('courses',{keyPath:'id',autoIncrement:true}); d.createObjectStore('logs',{keyPath:'id',autoIncrement:true}); d.createObjectStore('portfolio',{keyPath:'id',autoIncrement:true}); d.createObjectStore('files',{keyPath:'id',autoIncrement:true});}; req.onsuccess=()=>{db=req.result; init();}; req.onerror=(e)=>{console.error('IndexedDB error:', e);}; })();
 function tx(names,mode='readonly'){ return db.transaction(names,mode); }
-const DB={ add:(s,o)=>new Promise((res,rej)=>{const r=tx([s],'readwrite').objectStore(s).add(o); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error)}), put:(s,o)=>new Promise((res,rej)=>{const r=tx([s],'readwrite').objectStore(s).put(o); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error)}), get:(s,k)=>new Promise((res,rej)=>{const r=tx([s]).objectStore(s).get(k); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error)}), all:(s)=>new Promise((res,rej)=>{const r=tx([s]).objectStore(s).getAll(); r.onsuccess=()=>res(r.result||[]); r.onerror=()=>rej(r.error)}), del:(s,k)=>new Promise((res,rej)=>{const r=tx([s],'readwrite').objectStore(s).delete(k); r.onsuccess=()=>res(); r.onerror=()=>rej(r.error)}) };
+const DB={ 
+  add:(s,o)=>new Promise((res,rej)=>{const r=tx([s],'readwrite').objectStore(s).add(o); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error)}), 
+  put:(s,o)=>new Promise((res,rej)=>{const r=tx([s],'readwrite').objectStore(s).put(o); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error)}), 
+  get:(s,k)=>new Promise((res,rej)=>{const r=tx([s]).objectStore(s).get(k); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error)}), 
+  all:(s)=>new Promise((res,rej)=>{const r=tx([s]).objectStore(s).getAll(); r.onsuccess=()=>res(r.result || []); r.onerror=()=>rej(r.error)}), 
+  del:(s,k)=>new Promise((res,rej)=>{const r=tx([s],'readwrite').objectStore(s).delete(k); r.onsuccess=()=>res(); r.onerror=()=>rej(r.error)}) 
+};
+
+// Clean up object URLs to prevent memory leaks
+function cleanupObjectUrls() {
+  for (const [key, url] of objectUrlCache.entries()) {
+    URL.revokeObjectURL(url);
+  }
+  objectUrlCache.clear();
+}
+
+// Get or create object URL with caching
+function getObjectUrl(fileId, blob) {
+  if (objectUrlCache.has(fileId)) {
+    return objectUrlCache.get(fileId);
+  }
+  const url = URL.createObjectURL(blob);
+  objectUrlCache.set(fileId, url);
+  return url;
+}
 
 /* Netlify forms */
 function encode(data){ return Object.keys(data).map(k=> encodeURIComponent(k)+'='+encodeURIComponent(data[k])).join('&'); }
@@ -343,9 +395,12 @@ async function renderLogsTable(){
   const tb=$('#lgTable tbody'); tb.innerHTML=''; filtered.forEach(l=>{ const c=cMap.get(l.courseId), st=sMap.get(l.studentId); const tr=document.createElement('tr'); tr.innerHTML=`<td>${l.date}</td><td>${st?.name||''}</td><td>${c?.title||''}</td><td>${c?.subject||''}</td><td class="right">${fmt.format(l.hours)}</td><td>${l.location==='home'?'Home':'Offsite'}</td><td class="muted">${l.notes||''}</td><td class="right"><button class="lgDel" data-id="${l.id}">Delete</button></td>`; tb.appendChild(tr); });
 }
 async function renderPortfolio(){
+  // Clean up previous object URLs to prevent memory leaks
+  cleanupObjectUrls();
+  
   const [items,courses,students]=await Promise.all([listPortfolio(), listCourses(), listStudents()]); const y=$('#pfYearFilter').value, s=$('#pfStudentFilter').value, subj=$('#pfSubjectFilter').value; const cMap=new Map(courses.map(c=>[c.id,c])); const sMap=new Map(students.map(x=>[x.id,x]));
   const filtered=items.filter(p=> (!y||yearForDate(p.date)==Number(y)) && (!s||p.studentId==Number(s)) && (!subj||cMap.get(p.courseId)?.subject===subj)).sort((a,b)=>b.date.localeCompare(a.date));
-  const gal=$('#pfGallery'); gal.innerHTML=''; for(const p of filtered){ const c=cMap.get(p.courseId), st=sMap.get(p.studentId); const file=p.fileId?await DB.get('files', p.fileId):null; const url=file?URL.createObjectURL(file.blob):''; const isImg = file && file.type.startsWith('image/'); const div=document.createElement('div'); div.className='tile'; div.innerHTML=`<div style="height:140px;display:flex;align-items:center;justify-content:center;background:#0a1123">${file?(isImg?`<img src="${url}" style="width:100%;height:140px;object-fit:cover">`:`<div class="muted">File: ${file.name||file.type}</div>`):'<div class="muted">No file</div>'}</div><div style="padding:.6rem"><div><strong>${p.title||'(untitled)'}</strong></div><div class="muted">${p.date} • ${st?.name||''} • ${c?.title||''}</div><div style="font-size:.92rem">${p.desc||''}</div><div class="row" style="margin-top:.5rem;justify-content:space-between"><div class="muted">${(p.tags||[]).join(', ')}</div><div class="row">${file?`<a download="${(p.title||'portfolio')}" href="${url}">Download</a>`:''}<button class="pfDel" data-id="${p.id}">Delete</button></div></div></div>`; gal.appendChild(div);} }
+  const gal=$('#pfGallery'); gal.innerHTML=''; for(const p of filtered){ const c=cMap.get(p.courseId), st=sMap.get(p.studentId); const file=p.fileId?await DB.get('files', p.fileId):null; const url=file?getObjectUrl(p.fileId, file.blob):''; const isImg = file && file.type.startsWith('image/'); const div=document.createElement('div'); div.className='tile'; div.innerHTML=`<div style="height:140px;display:flex;align-items:center;justify-content:center;background:#0a1123">${file?(isImg?`<img src="${url}" style="width:100%;height:140px;object-fit:cover">`:`<div class="muted">File: ${file.name||file.type}</div>`):'<div class="muted">No file</div>'}</div><div style="padding:.6rem"><div><strong>${p.title||'(untitled)'}</strong></div><div class="muted">${p.date} • ${st?.name||''} • ${c?.title||''}</div><div style="font-size:.92rem">${p.desc||''}</div><div class="row" style="margin-top:.5rem;justify-content:space-between"><div class="muted">${(p.tags||[]).join(', ')}</div><div class="row">${file?`<a download="${(p.title||'portfolio')}" href="${url}">Download</a>`:''}<button class="pfDel" data-id="${p.id}">Delete</button></div></div></div>`; gal.appendChild(div);} }
 async function renderReports(){
   const [logs,courses]=await Promise.all([listLogs(), listCourses()]); const sId=Number($('#rpStudent').value); const yStart=Number($('#rpYear').value); const groupBy=$('#rpGroupBy').value; const cMap=new Map(courses.map(c=>[c.id,c])); const filtered=logs.filter(l=> l.studentId===sId && yearForDate(l.date)===yStart);
   const totals={total:0,core:0,home:0}, groups=new Map(); function addG(k,hrs,home){ const o=groups.get(k)||{hours:0,home:0}; o.hours+=hrs; if(home) o.home+=hrs; groups.set(k,o); }
@@ -365,20 +420,63 @@ $('#scWipe')?.addEventListener('click', async()=>{ if(!confirm('Erase ALL data?'
 
 /* Students */
 document.body.addEventListener('click', async(e)=>{ if(e.target.classList.contains('stDel')){ await DB.del('students', Number(e.target.dataset.id)); renderStudents(); renderDashboard(); renderLogsTable(); renderPortfolio(); renderReports(); } });
-$('#stSave')?.addEventListener('click', async()=>{ const obj={ name:$('#stName').value.trim(), dob:$('#stDob').value||'', grade:$('#stGrade').value.trim(), startYear:Number($('#stStart').value)||currentAcademicStart(), notes:$('#stNotes').value.trim() }; if(!obj.name){ alert('Name required'); return; } await DB.add('students', obj); await netlifySubmit('student', {name:obj.name, dob:obj.dob, grade:obj.grade, startYear:String(obj.startYear), notes:obj.notes}); await saveToNeon('student', {name:obj.name, dob:obj.dob, grade:obj.grade, startYear:obj.startYear, notes:obj.notes}); $('#stName').value=''; $('#stDob').value=''; $('#stGrade').value=''; $('#stNotes').value=''; renderStudents(); renderYearSelectors(); renderDashboard(); });
+$('#stSave')?.addEventListener('click', async()=>{ 
+  const obj={ 
+    name:$('#stName').value.trim(), 
+    dob:$('#stDob').value||'', 
+    grade:$('#stGrade').value.trim(), 
+    startYear:Number($('#stStart').value)||currentAcademicStart(), 
+    notes:$('#stNotes').value.trim() 
+  }; 
+  if(!validateRequired(obj.name)){ alert('Name is required'); return; }
+  if(obj.dob && !validateDate(obj.dob)){ alert('Please enter a valid date of birth'); return; }
+  
+  await DB.add('students', obj);
+  await netlifySubmit('student', {name:obj.name, dob:obj.dob, grade:obj.grade, startYear:String(obj.startYear), notes:obj.notes});
+  await saveToNeon('student', {name:obj.name, dob:obj.dob, grade:obj.grade, startYear:obj.startYear, notes:obj.notes});
+  $('#stName').value=''; $('#stDob').value=''; $('#stGrade').value=''; $('#stNotes').value=''; 
+  renderStudents(); renderYearSelectors(); renderDashboard(); 
+});
 $('#stClear')?.addEventListener('click', ()=>{$$('#view-students input, #view-students textarea').forEach(el=>el.value='')});
 
 /* Courses */
 document.body.addEventListener('click', async(e)=>{ if(e.target.classList.contains('coDel')){ await DB.del('courses', Number(e.target.dataset.id)); renderCourses(); renderLogsTable(); renderDashboard(); renderPortfolio(); renderReports(); } });
-$('#coSave')?.addEventListener('click', async()=>{ const obj={ title:$('#coTitle').value.trim(), subject:$('#coSubject').value, description:$('#coDesc').value.trim() }; if(!obj.title){ alert('Title required'); return; } await DB.add('courses', obj); await netlifySubmit('course', obj); await saveToNeon('course', obj); $('#coTitle').value=''; $('#coDesc').value=''; renderCourses(); renderDashboard(); });
+$('#coSave')?.addEventListener('click', async()=>{ 
+  const obj={ 
+    title:$('#coTitle').value.trim(), 
+    subject:$('#coSubject').value, 
+    description:$('#coDesc').value.trim() 
+  }; 
+  if(!validateRequired(obj.title)){ alert('Course title is required'); return; }
+  if(!validateRequired(obj.subject)){ alert('Subject is required'); return; }
+  
+  await DB.add('courses', obj);
+  await netlifySubmit('course', obj);
+  await saveToNeon('course', obj);
+  $('#coTitle').value=''; $('#coDesc').value=''; 
+  renderCourses(); renderDashboard(); 
+});
 $('#coClear')?.addEventListener('click', ()=>{$$('#view-courses input, #view-courses textarea').forEach(el=>el.value='')});
 
 /* Logs */
 $('#qaToday')?.addEventListener('click', ()=> $('#qaDate').value=todayISO());
 $('#lgToday2')?.addEventListener('click', ()=> $('#lgDate').value=todayISO());
 $('#qaAdd')?.addEventListener('click', async()=>{
-  const obj={ studentId:Number($('#qaStudent').value), courseId:Number($('#qaCourse').value), date:$('#qaDate').value||todayISO(), hours:Number($('#qaHours').value), location:$('#qaLocation').value, notes:$('#qaNotes').value.trim() };
-  if(!obj.studentId||!obj.courseId||!obj.hours){ alert('Student, course, hours required'); return; }
+  const obj={ 
+    studentId:Number($('#qaStudent').value), 
+    courseId:Number($('#qaCourse').value), 
+    date:$('#qaDate').value||todayISO(), 
+    hours:Number($('#qaHours').value), 
+    location:$('#qaLocation').value, 
+    notes:$('#qaNotes').value.trim() 
+  };
+  
+  // Enhanced validation
+  if(!obj.studentId){ alert('Please select a student'); return; }
+  if(!obj.courseId){ alert('Please select a course'); return; }
+  if(!validateHours(obj.hours)){ alert('Please enter valid hours (0.25 to 24)'); return; }
+  if(!validateDate(obj.date)){ alert('Please enter a valid date'); return; }
+  
   await DB.add('logs', obj);
   const [courses,students]=await Promise.all([listCourses(), listStudents()]); const c=courses.find(x=>x.id===obj.courseId), s=students.find(x=>x.id===obj.studentId);
   await netlifySubmit('log-entry', { student:s?.name||String(obj.studentId), course:c?.title||String(obj.courseId), subject:c?.subject||'', date:obj.date, hours:String(obj.hours), location:obj.location, notes:obj.notes });
@@ -386,8 +484,21 @@ $('#qaAdd')?.addEventListener('click', async()=>{
   $('#qaHours').value=''; $('#qaNotes').value=''; renderDashboard(); renderLogsTable(); renderReports();
 });
 $('#lgAdd')?.addEventListener('click', async()=>{
-  const obj={ studentId:Number($('#lgStudent').value), courseId:Number($('#lgCourse').value), date:$('#lgDate').value||todayISO(), hours:Number($('#lgHours').value), location:$('#lgLocation').value, notes:$('#lgNotes').value.trim() };
-  if(!obj.studentId||!obj.courseId||!obj.hours){ alert('Student, course, hours required'); return; }
+  const obj={ 
+    studentId:Number($('#lgStudent').value), 
+    courseId:Number($('#lgCourse').value), 
+    date:$('#lgDate').value||todayISO(), 
+    hours:Number($('#lgHours').value), 
+    location:$('#lgLocation').value, 
+    notes:$('#lgNotes').value.trim() 
+  };
+  
+  // Enhanced validation
+  if(!obj.studentId){ alert('Please select a student'); return; }
+  if(!obj.courseId){ alert('Please select a course'); return; }
+  if(!validateHours(obj.hours)){ alert('Please enter valid hours (0.25 to 24)'); return; }
+  if(!validateDate(obj.date)){ alert('Please enter a valid date'); return; }
+  
   await DB.add('logs', obj);
   const [courses,students]=await Promise.all([listCourses(), listStudents()]); const c=courses.find(x=>x.id===obj.courseId), s=students.find(x=>x.id===obj.studentId);
   await netlifySubmit('log-entry', { student:s?.name||String(obj.studentId), course:c?.title||String(obj.courseId), subject:c?.subject||'', date:obj.date, hours:String(obj.hours), location:obj.location, notes:obj.notes });
@@ -404,8 +515,21 @@ async function fileToBlob(file){ return file.slice(0,file.size,file.type); }
 $('#pfSave')?.addEventListener('click', async()=>{
   const file=$('#pfFile').files[0]||null; let fileId=null;
   if(file){ const blob=await fileToBlob(file); fileId=await DB.add('files', {blob, type:file.type, name:file.name, size:file.size}); }
-  const obj={ studentId:Number($('#pfStudent').value), courseId:Number($('#pfCourse').value), date:$('#pfDate').value||todayISO(), title:$('#pfTitle').value.trim(), desc:$('#pfDesc').value.trim(), tags:$('#pfTags').value.split(',').map(t=>t.trim()).filter(Boolean), fileId };
-  if(!obj.studentId||!obj.courseId){ alert('Student and course required'); return; }
+  const obj={ 
+    studentId:Number($('#pfStudent').value), 
+    courseId:Number($('#pfCourse').value), 
+    date:$('#pfDate').value||todayISO(), 
+    title:$('#pfTitle').value.trim(), 
+    desc:$('#pfDesc').value.trim(), 
+    tags:$('#pfTags').value.split(',').map(t=>t.trim()).filter(Boolean), 
+    fileId 
+  };
+  
+  // Enhanced validation
+  if(!obj.studentId){ alert('Please select a student'); return; }
+  if(!obj.courseId){ alert('Please select a course'); return; }
+  if(!validateDate(obj.date)){ alert('Please enter a valid date'); return; }
+  
   await DB.add('portfolio', obj);
   const [courses,students]=await Promise.all([listCourses(), listStudents()]); const c=courses.find(x=>x.id===obj.courseId), s=students.find(x=>x.id===obj.studentId);
   const fd=new FormData(); fd.append('student', s?.name||String(obj.studentId)); fd.append('course', c?.title||String(obj.courseId)); fd.append('date', obj.date); fd.append('title', obj.title); fd.append('tags', (obj.tags||[]).join(', ')); fd.append('description', obj.desc); if(file) fd.append('file', file, file.name); await netlifySubmitFormData('portfolio-upload', fd);
@@ -430,8 +554,30 @@ async function buildTranscript(){
   const gpa=gradedCredits? (totalPts/gradedCredits).toFixed(2) : '—';
   html += `</tbody></table><div class="row" style="justify-content:flex-end;margin-top:8px"><div class="card" style="background:#f1f5f9;color:#111827"><div><strong>Total Credits:</strong> ${fmt.format(totalCredits)}</div><div><strong>Cumulative GPA:</strong> ${gpa}</div></div></div><div class="row" style="margin-top:16px;justify-content:space-between"><div>Administrator: ${$('#trAdmin').value||''}</div><div>Signature: _____________________________</div></div></div>`;
   $('#trOut').innerHTML=html;
-  $('#trOut').addEventListener('blur',(e)=>{ const td=e.target.closest('[contenteditable]'); if(!td) return; const key=td.getAttribute('data-tr-key'); const field=td.getAttribute('data-tr-field'); ov[sId][key]=ov[sId][key]||{}; ov[sId][key][field]=td.textContent.trim(); setTranscriptOverrides(ov); buildTranscript(); }, {once:true});
+  
+  // Fix the event listener issue by removing the {once:true} option and properly managing listeners
+  const trOut = $('#trOut');
+  trOut.removeEventListener('blur', handleTranscriptEdit);
+  trOut.addEventListener('blur', handleTranscriptEdit);
 }
+
+// Separate function for transcript edit handling
+function handleTranscriptEdit(e) {
+  const td = e.target.closest('[contenteditable]');
+  if (!td) return;
+  
+  const key = td.getAttribute('data-tr-key');
+  const field = td.getAttribute('data-tr-field');
+  const ov = getTranscriptOverrides();
+  const sId = Number($('#trStudent').value);
+  
+  ov[sId] = ov[sId] || {};
+  ov[sId][key] = ov[sId][key] || {};
+  ov[sId][key][field] = td.textContent.trim();
+  setTranscriptOverrides(ov);
+  buildTranscript();
+}
+
 $('#trBuild')?.addEventListener('click', buildTranscript);
 $('#trPrint')?.addEventListener('click', ()=>window.print());
 
@@ -445,6 +591,9 @@ $('#dpPrint')?.addEventListener('click', ()=>window.print());
 ['pfYearFilter','pfStudentFilter','pfSubjectFilter'].forEach(id=>{ document.getElementById(id)?.addEventListener('change', renderPortfolio); });
 ['rpStudent','rpYear','rpGroupBy'].forEach(id=>{ document.getElementById(id)?.addEventListener('change', renderReports); });
 $('#rpPrint')?.addEventListener('click', ()=>window.print());
+
+// Clean up object URLs when page unloads
+window.addEventListener('beforeunload', cleanupObjectUrls);
 
 async function init(){
   if (!location.hash) location.hash = '#dashboard';
