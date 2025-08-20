@@ -23,7 +23,8 @@
   "author": "Peaceful Fields Academy",
   "license": "MIT",
   "dependencies": {
-    "@neondatabase/serverless": "^1.0.1"
+    "@neondatabase/serverless": "^1.0.1",
+    "all": "^0.0.0"
   },
   "devDependencies": {
     "@netlify/functions": "^2.0.0",
