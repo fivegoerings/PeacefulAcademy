@@ -109,6 +109,10 @@ footer{margin:3rem 0 2rem;color:var(--muted);text-align:center}
           <div style="flex:1" class="card"><div class="muted">Non-Core</div><div class="num" id="kpiNonCore">0</div><div class="bar"><span id="barNonCore" style="width:0%"></span></div></div>
         </div>
         <div class="row" style="margin-top:1rem">
+          <div style="flex:1" class="card"><div class="muted">Avg Daily Hours</div><div class="num" id="kpiAvgDaily">0</div><div class="bar"><span id="barAvgDaily" style="width:0%"></span></div></div>
+          <div style="flex:1" class="card"><div class="muted">Days Attended</div><div class="num" id="kpiDaysAttended">0</div><div class="bar"><span id="barDaysAttended" style="width:0%"></span></div></div>
+        </div>
+        <div class="row" style="margin-top:1rem">
           <div style="flex:1"><label>Student</label><select id="dashStudent"></select></div>
           <div style="flex:1"><label>Academic Year</label><select id="dashYear"></select></div>
         </div>
@@ -570,8 +574,18 @@ async function renderDashboard(){
   const sId=Number($('#dashStudent').value || (students[0]?.id||0)); $('#dashStudent').value=sId||''; const yStart=Number($('#dashYear').value)||currentAcademicStart();
   const filtered=logs.filter(l=> l.studentId===sId && yearForDate(l.date)===yStart); const cMap=new Map(courses.map(c=>[c.id,c]));
   let total=0, core=0, home=0, nonCore=0; filtered.forEach(l=>{ const subj=cMap.get(l.courseId)?.subject; const hrs=Number(l.hours)||0; total+=hrs; if(CORE.has(subj)){ core+=hrs; if(l.location==='home') home+=hrs; } else { nonCore+=hrs; }});
+  
+  // Calculate average daily hours and days attended
+  const uniqueDays = new Set(filtered.map(l => l.date));
+  const daysAttended = uniqueDays.size;
+  const avgDailyHours = daysAttended > 0 ? total / daysAttended : 0;
+  
   $('#kpiTotal').textContent=fmt.format(total); $('#kpiCore').textContent=fmt.format(core); $('#kpiHome').textContent=fmt.format(home); $('#kpiNonCore').textContent=fmt.format(nonCore);
+  $('#kpiAvgDaily').textContent=fmt.format(avgDailyHours); $('#kpiDaysAttended').textContent=daysAttended;
+  
   $('#barTotal').style.width=Math.min(100,(total/1000)*100)+'%'; $('#barCore').style.width=Math.min(100,(core/600)*100)+'%'; $('#barHome').style.width=Math.min(100,(home/400)*100)+'%'; $('#barNonCore').style.width=Math.min(100,(nonCore/400)*100)+'%';
+  $('#barAvgDaily').style.width=Math.min(100,(avgDailyHours/8)*100)+'%'; $('#barDaysAttended').style.width=Math.min(100,(daysAttended/180)*100)+'%';
+  
   const recent = filtered.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,10); const tb=$('#recentTable tbody'); tb.innerHTML=''; recent.forEach(r=>{ const c=cMap.get(r.courseId); const tr=document.createElement('tr'); tr.innerHTML=`<td>${r.date}</td><td>${c?.title||''}</td><td class="right">${fmt.format(r.hours)}</td><td>${r.location==='home'?'Home':'Offsite'}</td><td class="muted">${r.notes||''}</td>`; tb.appendChild(tr); });
   $('#qaStudent').value=sId||''; $('#qaCourse').value=courses[0]?.id||''; $('#qaDate').value=todayISO();
 }
