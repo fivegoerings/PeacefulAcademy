@@ -1,4 +1,23 @@
 // Utility functions
+// Simple log sink that mirrors console to localStorage for the console page
+const LOG_STORAGE_KEY = 'pa_log_console_v1';
+function appendLog(level, args) {
+  try {
+    const now = new Date().toISOString();
+    const entry = { ts: now, level, msg: Array.from(args).map(a => {
+      try { return typeof a === 'string' ? a : JSON.stringify(a); } catch(_) { return String(a); }
+    }).join(' ') };
+    const arr = JSON.parse(localStorage.getItem(LOG_STORAGE_KEY) || '[]');
+    arr.push(entry);
+    if (arr.length > 2000) arr.splice(0, arr.length - 2000);
+    localStorage.setItem(LOG_STORAGE_KEY, JSON.stringify(arr));
+  } catch(_) {}
+}
+
+['log','info','warn','error'].forEach(l => {
+  const orig = console[l];
+  console[l] = function() { try { appendLog(l, arguments); } catch(_){}; return orig.apply(console, arguments); };
+});
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
@@ -102,6 +121,7 @@ async function dbCall(action, data = {}) {
 
 // Toast notification system
 function showToast(message, type = 'info') {
+  try { appendLog(type==='error'?'error':type==='warning'?'warn':'info', [message]); } catch(_){}
   const toast = document.createElement('div');
   toast.className = `toast toast-${type}`;
   toast.textContent = message;

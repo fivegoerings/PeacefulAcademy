@@ -1,6 +1,6 @@
-const CACHE_NAME = 'peaceful-academy-v2';
-const STATIC_CACHE = 'peaceful-academy-static-v2';
-const DYNAMIC_CACHE = 'peaceful-academy-dynamic-v2';
+const CACHE_NAME = 'peaceful-academy-v3';
+const STATIC_CACHE = 'peaceful-academy-static-v3';
+const DYNAMIC_CACHE = 'peaceful-academy-dynamic-v3';
 
 // Assets to cache immediately
 const STATIC_ASSETS = [

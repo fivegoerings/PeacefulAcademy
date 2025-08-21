@@ -478,7 +478,7 @@ export async function handler(event) {
     if (action === 'bulk.upsertAll') {
       try {
         const payload = data || {};
-        await sql`BEGIN`;
+        const resultSummary = { settings: 0, students: 0, courses: 0, logs: 0, portfolio: 0, files: 0 };
 
         // Settings: store each field as its own key
         if (payload.settings && typeof payload.settings === 'object') {
@@ -489,6 +489,7 @@ export async function handler(event) {
               VALUES (${key}, ${String(value)})
               ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
             `;
+            resultSummary.settings++;
           }
         }
 
@@ -506,6 +507,7 @@ export async function handler(event) {
                 notes = EXCLUDED.notes,
                 updated_at = NOW()
             `;
+            resultSummary.students++;
           }
         }
 
@@ -521,6 +523,7 @@ export async function handler(event) {
                 description = EXCLUDED.description,
                 updated_at = NOW()
             `;
+            resultSummary.courses++;
           }
         }
 
@@ -539,6 +542,7 @@ export async function handler(event) {
                 location = EXCLUDED.location,
                 notes = EXCLUDED.notes
             `;
+            resultSummary.logs++;
           }
         }
 
@@ -557,6 +561,7 @@ export async function handler(event) {
                 date = EXCLUDED.date,
                 file_id = EXCLUDED.file_id
             `;
+            resultSummary.portfolio++;
           }
         }
 
@@ -571,14 +576,13 @@ export async function handler(event) {
                 type = EXCLUDED.type,
                 size = EXCLUDED.size
             `;
+            resultSummary.files++;
           }
         }
 
-        await sql`COMMIT`;
-        return jsonResponse({ ok: true, message: 'Bulk upsert completed' });
+        return jsonResponse({ ok: true, message: 'Bulk upsert completed', counts: resultSummary });
       } catch (error) {
         console.error('bulk.upsertAll failed:', error);
-        try { await sql`ROLLBACK`; } catch(_) {}
         return errorResponse('Failed to upsert all data to Neon', 500);
       }
     }
