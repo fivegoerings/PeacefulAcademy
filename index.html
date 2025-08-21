@@ -296,6 +296,7 @@ footer{margin:3rem 0 2rem;color:var(--muted);text-align:center}
             <button id="scImportNeon" title="Replace local data with Neon data">Import from Neon</button>
             <button id="scBackupNeon" title="Save a full JSON snapshot into Neon backups">Backup to Neon</button>
             <button id="scRestoreNeon" title="Replace local data with the latest Neon backup">Restore from Neon</button>
+            <button id="scBackfillLogs" title="Fill missing student_name/course_title/subject in logs from Neon">Backfill Logs</button>
           </div>
         </div>
       </div>
@@ -827,6 +828,20 @@ $('#scRestoreNeon')?.addEventListener('click', async()=>{
     showNotification('Restored from Neon backup', 'success');
     renderDashboard(); renderStudents(); renderCourses(); renderLogsTable(); renderPortfolio(); renderReports();
   } catch(e){ console.error('Restore from Neon failed', e); appendLog('error',['Restore from Neon exception', String(e&&e.message||e)]); showNotification('Restore from Neon failed','error'); }
+});
+
+// Backfill Neon logs with student_name / course_title / subject
+$('#scBackfillLogs')?.addEventListener('click', async()=>{
+  try {
+    appendLog('info', ['Logs backfill started']);
+    const res = await fetch('/.netlify/functions/db', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ action: 'logs.backfill' }) });
+    const raw=await res.text(); let json=null; try{ json=JSON.parse(raw);}catch(_){ }
+    if(!res.ok || (json && json.error)){
+      const msg=(json&&json.error)||`HTTP ${res.status}`; appendLog('error',['Logs backfill failed', msg, 'raw:', raw.slice(0,500)]); showNotification('Backfill failed', 'error'); return;
+    }
+    showNotification(`Backfilled: student_name ${json.updated.student_name}, course_title ${json.updated.course_title}, subject ${json.updated.subject}`, 'success');
+    appendLog('info', ['Logs backfill completed', JSON.stringify(json.updated||{})]);
+  } catch(e){ console.error('Logs backfill exception', e); appendLog('error',['Logs backfill exception', String(e&&e.message||e)]); showNotification('Backfill failed', 'error'); }
 });
 
 /* Students */

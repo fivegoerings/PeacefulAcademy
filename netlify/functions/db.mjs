@@ -161,6 +161,8 @@ export async function handler(event) {
         id SERIAL PRIMARY KEY,
         student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
         course_id INTEGER NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+        student_name TEXT,
+        course_title TEXT,
         subject VARCHAR(100),
         date DATE NOT NULL,
         hours NUMERIC(5,2) NOT NULL,
@@ -206,6 +208,15 @@ export async function handler(event) {
     } catch (schemaError) {
       console.error('Schema creation failed:', schemaError);
       return errorResponse(`Schema creation failed: ${schemaError?.message || schemaError}`, 500);
+    }
+
+    // Ensure optional columns exist on existing installations
+    try {
+      await sql`ALTER TABLE logs ADD COLUMN IF NOT EXISTS student_name TEXT`;
+      await sql`ALTER TABLE logs ADD COLUMN IF NOT EXISTS course_title TEXT`;
+    } catch (alterError) {
+      // Non-fatal; continue
+      console.warn('Optional column ensure failed:', alterError);
     }
 
     // Health check
@@ -314,8 +325,8 @@ export async function handler(event) {
 
       try {
         const [result] = await sql`
-          INSERT INTO logs (student_id, course_id, subject, date, hours, location, notes)
-          VALUES (${parseInt(data.studentId)}, ${parseInt(data.courseId)}, ${data.subject || null}, 
+          INSERT INTO logs (student_id, course_id, student_name, course_title, subject, date, hours, location, notes)
+          VALUES (${parseInt(data.studentId)}, ${parseInt(data.courseId)}, ${data.studentName || null}, ${data.courseTitle || null}, ${data.subject || null}, 
                   ${data.date}, ${parseFloat(data.hours)}, ${data.location}, ${data.notes || null})
           RETURNING id
         `;
@@ -460,6 +471,49 @@ export async function handler(event) {
       }
     }
 
+    // Backfill logs: populate student_name, course_title, and subject from related tables
+    if (action === 'logs.backfill') {
+      try {
+        const [sRow] = await sql`
+          WITH upd AS (
+            UPDATE logs AS l
+            SET student_name = s.name
+            FROM students AS s
+            WHERE l.student_id = s.id AND (l.student_name IS NULL OR l.student_name = '')
+            RETURNING 1
+          )
+          SELECT COUNT(*)::int AS count FROM upd
+        `;
+
+        const [cRow] = await sql`
+          WITH upd AS (
+            UPDATE logs AS l
+            SET course_title = c.title
+            FROM courses AS c
+            WHERE l.course_id = c.id AND (l.course_title IS NULL OR l.course_title = '')
+            RETURNING 1
+          )
+          SELECT COUNT(*)::int AS count FROM upd
+        `;
+
+        const [subjRow] = await sql`
+          WITH upd AS (
+            UPDATE logs AS l
+            SET subject = c.subject
+            FROM courses AS c
+            WHERE l.course_id = c.id AND (l.subject IS NULL OR l.subject = '')
+            RETURNING 1
+          )
+          SELECT COUNT(*)::int AS count FROM upd
+        `;
+
+        return jsonResponse({ ok: true, updated: { student_name: sRow?.count || 0, course_title: cRow?.count || 0, subject: subjRow?.count || 0 } });
+      } catch (error) {
+        console.error('logs.backfill failed:', error);
+        return errorResponse(`Backfill failed: ${error?.message || error}`, 500);
+      }
+    }
+
     // Bulk: read all tables from Neon
     if (action === 'bulk.readAll') {
       try {
@@ -506,6 +560,8 @@ export async function handler(event) {
             id: r.id,
             studentId: r.student_id,
             courseId: r.course_id,
+            studentName: r.student_name || null,
+            courseTitle: r.course_title || null,
             subject: r.subject || null,
             date: r.date,
             hours: parseFloat(r.hours),
