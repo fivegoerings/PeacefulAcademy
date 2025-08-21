@@ -7,6 +7,8 @@
 
 import { 
   getNetlifyContext, 
+  getPlatformEnvironment,
+  getEffectiveEnvironment,
   getDatabaseUrl, 
   getEnvironmentConfig, 
   getEnvironmentSettings,
@@ -25,18 +27,23 @@ const testContexts = [
 ];
 
 testContexts.forEach(context => {
-  console.log(`\n--- Testing Context: ${context} ---`);
+  console.log(`\n--- Testing NETLIFY_CONTEXT: ${context} ---`);
   
   // Set the context for testing
   process.env.NETLIFY_CONTEXT = context;
+  delete process.env.NODE_ENV; // Clear NODE_ENV to test NETLIFY_CONTEXT only
   
   // Test all functions
-  console.log('Context:', getNetlifyContext());
+  console.log('Netlify Context:', getNetlifyContext());
+  console.log('Platform Env:', getPlatformEnvironment());
+  console.log('Effective Context:', getEffectiveEnvironment());
   console.log('Database URL:', getDatabaseUrl() ? 'SET' : 'NOT SET');
   
   const config = getEnvironmentConfig();
   console.log('Environment Config:', {
-    context: config.context,
+    netlifyContext: config.netlifyContext,
+    platformEnv: config.platformEnv,
+    effectiveContext: config.context,
     isProduction: config.isProduction,
     isPreview: config.isPreview,
     isBranch: config.isBranch,
@@ -51,6 +58,27 @@ testContexts.forEach(context => {
     enableBackups: settings.enableBackups
   });
 });
+
+// Test NODE_ENV override scenarios
+console.log('\n--- Testing NODE_ENV Override Scenarios ---');
+
+// Test NODE_ENV=prod override
+console.log('\n--- Testing NODE_ENV=prod override ---');
+process.env.NETLIFY_CONTEXT = 'deploy-preview';
+process.env.NODE_ENV = 'prod';
+console.log('Netlify Context:', getNetlifyContext());
+console.log('Platform Env:', getPlatformEnvironment());
+console.log('Effective Context:', getEffectiveEnvironment());
+console.log('Database URL:', getDatabaseUrl() ? 'SET' : 'NOT SET');
+
+// Test NODE_ENV=dev override
+console.log('\n--- Testing NODE_ENV=dev override ---');
+process.env.NETLIFY_CONTEXT = 'production';
+process.env.NODE_ENV = 'dev';
+console.log('Netlify Context:', getNetlifyContext());
+console.log('Platform Env:', getPlatformEnvironment());
+console.log('Effective Context:', getEffectiveEnvironment());
+console.log('Database URL:', getDatabaseUrl() ? 'SET' : 'NOT SET');
 
 // Test with no context set
 console.log('\n--- Testing with no NETLIFY_CONTEXT ---');

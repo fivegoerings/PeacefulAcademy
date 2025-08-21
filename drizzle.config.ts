@@ -1,11 +1,33 @@
 import { defineConfig } from 'drizzle-kit';
 
+// Get the current platform environment
+const getPlatformEnvironment = () => process.env.NODE_ENV || 'development';
+
 // Get the current Netlify context
 const getNetlifyContext = () => process.env.NETLIFY_CONTEXT || 'development';
 
+// Determine the effective environment by combining NETLIFY_CONTEXT and NODE_ENV
+const getEffectiveEnvironment = () => {
+  const netlifyContext = getNetlifyContext();
+  const platformEnv = getPlatformEnvironment();
+  
+  // If NODE_ENV is explicitly set to 'prod', treat as production
+  if (platformEnv === 'prod') {
+    return 'production';
+  }
+  
+  // If NODE_ENV is explicitly set to 'dev', treat as development
+  if (platformEnv === 'dev') {
+    return 'development';
+  }
+  
+  // Otherwise, use NETLIFY_CONTEXT
+  return netlifyContext;
+};
+
 // Get the appropriate database URL based on the current context
 const getDatabaseUrl = () => {
-  const context = getNetlifyContext();
+  const context = getEffectiveEnvironment();
   
   switch (context) {
     case 'production':

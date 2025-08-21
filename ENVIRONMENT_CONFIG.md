@@ -1,15 +1,28 @@
-# Environment Configuration with NETLIFY_CONTEXT
+# Environment Configuration with NETLIFY_CONTEXT and NODE_ENV
 
-This project uses the `NETLIFY_CONTEXT` environment variable to automatically determine which database environment to use based on the deployment context.
+This project uses both `NETLIFY_CONTEXT` and `NODE_ENV` environment variables to automatically determine which database environment to use based on the deployment context and platform configuration.
 
 ## How It Works
 
-The `NETLIFY_CONTEXT` environment variable is automatically set by Netlify and contains one of the following values:
+The system uses two environment variables to determine the effective environment:
 
+### NETLIFY_CONTEXT
+Automatically set by Netlify and contains one of the following values:
 - `production` - Production deployments
 - `deploy-preview` - Pull request preview deployments
 - `branch-deploy` - Branch deployments
 - `development` - Local development (default fallback)
+
+### NODE_ENV
+Platform environment variable that can override NETLIFY_CONTEXT:
+- `prod` - Forces production environment (overrides NETLIFY_CONTEXT)
+- `dev` - Forces development environment (overrides NETLIFY_CONTEXT)
+- Any other value - Uses NETLIFY_CONTEXT as fallback
+
+### Priority Order
+1. If `NODE_ENV=prod` → Use production environment
+2. If `NODE_ENV=dev` → Use development environment
+3. Otherwise → Use `NETLIFY_CONTEXT` value
 
 ## Environment Variables Setup
 
@@ -37,29 +50,44 @@ NETLIFY_DATABASE_URL_BRANCH=postgresql://user:password@host:port/branch_database
 NETLIFY_DATABASE_URL_DEV=postgresql://user:password@host:port/dev_database
 ```
 
+### Platform Environment Variables
+
+#### NODE_ENV (Optional)
+```
+NODE_ENV=prod    # Force production environment
+NODE_ENV=dev     # Force development environment
+```
+
 ### Fallback Behavior
 
 If environment-specific variables are not set, the system will fall back to `NETLIFY_DATABASE_URL` for all contexts.
 
-## Database URL Priority
+## Environment Detection Priority
 
-The system uses the following priority order for each context:
+### 1. Environment Determination
+1. If `NODE_ENV=prod` → Use production environment
+2. If `NODE_ENV=dev` → Use development environment
+3. Otherwise → Use `NETLIFY_CONTEXT` value
 
-### Production Context
+### 2. Database URL Priority
+
+Once the environment is determined, the system uses the following priority order:
+
+#### Production Context
 1. `NETLIFY_DATABASE_URL`
 2. `DATABASE_URL`
 
-### Deploy Preview Context
+#### Deploy Preview Context
 1. `NETLIFY_DATABASE_URL_PREVIEW`
 2. `DATABASE_URL_PREVIEW`
 3. `NETLIFY_DATABASE_URL` (fallback)
 
-### Branch Deploy Context
+#### Branch Deploy Context
 1. `NETLIFY_DATABASE_URL_BRANCH`
 2. `DATABASE_URL_BRANCH`
 3. `NETLIFY_DATABASE_URL` (fallback)
 
-### Development Context
+#### Development Context
 1. `NETLIFY_DATABASE_URL_DEV`
 2. `DATABASE_URL_DEV`
 3. `NETLIFY_DATABASE_URL` (fallback)
@@ -69,8 +97,8 @@ The system uses the following priority order for each context:
 ### Database Configuration (`netlify/functions/db-config.mjs`)
 
 This utility provides:
-- Environment detection via `NETLIFY_CONTEXT`
-- Database URL selection based on context
+- Environment detection via `NETLIFY_CONTEXT` and `NODE_ENV`
+- Database URL selection based on effective context
 - Connection validation
 - Environment-specific settings
 
@@ -115,6 +143,8 @@ logEnvironmentInfo();
 // Get environment configuration
 const config = getEnvironmentConfig();
 console.log(`Running in ${config.context} environment`);
+console.log(`NETLIFY_CONTEXT: ${config.netlifyContext}`);
+console.log(`NODE_ENV: ${config.platformEnv}`);
 
 // Use environment-specific settings
 if (config.isProduction) {
@@ -145,6 +175,10 @@ if (!isValid) {
 export NETLIFY_CONTEXT=development
 export NETLIFY_DATABASE_URL_DEV=your_dev_db_url
 
+# Or use NODE_ENV to force development
+export NODE_ENV=dev
+export NETLIFY_DATABASE_URL_DEV=your_dev_db_url
+
 # Run development server
 npm run dev
 ```
@@ -161,6 +195,7 @@ Deploy to the main branch to trigger production environment.
 ```bash
 # In Netlify function logs
 console.log('NETLIFY_CONTEXT:', process.env.NETLIFY_CONTEXT);
+console.log('NODE_ENV:', process.env.NODE_ENV);
 console.log('Database URL:', process.env.NETLIFY_DATABASE_URL);
 ```
 

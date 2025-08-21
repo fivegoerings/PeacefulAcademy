@@ -2,7 +2,7 @@
 
 ## Overview
 
-Successfully implemented environment detection using the `NETLIFY_CONTEXT` environment variable to automatically determine which database environment to use based on the deployment context.
+Successfully implemented environment detection using both `NETLIFY_CONTEXT` and `NODE_ENV` environment variables to automatically determine which database environment to use based on the deployment context and platform configuration.
 
 ## What Was Implemented
 
@@ -10,8 +10,9 @@ Successfully implemented environment detection using the `NETLIFY_CONTEXT` envir
 
 Created a comprehensive configuration utility that provides:
 
-- **Environment Detection**: Reads `NETLIFY_CONTEXT` to determine current environment
-- **Database URL Selection**: Automatically selects appropriate database URL based on context
+- **Environment Detection**: Reads both `NETLIFY_CONTEXT` and `NODE_ENV` to determine current environment
+- **Effective Environment Logic**: Combines both variables with priority (NODE_ENV overrides NETLIFY_CONTEXT)
+- **Database URL Selection**: Automatically selects appropriate database URL based on effective context
 - **Connection Management**: Provides utilities for creating and validating database connections
 - **Environment Settings**: Returns environment-specific configuration settings
 - **Logging**: Includes debug logging for environment information
@@ -37,7 +38,11 @@ Enhanced the Drizzle ORM configuration to:
 
 The system now supports the following environment variables:
 
-#### Primary Variables
+#### Platform Variables
+- `NODE_ENV` - Platform environment (`prod`, `dev`, or other values)
+- `NETLIFY_CONTEXT` - Netlify deployment context (automatically set)
+
+#### Database Variables
 - `NETLIFY_DATABASE_URL` - Production database URL
 - `NETLIFY_DATABASE_URL_PREVIEW` - Preview environment database URL
 - `NETLIFY_DATABASE_URL_BRANCH` - Branch deployment database URL  
@@ -49,28 +54,39 @@ The system now supports the following environment variables:
 - `DATABASE_URL_BRANCH` - Branch fallback
 - `DATABASE_URL_DEV` - Development fallback
 
-## Environment Contexts Supported
+## Environment Detection Logic
 
-### Production (`production`)
+### Priority Order
+1. **NODE_ENV=prod** → Forces production environment (overrides NETLIFY_CONTEXT)
+2. **NODE_ENV=dev** → Forces development environment (overrides NETLIFY_CONTEXT)
+3. **NETLIFY_CONTEXT** → Uses Netlify's deployment context
+
+### Supported Contexts
+
+#### Production (`production`)
+- Triggered by: `NODE_ENV=prod` or `NETLIFY_CONTEXT=production`
 - Uses: `NETLIFY_DATABASE_URL` or `DATABASE_URL`
 - Settings: Production-optimized (10 connections, 30s timeout, security enabled)
 
-### Deploy Preview (`deploy-preview`)
+#### Deploy Preview (`deploy-preview`)
+- Triggered by: `NETLIFY_CONTEXT=deploy-preview` (unless overridden by NODE_ENV)
 - Uses: `NETLIFY_DATABASE_URL_PREVIEW` → `DATABASE_URL_PREVIEW` → `NETLIFY_DATABASE_URL`
 - Settings: Development-optimized (5 connections, 15s timeout, debug enabled)
 
-### Branch Deploy (`branch-deploy`)
+#### Branch Deploy (`branch-deploy`)
+- Triggered by: `NETLIFY_CONTEXT=branch-deploy` (unless overridden by NODE_ENV)
 - Uses: `NETLIFY_DATABASE_URL_BRANCH` → `DATABASE_URL_BRANCH` → `NETLIFY_DATABASE_URL`
 - Settings: Development-optimized (5 connections, 15s timeout, debug enabled)
 
-### Development (`development`)
+#### Development (`development`)
+- Triggered by: `NODE_ENV=dev` or `NETLIFY_CONTEXT=development`
 - Uses: `NETLIFY_DATABASE_URL_DEV` → `DATABASE_URL_DEV` → `NETLIFY_DATABASE_URL`
 - Settings: Development-optimized (5 connections, 15s timeout, debug enabled)
 
 ## Key Features
 
 ### Automatic Environment Detection
-The system automatically detects the current environment using `NETLIFY_CONTEXT` and applies appropriate settings.
+The system automatically detects the current environment using both `NETLIFY_CONTEXT` and `NODE_ENV` with priority logic, and applies appropriate settings.
 
 ### Fallback Mechanism
 If environment-specific variables are not set, the system gracefully falls back to the production database URL.
@@ -89,7 +105,8 @@ Environment information is logged for debugging and monitoring purposes.
 ## Testing
 
 Created a test script (`test-env-config.mjs`) that verifies:
-- Environment detection works correctly
+- Environment detection works correctly with both NETLIFY_CONTEXT and NODE_ENV
+- NODE_ENV override logic works as expected
 - Database URL selection follows the correct priority order
 - Environment-specific settings are applied properly
 - Fallback mechanisms work as expected
@@ -122,4 +139,4 @@ To use this implementation:
 3. Deploy and test the different environments
 4. Monitor logs to ensure proper environment detection
 
-The system is now ready to automatically handle different database environments based on the `NETLIFY_CONTEXT`!
+The system is now ready to automatically handle different database environments based on both `NETLIFY_CONTEXT` and `NODE_ENV`!

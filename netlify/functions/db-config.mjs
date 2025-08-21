@@ -1,7 +1,15 @@
 /**
- * Database configuration utility that uses NETLIFY_CONTEXT to determine environment
+ * Database configuration utility that uses NETLIFY_CONTEXT and NODE_ENV to determine environment
  * and select the appropriate database URL.
  */
+
+/**
+ * Get the current platform environment
+ * @returns {string} The current platform (prod, dev, or development)
+ */
+export function getPlatformEnvironment() {
+  return process.env.NODE_ENV || 'development';
+}
 
 /**
  * Get the current Netlify context
@@ -12,11 +20,33 @@ export function getNetlifyContext() {
 }
 
 /**
+ * Determine the effective environment by combining NETLIFY_CONTEXT and NODE_ENV
+ * @returns {string} The effective environment context
+ */
+export function getEffectiveEnvironment() {
+  const netlifyContext = getNetlifyContext();
+  const platformEnv = getPlatformEnvironment();
+  
+  // If NODE_ENV is explicitly set to 'prod', treat as production
+  if (platformEnv === 'prod') {
+    return 'production';
+  }
+  
+  // If NODE_ENV is explicitly set to 'dev', treat as development
+  if (platformEnv === 'dev') {
+    return 'development';
+  }
+  
+  // Otherwise, use NETLIFY_CONTEXT
+  return netlifyContext;
+}
+
+/**
  * Get the appropriate database URL based on the current context
  * @returns {string} The database URL for the current environment
  */
 export function getDatabaseUrl() {
-  const context = getNetlifyContext();
+  const context = getEffectiveEnvironment();
   
   switch (context) {
     case 'production':
@@ -39,17 +69,21 @@ export function getDatabaseUrl() {
  * @returns {Object} Configuration object with environment info
  */
 export function getEnvironmentConfig() {
-  const context = getNetlifyContext();
+  const netlifyContext = getNetlifyContext();
+  const platformEnv = getPlatformEnvironment();
+  const effectiveContext = getEffectiveEnvironment();
   const dbUrl = getDatabaseUrl();
   
   return {
-    context,
+    netlifyContext,
+    platformEnv,
+    context: effectiveContext,
     databaseUrl: dbUrl,
-    isProduction: context === 'production',
-    isPreview: context === 'deploy-preview',
-    isBranch: context === 'branch-deploy',
-    isDevelopment: context === 'development',
-    environment: context
+    isProduction: effectiveContext === 'production',
+    isPreview: effectiveContext === 'deploy-preview',
+    isBranch: effectiveContext === 'branch-deploy',
+    isDevelopment: effectiveContext === 'development',
+    environment: effectiveContext
   };
 }
 
@@ -89,7 +123,9 @@ export async function validateDatabaseConnection(sql) {
 export function logEnvironmentInfo() {
   const config = getEnvironmentConfig();
   console.log('🌍 Environment Configuration:', {
-    context: config.context,
+    netlifyContext: config.netlifyContext,
+    platformEnv: config.platformEnv,
+    effectiveContext: config.context,
     environment: config.environment,
     isProduction: config.isProduction,
     databaseUrl: config.databaseUrl ? `${config.databaseUrl.substring(0, 20)}...` : 'NOT SET'
