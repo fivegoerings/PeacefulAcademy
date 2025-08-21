@@ -117,7 +117,7 @@ footer{margin:3rem 0 2rem;color:var(--muted);text-align:center}
           <div style="flex:1"><label>Academic Year</label><select id="dashYear"></select></div>
         </div>
         <table id="recentTable" style="margin-top:.8rem"><thead><tr><th>Date</th><th>Course</th><th class="right">Hours</th><th>Loc</th><th>Notes</th></tr></thead><tbody></tbody></table>
-        <div class="row" style="margin-top:1rem">
+        <div class="row hide" style="margin-top:1rem">
           <button class="admin-button" onclick="window.open('./admin/index.html', '_blank')" style="background:linear-gradient(135deg,#dc2626,#b91c1c);border:none;color:white;padding:.75rem 1.5rem;border-radius:10px;font-weight:600;cursor:pointer;transition:all 0.2s ease;">
             <span style="margin-right:8px;">⚙️</span>Open Admin Panel
           </button>
@@ -129,7 +129,7 @@ footer{margin:3rem 0 2rem;color:var(--muted);text-align:center}
           <div><label>Student</label><select id="qaStudent"></select></div>
           <div><label>Course</label><select id="qaCourse"></select></div>
           <div><label>Date</label><input type="date" id="qaDate"></div>
-          <div><label>Hours</label><input type="number" step="0.25" min="0" id="qaHours"></div>
+                     <div><label>Time (minutes)</label><input type="number" step="1" min="0" id="qaMinutes" placeholder="e.g., 90 for 1.5 hours"></div>
           <div><label>Location</label><select id="qaLocation"><option value="home">Home</option><option value="offsite">Offsite</option></select></div>
           <div><label>Notes</label><input id="qaNotes" placeholder="Lesson, lab, trip…"></div>
         </div>
@@ -184,7 +184,7 @@ footer{margin:3rem 0 2rem;color:var(--muted);text-align:center}
         <div><label>Student</label><select id="lgStudent"></select></div>
         <div><label>Course</label><select id="lgCourse"></select></div>
         <div><label>Date</label><input type="date" id="lgDate"></div>
-        <div><label>Hours</label><input type="number" step="0.25" min="0" id="lgHours"></div>
+                 <div><label>Time (minutes)</label><input type="number" step="1" min="0" id="lgMinutes" placeholder="e.g., 90 for 1.5 hours"></div>
         <div><label>Location</label><select id="lgLocation"><option value="home">Home</option><option value="offsite">Offsite</option></select></div>
         <div><label>Notes</label><input id="lgNotes" placeholder="Activity details"></div>
       </div>
@@ -363,9 +363,13 @@ const CORE = new Set(['Reading','Language Arts','Mathematics','Science','Social 
 const objectUrlCache = new Map();
 
 // Input validation helpers
-function validateHours(hours) {
-  const num = Number(hours);
-  return !isNaN(num) && num >= 0.25 && num <= 24;
+function validateMinutes(minutes) {
+  const num = Number(minutes);
+  return !isNaN(num) && num >= 1 && num <= 1440; // 1 minute to 24 hours (1440 minutes)
+}
+
+function minutesToHours(minutes) {
+  return Number(minutes) / 60;
 }
 
 function validateDate(date) {
@@ -928,11 +932,14 @@ $('#coClear')?.addEventListener('click', ()=>{$$('#view-courses input, #view-cou
 $('#qaToday')?.addEventListener('click', ()=> $('#qaDate').value=todayISO());
 $('#lgToday2')?.addEventListener('click', ()=> $('#lgDate').value=todayISO());
 $('#qaAdd')?.addEventListener('click', async()=>{
+  const minutes = Number($('#qaMinutes').value);
+  const hours = minutesToHours(minutes);
+  
   const obj={ 
     studentId:Number($('#qaStudent').value), 
     courseId:Number($('#qaCourse').value), 
     date:$('#qaDate').value||todayISO(), 
-    hours:Number($('#qaHours').value), 
+    hours: hours, 
     location:$('#qaLocation').value, 
     notes:$('#qaNotes').value.trim() 
   };
@@ -941,7 +948,7 @@ $('#qaAdd')?.addEventListener('click', async()=>{
   const errors = [];
   if(!obj.studentId){ errors.push('Please select a student'); }
   if(!obj.courseId){ errors.push('Please select a course'); }
-  if(!validateHours(obj.hours)){ errors.push('Please enter valid hours (0.25 to 24)'); }
+  if(!validateMinutes(minutes)){ errors.push('Please enter valid minutes (1 to 1440)'); }
   if(!validateDate(obj.date)){ errors.push('Please enter a valid date'); }
   if(obj.notes.length > 500) { errors.push('Notes are too long (max 500 characters)'); }
   
@@ -956,7 +963,7 @@ $('#qaAdd')?.addEventListener('click', async()=>{
     const c=courses.find(x=>x.id===obj.courseId), s=students.find(x=>x.id===obj.studentId);
     await netlifySubmit('log-entry', { student:s?.name||String(obj.studentId), course:c?.title||String(obj.courseId), subject:c?.subject||'', date:obj.date, hours:String(obj.hours), location:obj.location, notes:obj.notes });
     await saveToNeon('log', { studentId: obj.studentId, studentName: s?.name||String(obj.studentId), courseId: obj.courseId, courseTitle: c?.title||String(obj.courseId), subject: c?.subject||'', date: obj.date, hours: obj.hours, location: obj.location, notes: obj.notes });
-    $('#qaHours').value=''; $('#qaNotes').value=''; 
+    $('#qaMinutes').value=''; $('#qaNotes').value=''; 
     renderDashboard(); renderLogsTable(); renderReports();
     showNotification('Log entry added successfully!', 'success');
   } catch(e) {
@@ -965,11 +972,14 @@ $('#qaAdd')?.addEventListener('click', async()=>{
   }
 });
 $('#lgAdd')?.addEventListener('click', async()=>{
+  const minutes = Number($('#lgMinutes').value);
+  const hours = minutesToHours(minutes);
+  
   const obj={ 
     studentId:Number($('#lgStudent').value), 
     courseId:Number($('#lgCourse').value), 
     date:$('#lgDate').value||todayISO(), 
-    hours:Number($('#lgHours').value), 
+    hours: hours, 
     location:$('#lgLocation').value, 
     notes:$('#lgNotes').value.trim() 
   };
@@ -978,7 +988,7 @@ $('#lgAdd')?.addEventListener('click', async()=>{
   const errors = [];
   if(!obj.studentId){ errors.push('Please select a student'); }
   if(!obj.courseId){ errors.push('Please select a course'); }
-  if(!validateHours(obj.hours)){ errors.push('Please enter valid hours (0.25 to 24)'); }
+  if(!validateMinutes(minutes)){ errors.push('Please enter valid minutes (1 to 1440)'); }
   if(!validateDate(obj.date)){ errors.push('Please enter a valid date'); }
   if(obj.notes.length > 500) { errors.push('Notes are too long (max 500 characters)'); }
   
@@ -993,7 +1003,7 @@ $('#lgAdd')?.addEventListener('click', async()=>{
     const c=courses.find(x=>x.id===obj.courseId), s=students.find(x=>x.id===obj.studentId);
     await netlifySubmit('log-entry', { student:s?.name||String(obj.studentId), course:c?.title||String(obj.courseId), subject:c?.subject||'', date:obj.date, hours:String(obj.hours), location:obj.location, notes:obj.notes });
     await saveToNeon('log', { studentId: obj.studentId, studentName: s?.name||String(obj.studentId), courseId: obj.courseId, courseTitle: c?.title||String(obj.courseId), subject: c?.subject||'', date: obj.date, hours: obj.hours, location: obj.location, notes: obj.notes });
-    $('#lgHours').value=''; $('#lgNotes').value=''; 
+    $('#lgMinutes').value=''; $('#lgNotes').value=''; 
     renderLogsTable(); renderDashboard(); renderReports();
     showNotification('Log entry added successfully!', 'success');
   } catch(e) {
