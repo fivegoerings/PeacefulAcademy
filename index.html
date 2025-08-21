@@ -723,8 +723,13 @@ $('#scExportNeon')?.addEventListener('click', async()=>{
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ action: 'bulk.upsertAll', data: payload })
     });
-    const json = await res.json().catch(()=>({}));
-    if(!res.ok || json.error){ appendLog('error', ['Export to Neon failed', json.error || `HTTP ${res.status}`]); throw new Error(json.error || `HTTP ${res.status}`); }
+    const raw = await res.text();
+    let json = null; try{ json = JSON.parse(raw); } catch(_){}
+    if(!res.ok || (json && json.error)){
+      const msg = (json && json.error) ? json.error : `HTTP ${res.status}`;
+      appendLog('error', ['Export to Neon failed', msg, 'raw:', raw.slice(0,500)]);
+      throw new Error(msg);
+    }
     appendLog('info', ['Export to Neon completed', JSON.stringify(json.counts||{})]);
     showNotification('Exported to Neon successfully!', 'success');
   } catch(e){
@@ -744,8 +749,13 @@ $('#scImportNeon')?.addEventListener('click', async()=>{
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ action: 'bulk.readAll' })
     });
-    const json = await res.json();
-    if(!res.ok || json.error){ appendLog('error', ['Import from Neon failed', json.error || `HTTP ${res.status}`]); throw new Error(json.error || `HTTP ${res.status}`); }
+    const raw = await res.text();
+    let json = null; try{ json = JSON.parse(raw); } catch(_){}
+    if(!res.ok || (json && json.error)){
+      const msg = (json && json.error) ? json.error : `HTTP ${res.status}`;
+      appendLog('error', ['Import from Neon failed', msg, 'raw:', raw.slice(0,500)]);
+      throw new Error(msg);
+    }
     const data = json.data || {};
     await Promise.all(['students','courses','logs','portfolio','files'].map(s=>new Promise((res2,rej)=>{ const r=tx([s],'readwrite').objectStore(s).clear(); r.onsuccess=()=>res2(); r.onerror=()=>rej(r.error);}))); 
     if(data.settings) setSettings(data.settings);
