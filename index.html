@@ -1606,6 +1606,10 @@ function tx(names,mode='readonly'){ return db.transaction(names,mode); }
 const DB={ 
   add:(s,o)=>new Promise((res,rej)=>{
     try {
+      if(!db) {
+        rej(new Error('Database not initialized'));
+        return;
+      }
       const r=tx([s],'readwrite').objectStore(s).add(o); 
       r.onsuccess=()=>res(r.result); 
       r.onerror=(e)=>{console.error('DB add error:', e); rej(r.error);}
@@ -1616,6 +1620,10 @@ const DB={
   }), 
   put:(s,o)=>new Promise((res,rej)=>{
     try {
+      if(!db) {
+        rej(new Error('Database not initialized'));
+        return;
+      }
       const r=tx([s],'readwrite').objectStore(s).put(o); 
       r.onsuccess=()=>res(r.result); 
       r.onerror=(e)=>{console.error('DB put error:', e); rej(r.error);}
@@ -1626,6 +1634,10 @@ const DB={
   }), 
   get:(s,k)=>new Promise((res,rej)=>{
     try {
+      if(!db) {
+        rej(new Error('Database not initialized'));
+        return;
+      }
       const r=tx([s]).objectStore(s).get(k); 
       r.onsuccess=()=>res(r.result); 
       r.onerror=(e)=>{console.error('DB get error:', e); rej(r.error);}
@@ -1636,6 +1648,10 @@ const DB={
   }), 
   all:(s)=>new Promise((res,rej)=>{
     try {
+      if(!db) {
+        rej(new Error('Database not initialized'));
+        return;
+      }
       const r=tx([s]).objectStore(s).getAll(); 
       r.onsuccess=()=>res(r.result || []); 
       r.onerror=(e)=>{console.error('DB all error:', e); rej(r.error);}
@@ -1646,6 +1662,10 @@ const DB={
   }), 
   del:(s,k)=>new Promise((res,rej)=>{
     try {
+      if(!db) {
+        rej(new Error('Database not initialized'));
+        return;
+      }
       const r=tx([s],'readwrite').objectStore(s).delete(k); 
       r.onsuccess=()=>res(); 
       r.onerror=(e)=>{console.error('DB delete error:', e); rej(r.error);}
@@ -1653,7 +1673,26 @@ const DB={
       console.error('DB delete exception:', e);
       rej(e);
     }
-  }) 
+  }),
+  clearAll:()=>new Promise((res,rej)=>{
+    try {
+      if(!db) {
+        rej(new Error('Database not initialized'));
+        return;
+      }
+      const transaction = db.transaction(['students','courses','logs','portfolio','files'], 'readwrite');
+      Promise.all(['students','courses','logs','portfolio','files'].map(storeName => 
+        new Promise((res, rej) => {
+          const request = transaction.objectStore(storeName).clear();
+          request.onsuccess = () => res();
+          request.onerror = () => rej(request.error);
+        })
+      )).then(res).catch(rej);
+    } catch(e) {
+      console.error('DB clearAll exception:', e);
+      rej(e);
+    }
+  })
 };
 
 // Clean up object URLs to prevent memory leaks
@@ -1702,6 +1741,57 @@ async function netlifySubmitFormData(formName, fd){
 
 // Enhanced notification system
 function showNotification(message, type = 'info') {
+
+// Data validation functions
+function validateImportData(data) {
+  const errors = [];
+  
+  if (!data || typeof data !== 'object') {
+    errors.push('Invalid data format');
+    return errors;
+  }
+  
+  // Validate students
+  if (data.students && !Array.isArray(data.students)) {
+    errors.push('Students must be an array');
+  } else if (data.students) {
+    data.students.forEach((student, index) => {
+      if (!student || typeof student !== 'object') {
+        errors.push(`Student ${index + 1} is invalid`);
+      } else if (!student.name || typeof student.name !== 'string') {
+        errors.push(`Student ${index + 1} must have a valid name`);
+      }
+    });
+  }
+  
+  // Validate courses
+  if (data.courses && !Array.isArray(data.courses)) {
+    errors.push('Courses must be an array');
+  } else if (data.courses) {
+    data.courses.forEach((course, index) => {
+      if (!course || typeof course !== 'object') {
+        errors.push(`Course ${index + 1} is invalid`);
+      } else if (!course.title || typeof course.title !== 'string') {
+        errors.push(`Course ${index + 1} must have a valid title`);
+      }
+    });
+  }
+  
+  // Validate logs
+  if (data.logs && !Array.isArray(data.logs)) {
+    errors.push('Logs must be an array');
+  } else if (data.logs) {
+    data.logs.forEach((log, index) => {
+      if (!log || typeof log !== 'object') {
+        errors.push(`Log ${index + 1} is invalid`);
+      } else if (!log.studentId || !log.courseId || !log.date) {
+        errors.push(`Log ${index + 1} must have studentId, courseId, and date`);
+      }
+    });
+  }
+  
+  return errors;
+}
   const notification = document.createElement('div');
   notification.className = `notification ${type}`;
   notification.textContent = message;
@@ -1837,8 +1927,98 @@ $('#scSave')?.addEventListener('click', ()=>{
 });
 $('#scReset')?.addEventListener('click', ()=>{ if(confirm('Reset to defaults?')) setSettings({name:'Peaceful Academy of Kansas City, Missouri',phone:'',address:'',yearStart:'07-01'}); });
 $('#scExportAll')?.addEventListener('click', async()=>{ const blob=new Blob([JSON.stringify({settings:getSettings(),students:await listStudents(),courses:await listCourses(),logs:await listLogs(),portfolio:await listPortfolio()},null,2)],{type:'application/json'}); const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:'peaceful-academy-backup.json'}); a.click(); });
-$('#scImportAll')?.addEventListener('change', async(e)=>{ const f=e.target.files?.[0]; if(!f) return; if(!confirm('Import will REPLACE existing data. Continue?')) return; const data=JSON.parse(await f.text()); await Promise.all(['students','courses','logs','portfolio','files'].map(s=>new Promise((res,rej)=>{ const r=tx([s],'readwrite').objectStore(s).clear(); r.onsuccess=()=>res(); r.onerror=()=>rej(r.error);}))); if(data.settings) setSettings(data.settings); for(const s of (data.students||[])) await DB.add('students', s); for(const c of (data.courses||[])) await DB.add('courses', c); for(const l of (data.logs||[])) await DB.add('logs', l); for(const p of (data.portfolio||[])) await DB.add('portfolio', p); alert('Imported.'); renderDashboard(); renderStudents(); renderCourses(); renderLogsTable(); renderPortfolio(); renderReports(); });
-$('#scWipe')?.addEventListener('click', async()=>{ if(!confirm('Erase ALL data?')) return; await Promise.all(['students','courses','logs','portfolio','files'].map(s=>new Promise((res,rej)=>{ const r=tx([s],'readwrite').objectStore(s).clear(); r.onsuccess=()=>res(); r.onerror=()=>rej(r.error);}))); alert('Cleared.'); renderDashboard(); renderStudents(); renderCourses(); renderLogsTable(); renderPortfolio(); renderReports(); });
+$('#scImportAll')?.addEventListener('change', async(e)=>{ 
+  try {
+    const f=e.target.files?.[0]; 
+    if(!f) return; 
+    if(!confirm('Import will REPLACE existing data. Continue?')) return; 
+    
+    const data=JSON.parse(await f.text()); 
+    
+    // Validate data structure
+    const validationErrors = validateImportData(data);
+    if(validationErrors.length > 0) {
+      showNotification('Invalid file format: ' + validationErrors.join(', '), 'error');
+      return;
+    }
+    
+    // Clear all stores
+    await DB.clearAll();
+    
+    // Import settings if present
+    if(data.settings) setSettings(data.settings); 
+    
+    // Import data with validation and progress tracking
+    let totalImported = 0;
+    const totalItems = (data.students?.length || 0) + (data.courses?.length || 0) + (data.logs?.length || 0) + (data.portfolio?.length || 0);
+    
+    if(Array.isArray(data.students)) {
+      for(const s of data.students) {
+        if(s && typeof s === 'object') {
+          await DB.add('students', s);
+          totalImported++;
+        }
+      }
+    }
+    
+    if(Array.isArray(data.courses)) {
+      for(const c of data.courses) {
+        if(c && typeof c === 'object') {
+          await DB.add('courses', c);
+          totalImported++;
+        }
+      }
+    }
+    
+    if(Array.isArray(data.logs)) {
+      for(const l of data.logs) {
+        if(l && typeof l === 'object') {
+          await DB.add('logs', l);
+          totalImported++;
+        }
+      }
+    }
+    
+    if(Array.isArray(data.portfolio)) {
+      for(const p of data.portfolio) {
+        if(p && typeof p === 'object') {
+          await DB.add('portfolio', p);
+          totalImported++;
+        }
+      }
+    }
+    
+    showNotification(`Data imported successfully! ${totalImported} items imported.`, 'success'); 
+    renderDashboard(); 
+    renderStudents(); 
+    renderCourses(); 
+    renderLogsTable(); 
+    renderPortfolio(); 
+    renderReports(); 
+  } catch(error) {
+    console.error('Import error:', error);
+    showNotification('Error importing data: ' + error.message, 'error');
+  }
+});
+$('#scWipe')?.addEventListener('click', async()=>{ 
+  try {
+    if(!confirm('Erase ALL data?')) return; 
+    
+    // Clear all stores
+    await DB.clearAll();
+    
+    showNotification('All data cleared successfully.', 'success'); 
+    renderDashboard(); 
+    renderStudents(); 
+    renderCourses(); 
+    renderLogsTable(); 
+    renderPortfolio(); 
+    renderReports(); 
+  } catch(error) {
+    console.error('Clear error:', error);
+    showNotification('Error clearing data: ' + error.message, 'error');
+  }
+});
 
 /* Students */
 document.body.addEventListener('click', async(e)=>{ if(e.target.classList.contains('stDel')){ await DB.del('students', Number(e.target.dataset.id)); renderStudents(); renderDashboard(); renderLogsTable(); renderPortfolio(); renderReports(); } });
@@ -1984,7 +2164,42 @@ $('#lgAdd')?.addEventListener('click', async()=>{
 document.body.addEventListener('click', async(e)=>{ if(e.target.classList.contains('lgDel')){ await DB.del('logs', Number(e.target.dataset.id)); renderLogsTable(); renderDashboard(); renderReports(); } });
 $('#exportCSV')?.addEventListener('click', async()=>{ const [logs,courses,students]=await Promise.all([listLogs(), listCourses(), listStudents()]); const cMap=new Map(courses.map(c=>[c.id,c])); const sMap=new Map(students.map(s=>[s.id,s])); const y=$('#lgYearFilter').value; const rows=[['date','student','course','subject','hours','location','notes']]; for(const l of logs){ if(y && yearForDate(l.date)!=Number(y)) continue; const c=cMap.get(l.courseId), st=sMap.get(l.studentId); rows.push([l.date, st?.name||'', c?.title||'', c?.subject||'', String(l.hours), l.location, (l.notes||'').replace(/\n/g,' ')]);} const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n'); const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob([csv],{type:'text/csv'})),download:'logs.csv'}); a.click(); });
 $('#exportJSON')?.addEventListener('click', async()=>{ const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob([JSON.stringify({logs:await listLogs()},null,2)],{type:'application/json'})),download:'logs.json'}); a.click(); });
-$('#importJSON')?.addEventListener('change', async(e)=>{ const f=e.target.files?.[0]; if(!f) return; const data=JSON.parse(await f.text()); if(!Array.isArray(data.logs)){ alert('Invalid'); return; } for(const l of data.logs) await DB.add('logs', l); alert('Imported'); renderLogsTable(); renderDashboard(); renderReports(); });
+$('#importJSON')?.addEventListener('change', async(e)=>{ 
+  try {
+    const f=e.target.files?.[0]; 
+    if(!f) return; 
+    
+    const data=JSON.parse(await f.text()); 
+    
+    // Validate data structure
+    if(!data || typeof data !== 'object') {
+      showNotification('Invalid file format. Please select a valid JSON file.', 'error');
+      return;
+    }
+    
+    if(!Array.isArray(data.logs)) {
+      showNotification('Invalid file format. File must contain a "logs" array.', 'error');
+      return;
+    }
+    
+    // Import logs with validation
+    let importedCount = 0;
+    for(const l of data.logs) {
+      if(l && typeof l === 'object' && l.studentId && l.courseId && l.date) {
+        await DB.add('logs', l);
+        importedCount++;
+      }
+    }
+    
+    showNotification(`Successfully imported ${importedCount} log entries.`, 'success'); 
+    renderLogsTable(); 
+    renderDashboard(); 
+    renderReports(); 
+  } catch(error) {
+    console.error('Import error:', error);
+    showNotification('Error importing logs: ' + error.message, 'error');
+  }
+});
 
 /* Portfolio */
 async function fileToBlob(file){ return file.slice(0,file.size,file.type); }
