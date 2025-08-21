@@ -126,12 +126,23 @@ export async function handler(event) {
   }
 
   try {
+    // Choose database URL based on environment (dev vs prod)
+    const isDevEnv = (
+      process.env.NETLIFY_DEV === 'true' ||
+      (process.env.NODE_ENV && process.env.NODE_ENV !== 'production') ||
+      ['dev', 'develop', 'development', 'deploy-preview', 'branch-deploy'].includes((process.env.CONTEXT || '').toLowerCase())
+    );
+
+    const databaseUrl = (isDevEnv && process.env.NETLIFY_DATABASE_URL_DEV)
+      ? process.env.NETLIFY_DATABASE_URL_DEV
+      : process.env.NETLIFY_DATABASE_URL;
+
     // Validate database connection
-    if (!process.env.NETLIFY_DATABASE_URL) {
+    if (!databaseUrl) {
       return errorResponse('Database configuration error', 500);
     }
 
-    const sql = neon(process.env.NETLIFY_DATABASE_URL);
+    const sql = neon(databaseUrl);
     const action = (event.queryStringParameters?.action) ||
                    (JSON.parse(event.body || '{}').action);
 
