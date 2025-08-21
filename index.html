@@ -1743,7 +1743,13 @@ async function netlifySubmitFormData(formName, fd){
 function showNotification(message, type = 'info') {
 
 // Data validation functions
-function validateImportData(data) {
+function validateDate(dateString) {
+  if (!dateString) return false;
+  const date = new Date(dateString);
+  return !isNaN(date.getTime());
+}
+
+async function validateImportData(data) {
   const errors = [];
   
   if (!data || typeof data !== 'object') {
@@ -1777,15 +1783,50 @@ function validateImportData(data) {
     });
   }
   
-  // Validate logs
+  // Validate logs with reference integrity
   if (data.logs && !Array.isArray(data.logs)) {
     errors.push('Logs must be an array');
   } else if (data.logs) {
+    const existingStudents = await listStudents();
+    const existingCourses = await listCourses();
+    const studentIds = new Set(existingStudents.map(s => s.id));
+    const courseIds = new Set(existingCourses.map(c => c.id));
+    
     data.logs.forEach((log, index) => {
       if (!log || typeof log !== 'object') {
         errors.push(`Log ${index + 1} is invalid`);
       } else if (!log.studentId || !log.courseId || !log.date) {
         errors.push(`Log ${index + 1} must have studentId, courseId, and date`);
+      } else if (!validateDate(log.date)) {
+        errors.push(`Log ${index + 1}: Invalid date format`);
+      } else if (!studentIds.has(Number(log.studentId))) {
+        errors.push(`Log ${index + 1}: Student with ID ${log.studentId} not found`);
+      } else if (!courseIds.has(Number(log.courseId))) {
+        errors.push(`Log ${index + 1}: Course with ID ${log.courseId} not found`);
+      }
+    });
+  }
+  
+  // Validate portfolio with reference integrity
+  if (data.portfolio && !Array.isArray(data.portfolio)) {
+    errors.push('Portfolio must be an array');
+  } else if (data.portfolio) {
+    const existingStudents = await listStudents();
+    const existingCourses = await listCourses();
+    const studentIds = new Set(existingStudents.map(s => s.id));
+    const courseIds = new Set(existingCourses.map(c => c.id));
+    
+    data.portfolio.forEach((item, index) => {
+      if (!item || typeof item !== 'object') {
+        errors.push(`Portfolio item ${index + 1} is invalid`);
+      } else if (!item.studentId || !item.courseId || !item.date || !item.title) {
+        errors.push(`Portfolio item ${index + 1} must have studentId, courseId, date, and title`);
+      } else if (!validateDate(item.date)) {
+        errors.push(`Portfolio item ${index + 1}: Invalid date format`);
+      } else if (!studentIds.has(Number(item.studentId))) {
+        errors.push(`Portfolio item ${index + 1}: Student with ID ${item.studentId} not found`);
+      } else if (!courseIds.has(Number(item.courseId))) {
+        errors.push(`Portfolio item ${index + 1}: Course with ID ${item.courseId} not found`);
       }
     });
   }
@@ -1936,7 +1977,7 @@ $('#scImportAll')?.addEventListener('change', async(e)=>{
     const data=JSON.parse(await f.text()); 
     
     // Validate data structure
-    const validationErrors = validateImportData(data);
+    const validationErrors = await validateImportData(data);
     if(validationErrors.length > 0) {
       showNotification('Invalid file format: ' + validationErrors.join(', '), 'error');
       return;
@@ -2179,6 +2220,32 @@ $('#importJSON')?.addEventListener('change', async(e)=>{
     
     if(!Array.isArray(data.logs)) {
       showNotification('Invalid file format. File must contain a "logs" array.', 'error');
+      return;
+    }
+    
+    // Validate log references before importing
+    const existingStudents = await listStudents();
+    const existingCourses = await listCourses();
+    const studentIds = new Set(existingStudents.map(s => s.id));
+    const courseIds = new Set(existingCourses.map(c => c.id));
+    
+    const invalidLogs = [];
+    data.logs.forEach((log, index) => {
+      if (!log || typeof log !== 'object') {
+        invalidLogs.push(`Log ${index + 1} is invalid`);
+      } else if (!log.studentId || !log.courseId || !log.date) {
+        invalidLogs.push(`Log ${index + 1} must have studentId, courseId, and date`);
+      } else if (!validateDate(log.date)) {
+        invalidLogs.push(`Log ${index + 1}: Invalid date format`);
+      } else if (!studentIds.has(Number(log.studentId))) {
+        invalidLogs.push(`Log ${index + 1}: Student with ID ${log.studentId} not found`);
+      } else if (!courseIds.has(Number(log.courseId))) {
+        invalidLogs.push(`Log ${index + 1}: Course with ID ${log.courseId} not found`);
+      }
+    });
+    
+    if (invalidLogs.length > 0) {
+      showNotification('Import validation failed: ' + invalidLogs.join(', '), 'error');
       return;
     }
     

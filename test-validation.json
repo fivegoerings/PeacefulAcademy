@@ -1,0 +1,69 @@
+{
+  "students": [
+    {
+      "name": "John Doe",
+      "dob": "2005-03-15",
+      "grade": "10th",
+      "startYear": 2023
+    }
+  ],
+  "courses": [
+    {
+      "title": "Mathematics",
+      "subject": "Math",
+      "description": "Advanced mathematics course"
+    }
+  ],
+  "logs": [
+    {
+      "studentId": 1,
+      "courseId": 1,
+      "date": "2023-09-15",
+      "hours": 2.5,
+      "location": "Classroom",
+      "notes": "Valid log entry"
+    },
+    {
+      "studentId": 999,
+      "courseId": 1,
+      "date": "2023-09-16",
+      "hours": 1.5,
+      "location": "Library",
+      "notes": "Invalid student ID - should fail validation"
+    },
+    {
+      "studentId": 1,
+      "courseId": 999,
+      "date": "2023-09-17",
+      "hours": 2.0,
+      "location": "Lab",
+      "notes": "Invalid course ID - should fail validation"
+    },
+    {
+      "studentId": 1,
+      "courseId": 1,
+      "date": "invalid-date",
+      "hours": 1.0,
+      "location": "Classroom",
+      "notes": "Invalid date format - should fail validation"
+    }
+  ],
+  "portfolio": [
+    {
+      "studentId": 1,
+      "courseId": 1,
+      "date": "2023-09-15",
+      "title": "Math Project",
+      "desc": "A valid portfolio item",
+      "tags": ["math", "project"]
+    },
+    {
+      "studentId": 999,
+      "courseId": 1,
+      "date": "2023-09-16",
+      "title": "Invalid Portfolio Item",
+      "desc": "This should fail validation due to invalid student ID",
+      "tags": ["test"]
+    }
+  ]
+}

@@ -92,6 +92,16 @@ This option imports only log entries.
 5. **Confirm the import**: You'll be asked to confirm that existing data will be replaced
 6. **Wait for completion**: The system will show a success notification when complete
 
+## Import Order for Partial Imports
+
+When importing data in parts (not using the complete backup), follow this order to avoid reference integrity errors:
+
+1. **Import students first** (if not already present)
+2. **Import courses second** (if not already present)
+3. **Import logs and portfolio items last**
+
+This ensures that all referenced objects exist before importing items that reference them.
+
 ## Important Notes
 
 ### Data Replacement
@@ -104,6 +114,9 @@ The system validates imported data and will show error messages for:
 - Missing required fields
 - Incorrect data types
 - Malformed data structures
+- **Reference integrity**: Ensures that log and portfolio entries reference existing students and courses
+- **Date format validation**: Validates that all date fields are in proper format
+- **Object existence**: Checks that referenced objects (students, courses) exist in the database
 
 ### Error Handling
 If an import fails:
@@ -128,11 +141,20 @@ Always create a backup before importing new data:
    - Verify the file structure matches the expected format
    - Ensure the file isn't corrupted
 
-2. **"Database not initialized" error**
+2. **"Student with ID X not found" or "Course with ID Y not found" errors**
+   - Ensure that students and courses are imported before importing logs or portfolio items
+   - Verify that the studentId and courseId values in your data match existing records
+   - Import students and courses first, then import logs/portfolio items
+
+3. **"Invalid date format" error**
+   - Ensure all date fields use the format YYYY-MM-DD
+   - Check that dates are valid (e.g., not February 30th)
+
+4. **"Database not initialized" error**
    - Refresh the page and try again
    - Clear browser cache if the issue persists
 
-3. **Import appears to succeed but data doesn't show**
+5. **Import appears to succeed but data doesn't show**
    - Check the browser console for errors
    - Verify that the imported data has valid studentId and courseId references
    - Ensure the data format matches the expected schema
