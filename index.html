@@ -136,6 +136,7 @@ footer{margin:3rem 0 2rem;color:var(--muted);text-align:center}
         <div class="row" style="margin-top:.6rem"><button class="primary" id="qaAdd">Add Hours</button><button class="ghost" id="qaToday">Today</button></div>
       </div>
     </div>
+    <div id="appVersion" style="position: fixed; bottom: 10px; right: 10px; font-size: 0.75rem; color: #666; background: rgba(255,255,255,0.9); padding: 4px 8px; border-radius: 4px; z-index: 1000;"></div>
   </section>
 
   <section id="view-students" class="view hide">
@@ -633,7 +634,7 @@ async function listLogs(){ return await DB.all('logs'); }
 async function listPortfolio(){ return await DB.all('portfolio'); }
 
 function show(view){ $$('.view').forEach(v=>v.classList.add('hide')); $('#view-'+view).classList.remove('hide'); $$('#nav a').forEach(a=>a.classList.remove('active')); $(`#nav a[href="#${view}"]`)?.classList.add('active'); }
-window.addEventListener('hashchange', ()=>{ const v=(location.hash||'#dashboard').slice(1); show(v); if(v==='dashboard') renderDashboard(); if(v==='students') renderStudents(); if(v==='courses') renderCourses(); if(v==='log') renderLogsTable(); if(v==='portfolio') renderPortfolio(); if(v==='reports') renderReports(); if(v==='settings') renderSettings(); });
+window.addEventListener('hashchange', ()=>{ const v=(location.hash||'#dashboard').slice(1); show(v); updateVersionVisibility(); if(v==='dashboard') renderDashboard(); if(v==='students') renderStudents(); if(v==='courses') renderCourses(); if(v==='log') renderLogsTable(); if(v==='portfolio') renderPortfolio(); if(v==='reports') renderReports(); if(v==='settings') renderSettings(); });
 
 async function renderStudents(){
   const students = await listStudents();
@@ -1152,6 +1153,59 @@ function initHamburgerMenu() {
   });
 }
 
+// Display app version and environment information
+function displayAppVersion() {
+  const versionElement = document.getElementById('appVersion');
+  if (!versionElement) return;
+  
+  // Get version from package.json or use a default
+  const version = '1.0.0'; // This could be dynamically loaded from package.json
+  
+  // Detect environment more accurately
+  const hostname = window.location.hostname;
+  const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+  const isNetlifyDev = hostname.includes('netlify.app') && (hostname.includes('dev') || hostname.includes('deploy-preview'));
+  const isDev = isLocalhost || isNetlifyDev;
+  
+  const environment = isDev ? 'DEV' : 'PROD';
+  
+  // Get build timestamp for additional info
+  const buildTime = new Date().toISOString().split('T')[0]; // Current date as fallback
+  
+  // Display version and environment
+  versionElement.textContent = `v${version} | ${environment}`;
+  
+  // Add hover effect to show more details
+  const details = [
+    `Peaceful Academy v${version}`,
+    `Environment: ${environment}`,
+    `Host: ${hostname}`,
+    `Build: ${buildTime}`
+  ].join(' | ');
+  
+  versionElement.title = details;
+  
+  // Add subtle styling based on environment
+  if (isDev) {
+    versionElement.style.background = 'rgba(255, 193, 7, 0.9)';
+    versionElement.style.color = '#000';
+  }
+  
+  // Show/hide based on current view
+  updateVersionVisibility();
+}
+
+// Update version visibility based on current view
+function updateVersionVisibility() {
+  const versionElement = document.getElementById('appVersion');
+  if (!versionElement) return;
+  
+  const currentView = (location.hash || '#dashboard').slice(1);
+  const isDashboard = currentView === 'dashboard';
+  
+  versionElement.style.display = isDashboard ? 'block' : 'none';
+}
+
 // Enhanced initialization with error handling
 async function init(){
   try {
@@ -1196,6 +1250,9 @@ async function init(){
     
     // Initialize hamburger menu
     initHamburgerMenu();
+    
+    // Display app version and environment
+    displayAppVersion();
     
     // Add loading states
     document.body.classList.add('loaded');
