@@ -107,18 +107,45 @@ button:focus,input:focus,select:focus,textarea:focus{outline:2px solid var(--acc
 .env-content .loading{color:var(--muted);font-style:italic}
 .env-item{margin-bottom:.8rem;padding-bottom:.8rem;border-bottom:1px solid rgba(31,41,55,0.5)}
 .env-item:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none}
-.env-label{font-weight:600;color:#9ca3af;margin-bottom:.3rem;font-size:12px;text-transform:uppercase;letter-spacing:0.5px}
-.env-value{color:var(--ink);word-break:break-all;font-family:monospace;background:rgba(15,23,42,0.5);padding:.4rem .6rem;border-radius:6px;border:1px solid rgba(31,41,55,0.3)}
-.env-value.masked{color:var(--muted);font-style:italic}
-.env-value.success{color:var(--ok);border-color:rgba(16,185,129,0.3)}
-.env-value.error{color:var(--danger);border-color:rgba(239,68,68,0.3)}
-.env-value.warning{color:#f59e0b;border-color:rgba(245,158,11,0.3)}
+.env-label{font-weight:600;color:#9ca3af;margin-bottom:.2rem}
+.env-value{color:#e5e7eb;word-break:break-all}
+.env-value.success{color:#10b981}
+.env-value.error{color:#ef4444}
+.env-value.warning{color:#f59e0b}
+.env-value.masked{filter:blur(2px);user-select:none}
 
-/* Responsive adjustments for environment grid */
-@media(max-width:768px){
-  .env-grid{grid-template-columns:1fr}
-  .env-section{padding:12px}
-}
+/* Edit form styles */
+.button-group{display:flex;gap:.5rem;margin-top:1rem}
+.button-group button{flex:1}
+.button-group button[type="button"]{background:var(--muted);color:var(--text)}
+.button-group button[type="button"]:hover{background:var(--muted-hover)}
+
+/* Edit form headers */
+form h4{margin:0 0 1rem;color:var(--accent);font-size:1.1rem;font-weight:600}
+
+/* Form transitions */
+form{transition:opacity 0.2s ease-in-out}
+form[style*="display: none"]{opacity:0}
+
+/* Action buttons */
+.btn-edit,.btn-delete{padding:.25rem .5rem;font-size:.75rem;border-radius:4px;border:none;cursor:pointer;margin-right:.25rem;transition:all 0.2s ease}
+.btn-edit{background:#3b82f6;color:white}
+.btn-edit:hover{background:#2563eb}
+.btn-delete{background:#ef4444;color:white}
+.btn-delete:hover{background:#dc2626}
+
+/* Table improvements */
+table button{min-width:60px}
+table td:last-child{white-space:nowrap}
+
+/* Form improvements */
+.inline{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;align-items:end}
+.inline label{font-weight:500;color:var(--text);margin-bottom:.25rem}
+.inline input,.inline select,.inline textarea{padding:.5rem;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text)}
+.inline input:focus,.inline select:focus,.inline textarea:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(59,130,246,0.1)}
+.inline textarea{resize:vertical;min-height:80px}
+.inline button[type="submit"]{background:var(--accent);color:white;padding:.75rem 1.5rem;border:none;border-radius:4px;font-weight:600;cursor:pointer;transition:background 0.2s ease}
+.inline button[type="submit"]:hover{background:var(--accent-hover)}
 
 /* High contrast mode support */
 @media(prefers-contrast:high){

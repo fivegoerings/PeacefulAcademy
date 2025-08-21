@@ -151,6 +151,58 @@ export async function handler(event) {
       }
     }
 
+    if (action === 'student.update') {
+      const { data } = JSON.parse(event.body || '{}');
+      try {
+        if (!data.id) {
+          return errorResponse('Student ID is required', 400);
+        }
+        
+        const result = await db.update(students)
+          .set({
+            name: data.name,
+            dob: data.dob || null,
+            grade: data.grade || null,
+            startYear: data.startYear || null,
+            notes: data.notes || null,
+            updatedAt: new Date()
+          })
+          .where(eq(students.id, data.id))
+          .returning();
+        
+        if (result.length === 0) {
+          return errorResponse('Student not found', 404);
+        }
+        
+        return jsonResponse({ id: result[0].id });
+      } catch (error) {
+        console.error('Student update error:', error);
+        return errorResponse('Failed to update student', 500);
+      }
+    }
+
+    if (action === 'student.delete') {
+      const { data } = JSON.parse(event.body || '{}');
+      try {
+        if (!data.id) {
+          return errorResponse('Student ID is required', 400);
+        }
+        
+        const result = await db.delete(students)
+          .where(eq(students.id, data.id))
+          .returning();
+        
+        if (result.length === 0) {
+          return errorResponse('Student not found', 404);
+        }
+        
+        return jsonResponse({ id: result[0].id });
+      } catch (error) {
+        console.error('Student delete error:', error);
+        return errorResponse('Failed to delete student', 500);
+      }
+    }
+
     if (action === 'student.list') {
       try {
         const result = await db.select().from(students).orderBy(asc(students.name));
@@ -175,6 +227,56 @@ export async function handler(event) {
       } catch (error) {
         console.error('Course insert error:', error);
         return errorResponse('Failed to insert course', 500);
+      }
+    }
+
+    if (action === 'course.update') {
+      const { data } = JSON.parse(event.body || '{}');
+      try {
+        if (!data.id) {
+          return errorResponse('Course ID is required', 400);
+        }
+        
+        const result = await db.update(courses)
+          .set({
+            title: data.title,
+            subject: data.subject,
+            description: data.description || null,
+            updatedAt: new Date()
+          })
+          .where(eq(courses.id, data.id))
+          .returning();
+        
+        if (result.length === 0) {
+          return errorResponse('Course not found', 404);
+        }
+        
+        return jsonResponse({ id: result[0].id });
+      } catch (error) {
+        console.error('Course update error:', error);
+        return errorResponse('Failed to update course', 500);
+      }
+    }
+
+    if (action === 'course.delete') {
+      const { data } = JSON.parse(event.body || '{}');
+      try {
+        if (!data.id) {
+          return errorResponse('Course ID is required', 400);
+        }
+        
+        const result = await db.delete(courses)
+          .where(eq(courses.id, data.id))
+          .returning();
+        
+        if (result.length === 0) {
+          return errorResponse('Course not found', 404);
+        }
+        
+        return jsonResponse({ id: result[0].id });
+      } catch (error) {
+        console.error('Course delete error:', error);
+        return errorResponse('Failed to delete course', 500);
       }
     }
 
@@ -206,6 +308,61 @@ export async function handler(event) {
       } catch (error) {
         console.error('Log insert error:', error);
         return errorResponse('Failed to insert log', 500);
+      }
+    }
+
+    if (action === 'log.update') {
+      const { data } = JSON.parse(event.body || '{}');
+      try {
+        if (!data.id) {
+          return errorResponse('Log ID is required', 400);
+        }
+        
+        const result = await db.update(logs)
+          .set({
+            studentId: data.studentId,
+            courseId: data.courseId,
+            studentName: data.studentName || null,
+            courseTitle: data.courseTitle || null,
+            subject: data.subject || null,
+            date: data.date,
+            hours: data.hours,
+            location: data.location || 'home',
+            notes: data.notes || null
+          })
+          .where(eq(logs.id, data.id))
+          .returning();
+        
+        if (result.length === 0) {
+          return errorResponse('Log not found', 404);
+        }
+        
+        return jsonResponse({ id: result[0].id });
+      } catch (error) {
+        console.error('Log update error:', error);
+        return errorResponse('Failed to update log', 500);
+      }
+    }
+
+    if (action === 'log.delete') {
+      const { data } = JSON.parse(event.body || '{}');
+      try {
+        if (!data.id) {
+          return errorResponse('Log ID is required', 400);
+        }
+        
+        const result = await db.delete(logs)
+          .where(eq(logs.id, data.id))
+          .returning();
+        
+        if (result.length === 0) {
+          return errorResponse('Log not found', 404);
+        }
+        
+        return jsonResponse({ id: result[0].id });
+      } catch (error) {
+        console.error('Log delete error:', error);
+        return errorResponse('Failed to delete log', 500);
       }
     }
 

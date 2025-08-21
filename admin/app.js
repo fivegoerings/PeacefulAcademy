@@ -177,6 +177,47 @@ function initTabs() {
   });
 }
 
+// Populate dropdowns for forms
+async function populateDropdowns() {
+  try {
+    // Load students and courses for dropdowns
+    const [studentsData, coursesData] = await Promise.all([
+      dbCall('student.list'),
+      dbCall('course.list')
+    ]);
+
+    // Populate student dropdowns
+    const studentDropdowns = document.querySelectorAll('select[name="student_id"]');
+    studentDropdowns.forEach(dropdown => {
+      dropdown.innerHTML = '<option value="">Select student</option>';
+      if (studentsData.students) {
+        studentsData.students.forEach(student => {
+          const option = document.createElement('option');
+          option.value = student.id;
+          option.textContent = student.name;
+          dropdown.appendChild(option);
+        });
+      }
+    });
+
+    // Populate course dropdowns
+    const courseDropdowns = document.querySelectorAll('select[name="course_id"]');
+    courseDropdowns.forEach(dropdown => {
+      dropdown.innerHTML = '<option value="">Select course</option>';
+      if (coursesData.courses) {
+        coursesData.courses.forEach(course => {
+          const option = document.createElement('option');
+          option.value = course.id;
+          option.textContent = course.title;
+          dropdown.appendChild(option);
+        });
+      }
+    });
+  } catch (error) {
+    console.error('Failed to populate dropdowns:', error);
+  }
+}
+
 // Database Monitor - Updated for Drizzle ORM
 async function loadHealth() {
   const healthEl = $('#health');
@@ -386,10 +427,62 @@ async function addStudent(form) {
       showToast('Student added successfully', 'success');
       form.reset();
       await loadStudents();
+      await populateDropdowns(); // Refresh dropdowns
     }
   } catch (error) {
     console.error('Error adding student:', error);
     showToast(`Failed to add student: ${error.message}`, 'error');
+  }
+}
+
+async function updateStudent(form) {
+  try {
+    const studentId = form.dataset.studentId;
+    const firstName = getFormValue(form, 'first_name');
+    const lastName = getFormValue(form, 'last_name');
+    
+    const studentData = {
+      id: parseInt(studentId),
+      name: firstName + ' ' + lastName,
+      dob: getFormValue(form, 'birth_date') || null,
+      grade: getFormValue(form, 'grade') || null,
+      startYear: getFormValue(form, 'start_year') ? parseInt(getFormValue(form, 'start_year')) : null,
+      notes: getFormValue(form, 'notes') || null
+    };
+    
+    // Validate required fields
+    if (!firstName.trim() || !lastName.trim()) {
+      showToast('First name and last name are required', 'error');
+      return;
+    }
+    
+    console.log('Updating student with data:', studentData);
+    const result = await dbCall('student.update', studentData);
+    
+    if (result.id) {
+      showToast('Student updated successfully', 'success');
+      hideEditForm('student');
+      await loadStudents();
+    }
+  } catch (error) {
+    console.error('Error updating student:', error);
+    showToast(`Failed to update student: ${error.message}`, 'error');
+  }
+}
+
+async function deleteStudent(studentId) {
+  try {
+    if (confirm('Are you sure you want to delete this student? This will also delete all associated logs and portfolio items.')) {
+      const result = await dbCall('student.delete', { id: parseInt(studentId) });
+      
+      if (result.id) {
+        showToast('Student deleted successfully', 'success');
+        await loadStudents();
+      }
+    }
+  } catch (error) {
+    console.error('Error deleting student:', error);
+    showToast(`Failed to delete student: ${error.message}`, 'error');
   }
 }
 
@@ -453,10 +546,62 @@ async function addCourse(form) {
       showToast('Course added successfully', 'success');
       form.reset();
       await loadCourses();
+      await populateDropdowns(); // Refresh dropdowns
     }
   } catch (error) {
     console.error('Error adding course:', error);
     showToast(`Failed to add course: ${error.message}`, 'error');
+  }
+}
+
+async function updateCourse(form) {
+  try {
+    const courseId = form.dataset.courseId;
+    
+    const courseData = {
+      id: parseInt(courseId),
+      title: getFormValue(form, 'title'),
+      subject: getFormValue(form, 'subject'),
+      description: getFormValue(form, 'description') || null
+    };
+    
+    // Validate required fields
+    if (!courseData.title.trim()) {
+      showToast('Course title is required', 'error');
+      return;
+    }
+    if (!courseData.subject.trim()) {
+      showToast('Subject is required', 'error');
+      return;
+    }
+    
+    console.log('Updating course with data:', courseData);
+    const result = await dbCall('course.update', courseData);
+    
+    if (result.id) {
+      showToast('Course updated successfully', 'success');
+      hideEditForm('course');
+      await loadCourses();
+    }
+  } catch (error) {
+    console.error('Error updating course:', error);
+    showToast(`Failed to update course: ${error.message}`, 'error');
+  }
+}
+
+async function deleteCourse(courseId) {
+  try {
+    if (confirm('Are you sure you want to delete this course? This will also delete all associated logs and portfolio items.')) {
+      const result = await dbCall('course.delete', { id: parseInt(courseId) });
+      
+      if (result.id) {
+        showToast('Course deleted successfully', 'success');
+        await loadCourses();
+      }
+    }
+  } catch (error) {
+    console.error('Error deleting course:', error);
+    showToast(`Failed to delete course: ${error.message}`, 'error');
   }
 }
 
@@ -541,6 +686,125 @@ async function addLog(form) {
   }
 }
 
+async function updateLog(form) {
+  try {
+    const logId = form.dataset.logId;
+    const studentId = getFormValue(form, 'student_id');
+    const courseId = getFormValue(form, 'course_id');
+    
+    const logData = {
+      id: parseInt(logId),
+      studentId: parseInt(studentId),
+      courseId: parseInt(courseId),
+      date: getFormValue(form, 'date'),
+      hours: parseFloat(getFormValue(form, 'hours')),
+      location: getFormValue(form, 'location'),
+      notes: getFormValue(form, 'notes') || null
+    };
+    
+    // Validate required fields
+    if (!logData.studentId || isNaN(logData.studentId)) {
+      showToast('Please select a student', 'error');
+      return;
+    }
+    if (!logData.courseId || isNaN(logData.courseId)) {
+      showToast('Please select a course', 'error');
+      return;
+    }
+    if (!logData.date) {
+      showToast('Date is required', 'error');
+      return;
+    }
+    if (!logData.hours || isNaN(logData.hours) || logData.hours < 0.25) {
+      showToast('Valid hours are required (minimum 0.25)', 'error');
+      return;
+    }
+    
+    console.log('Updating log with data:', logData);
+    const result = await dbCall('log.update', logData);
+    
+    if (result.id) {
+      showToast('Log entry updated successfully', 'success');
+      hideEditForm('log');
+      await loadLogs();
+    }
+  } catch (error) {
+    console.error('Error updating log:', error);
+    showToast(`Failed to update log entry: ${error.message}`, 'error');
+  }
+}
+
+async function deleteLog(logId) {
+  try {
+    if (confirm('Are you sure you want to delete this log entry?')) {
+      const result = await dbCall('log.delete', { id: parseInt(logId) });
+      
+      if (result.id) {
+        showToast('Log entry deleted successfully', 'success');
+        await loadLogs();
+      }
+    }
+  } catch (error) {
+    console.error('Error deleting log:', error);
+    showToast(`Failed to delete log entry: ${error.message}`, 'error');
+  }
+}
+
+// Edit form management
+function showEditForm(type, data) {
+  const formId = `${type}EditForm`;
+  const form = document.getElementById(formId);
+  const addForm = document.getElementById(`${type}Form`);
+  
+  if (form && addForm) {
+    // Hide add form, show edit form
+    addForm.style.display = 'none';
+    form.style.display = 'block';
+    
+    // Populate form with data
+    if (type === 'student') {
+      const [firstName, ...lastNameParts] = data.name.split(' ');
+      const lastName = lastNameParts.join(' ');
+      form.querySelector('[name="first_name"]').value = firstName || '';
+      form.querySelector('[name="last_name"]').value = lastName || '';
+      form.querySelector('[name="birth_date"]').value = data.dob || '';
+      form.querySelector('[name="grade"]').value = data.grade || '';
+      form.querySelector('[name="start_year"]').value = data.startYear || '';
+      form.querySelector('[name="notes"]').value = data.notes || '';
+      form.dataset.studentId = data.id;
+    } else if (type === 'course') {
+      form.querySelector('[name="title"]').value = data.title || '';
+      form.querySelector('[name="subject"]').value = data.subject || '';
+      form.querySelector('[name="description"]').value = data.description || '';
+      form.dataset.courseId = data.id;
+    } else if (type === 'log') {
+      form.querySelector('[name="student_id"]').value = data.studentId || '';
+      form.querySelector('[name="course_id"]').value = data.courseId || '';
+      form.querySelector('[name="date"]').value = data.date || '';
+      form.querySelector('[name="hours"]').value = data.hours || '';
+      form.querySelector('[name="location"]').value = data.location || 'home';
+      form.querySelector('[name="notes"]').value = data.notes || '';
+      form.dataset.logId = data.id;
+    }
+  }
+}
+
+function hideEditForm(type) {
+  const formId = `${type}EditForm`;
+  const form = document.getElementById(formId);
+  const addForm = document.getElementById(`${type}Form`);
+  
+  if (form && addForm) {
+    // Hide edit form, show add form
+    form.style.display = 'none';
+    addForm.style.display = 'block';
+    
+    // Reset edit form
+    form.reset();
+    delete form.dataset[`${type}Id`];
+  }
+}
+
 // Event Listeners
 function initEventListeners() {
   // Tab switching
@@ -584,12 +848,20 @@ function initEventListeners() {
     e.preventDefault();
     await addStudent(e.target);
   });
+  $('#studentEditForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    await updateStudent(e.target);
+  });
   $('#reloadStudents')?.addEventListener('click', loadStudents);
   
   // Courses
   $('#courseForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     await addCourse(e.target);
+  });
+  $('#courseEditForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    await updateCourse(e.target);
   });
   $('#reloadCourses')?.addEventListener('click', loadCourses);
   
@@ -598,21 +870,54 @@ function initEventListeners() {
     e.preventDefault();
     await addLog(e.target);
   });
+  $('#logEditForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    await updateLog(e.target);
+  });
   $('#reloadLogs')?.addEventListener('click', loadLogs);
   
-  // Delete buttons (delegated event handling)
+  // Edit and Delete buttons (delegated event handling)
   document.addEventListener('click', async (e) => {
-    if (e.target.classList.contains('btn-delete')) {
-      if (confirm('Are you sure you want to delete this item?')) {
-        const id = e.target.dataset.id;
-        const type = e.target.closest('section').id;
-        
-        try {
-          // This would need to be implemented in the API
-          showToast('Delete functionality not yet implemented', 'warning');
-        } catch (error) {
-          showToast(`Failed to delete: ${error.message}`, 'error');
+    if (e.target.classList.contains('btn-edit')) {
+      const id = parseInt(e.target.dataset.id);
+      const type = e.target.closest('section').id;
+      
+      try {
+        // Get the data for the item to edit
+        let data;
+        if (type === 'students') {
+          const studentsData = await dbCall('student.list');
+          data = studentsData.students.find(s => s.id === id);
+        } else if (type === 'courses') {
+          const coursesData = await dbCall('course.list');
+          data = coursesData.courses.find(c => c.id === id);
+        } else if (type === 'logs') {
+          const logsData = await dbCall('log.list');
+          data = logsData.logs.find(l => l.id === id);
         }
+        
+        if (data) {
+          showEditForm(type.slice(0, -1), data); // Remove 's' from end
+        } else {
+          showToast('Item not found', 'error');
+        }
+      } catch (error) {
+        showToast(`Failed to load item for editing: ${error.message}`, 'error');
+      }
+    } else if (e.target.classList.contains('btn-delete')) {
+      const id = e.target.dataset.id;
+      const type = e.target.closest('section').id;
+      
+      try {
+        if (type === 'students') {
+          await deleteStudent(id);
+        } else if (type === 'courses') {
+          await deleteCourse(id);
+        } else if (type === 'logs') {
+          await deleteLog(id);
+        }
+      } catch (error) {
+        showToast(`Failed to delete: ${error.message}`, 'error');
       }
     }
   });
@@ -646,7 +951,8 @@ async function init() {
       loadEnvironmentInfo(),
       loadStudents(),
       loadCourses(),
-      loadLogs()
+      loadLogs(),
+      populateDropdowns() // Populate dropdowns
     ]);
     
     // Start auto-refresh
