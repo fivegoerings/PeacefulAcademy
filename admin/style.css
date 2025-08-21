@@ -99,6 +99,27 @@ pre{background:#0a1123;border:1px solid var(--border);border-radius:10px;padding
 /* Focus indicators for keyboard navigation */
 button:focus,input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:2px}
 
+/* Environment monitoring styles */
+.env-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1rem;margin-top:1rem}
+.env-section{background:#0a1123;border:1px solid var(--border);border-radius:10px;padding:1rem}
+.env-section h4{font-size:1rem;margin:0 0 .8rem;color:#d1d5db;font-weight:600}
+.env-content{font-size:13px;line-height:1.4}
+.env-content .loading{color:var(--muted);font-style:italic}
+.env-item{margin-bottom:.8rem;padding-bottom:.8rem;border-bottom:1px solid rgba(31,41,55,0.5)}
+.env-item:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none}
+.env-label{font-weight:600;color:#9ca3af;margin-bottom:.3rem;font-size:12px;text-transform:uppercase;letter-spacing:0.5px}
+.env-value{color:var(--ink);word-break:break-all;font-family:monospace;background:rgba(15,23,42,0.5);padding:.4rem .6rem;border-radius:6px;border:1px solid rgba(31,41,55,0.3)}
+.env-value.masked{color:var(--muted);font-style:italic}
+.env-value.success{color:var(--ok);border-color:rgba(16,185,129,0.3)}
+.env-value.error{color:var(--danger);border-color:rgba(239,68,68,0.3)}
+.env-value.warning{color:#f59e0b;border-color:rgba(245,158,11,0.3)}
+
+/* Responsive adjustments for environment grid */
+@media(max-width:768px){
+  .env-grid{grid-template-columns:1fr}
+  .env-section{padding:12px}
+}
+
 /* High contrast mode support */
 @media(prefers-contrast:high){
   .card{border:2px solid #fff}

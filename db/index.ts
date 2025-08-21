@@ -2,8 +2,7 @@ import { neon } from '@netlify/neon';
 import { drizzle } from 'drizzle-orm/neon-http';
 import * as schema from './schema';
 
-// Create database connection with error handling
-// @netlify/neon automatically uses NETLIFY_DATABASE_URL
+// Use Netlify's automatic database URL handling
 const sql = neon();
 
 export const db = drizzle(sql, { schema });

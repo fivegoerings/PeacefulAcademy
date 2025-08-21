@@ -126,11 +126,11 @@ export async function handler(event) {
   }
 
   try {
-    // @netlify/neon automatically uses NETLIFY_DATABASE_URL
-    // For development vs production, you can set different NETLIFY_DATABASE_URL values
-    // in your Netlify environment variables based on the context
-    
+    // Use Netlify's automatic database URL handling
     const sql = neon();
+    const context = process.env.CONTEXT || 'unknown';
+    const isDev = ['dev', 'develop', 'development', 'deploy-preview', 'branch-deploy'].includes(context.toLowerCase());
+    const isProd = context === 'production';
     const action = (event.queryStringParameters?.action) ||
                    (JSON.parse(event.body || '{}').action);
 
@@ -745,6 +745,43 @@ export async function handler(event) {
         console.error('bulk.upsertAll failed:', error);
         return errorResponse(`Failed to upsert all data to Neon: ${error?.message || error}`, 500);
       }
+    }
+
+    // System environment information
+    if (action === 'system.environment') {
+      const context = process.env.CONTEXT || 'unknown';
+      const isDev = ['dev', 'develop', 'development', 'deploy-preview', 'branch-deploy'].includes(context.toLowerCase());
+      const isProd = context === 'production';
+      
+      let environment = 'UNKNOWN';
+      if (isDev) {
+        environment = 'DEV';
+      } else if (isProd) {
+        environment = 'PROD';
+      }
+      
+      // Get database URL info (masked for security)
+      const dbUrl = process.env.NETLIFY_DATABASE_URL;
+      let dbUrlInfo = 'Not set';
+      if (dbUrl) {
+        try {
+          const url = new URL(dbUrl);
+          dbUrlInfo = `${url.protocol}//${url.hostname}:${url.port || 'default'}/${url.pathname.split('/')[1] || 'default'}`;
+        } catch (e) {
+          dbUrlInfo = 'Set (invalid format)';
+        }
+      }
+      
+      return jsonResponse({
+        environment,
+        context,
+        isDev,
+        isProd,
+        nodeEnv: process.env.NODE_ENV || 'unknown',
+        databaseUrl: 'AUTO', // Netlify automatically sets NETLIFY_DATABASE_URL
+        databaseUrlInfo: dbUrlInfo,
+        hasDatabaseUrl: !!dbUrl
+      });
     }
 
     return errorResponse(`Unknown action: ${action}`, 400);

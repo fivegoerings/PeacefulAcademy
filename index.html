@@ -1154,20 +1154,46 @@ function initHamburgerMenu() {
 }
 
 // Display app version and environment information
-function displayAppVersion() {
+async function displayAppVersion() {
   const versionElement = document.getElementById('appVersion');
   if (!versionElement) return;
   
   // Get version from package.json or use a default
   const version = '1.0.0'; // This could be dynamically loaded from package.json
   
-  // Detect environment more accurately
-  const hostname = window.location.hostname;
-  const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
-  const isNetlifyDev = hostname.includes('netlify.app') && (hostname.includes('dev') || hostname.includes('deploy-preview'));
-  const isDev = isLocalhost || isNetlifyDev;
+  // Try to get environment from backend first, fallback to client-side detection
+  let environment = 'UNKNOWN';
+  let context = 'unknown';
   
-  const environment = isDev ? 'DEV' : 'PROD';
+  try {
+    const response = await fetch('/.netlify/functions/db', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ action: 'system.environment' })
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      environment = data.environment || 'UNKNOWN';
+      context = data.context || 'unknown';
+    } else {
+      // Fallback to client-side detection
+      const hostname = window.location.hostname;
+      const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+      const isNetlifyDev = hostname.includes('netlify.app') && (hostname.includes('dev') || hostname.includes('deploy-preview'));
+      const isDev = isLocalhost || isNetlifyDev;
+      environment = isDev ? 'DEV' : 'PROD';
+      context = isDev ? 'development' : 'production';
+    }
+  } catch (error) {
+    // Fallback to client-side detection
+    const hostname = window.location.hostname;
+    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+    const isNetlifyDev = hostname.includes('netlify.app') && (hostname.includes('dev') || hostname.includes('deploy-preview'));
+    const isDev = isLocalhost || isNetlifyDev;
+    environment = isDev ? 'DEV' : 'PROD';
+    context = isDev ? 'development' : 'production';
+  }
   
   // Get build timestamp for additional info
   const buildTime = new Date().toISOString().split('T')[0]; // Current date as fallback
@@ -1179,16 +1205,20 @@ function displayAppVersion() {
   const details = [
     `Peaceful Academy v${version}`,
     `Environment: ${environment}`,
-    `Host: ${hostname}`,
+    `Context: ${context}`,
+    `Host: ${window.location.hostname}`,
     `Build: ${buildTime}`
   ].join(' | ');
   
   versionElement.title = details;
   
   // Add subtle styling based on environment
-  if (isDev) {
+  if (environment === 'DEV') {
     versionElement.style.background = 'rgba(255, 193, 7, 0.9)';
     versionElement.style.color = '#000';
+  } else if (environment === 'PROD') {
+    versionElement.style.background = 'rgba(16, 185, 129, 0.9)';
+    versionElement.style.color = '#fff';
   }
   
   // Show/hide based on current view
@@ -1252,7 +1282,7 @@ async function init(){
     initHamburgerMenu();
     
     // Display app version and environment
-    displayAppVersion();
+    await displayAppVersion();
     
     // Add loading states
     document.body.classList.add('loaded');

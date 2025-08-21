@@ -66,8 +66,11 @@ export async function handler(event) {
   }
 
   try {
-    // @netlify/neon automatically uses NETLIFY_DATABASE_URL
+    // Use Netlify's automatic database URL handling
     const sql = neon();
+    const context = process.env.CONTEXT || 'unknown';
+    const isDev = ['dev', 'develop', 'development', 'deploy-preview', 'branch-deploy'].includes(context.toLowerCase());
+    const isProd = context === 'production';
     const path = event.path || '';
 
     // Health check endpoint

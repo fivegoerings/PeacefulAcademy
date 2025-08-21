@@ -254,6 +254,106 @@ async function loadStats() {
   }
 }
 
+// Environment and Connection Monitoring
+async function loadEnvironmentInfo() {
+  const envVarsEl = $('#envVars');
+  const connectionInfoEl = $('#connectionInfo');
+  const connectionTestEl = $('#connectionTest');
+  
+  try {
+    // Get environment information from backend
+    const envData = await dbCall('system.environment');
+    
+    // Display environment variables
+    envVarsEl.innerHTML = '';
+    const envVars = {
+      'CONTEXT': envData.context || 'Not set',
+      'NODE_ENV': envData.nodeEnv || 'Not set',
+      'NETLIFY_DATABASE_URL': envData.hasDatabaseUrl ? 'Set (auto)' : 'Not set',
+      'Database URL Info': envData.databaseUrlInfo || 'Unknown',
+      'Database URL Source': envData.databaseUrl || 'Unknown'
+    };
+    
+    Object.entries(envVars).forEach(([key, value]) => {
+      const item = document.createElement('div');
+      item.className = 'env-item';
+      item.innerHTML = `
+        <div class="env-label">${key}</div>
+        <div class="env-value ${value.includes('masked') ? 'masked' : ''}">${value}</div>
+      `;
+      envVarsEl.appendChild(item);
+    });
+    
+    // Display connection details
+    connectionInfoEl.innerHTML = '';
+    const connectionDetails = {
+      'Environment': envData.environment || 'Unknown',
+      'Context': envData.context || 'Unknown',
+      'Is Development': envData.isDev ? 'Yes' : 'No',
+      'Is Production': envData.isProd ? 'Yes' : 'No',
+      'Database URL Source': envData.databaseUrl || 'Unknown'
+    };
+    
+    Object.entries(connectionDetails).forEach(([key, value]) => {
+      const item = document.createElement('div');
+      item.className = 'env-item';
+      const valueClass = value === 'Yes' ? 'success' : value === 'No' ? 'warning' : '';
+      item.innerHTML = `
+        <div class="env-label">${key}</div>
+        <div class="env-value ${valueClass}">${value}</div>
+      `;
+      connectionInfoEl.appendChild(item);
+    });
+    
+    // Test connection and display results
+    connectionTestEl.innerHTML = '';
+    try {
+      const healthData = await apiCall('health');
+      const testResults = {
+        'Connection Status': healthData.ok ? 'Connected' : 'Failed',
+        'Response Time': healthData.latency_ms ? `${healthData.latency_ms}ms` : 'Unknown',
+        'Database Version': healthData.version || 'Unknown',
+        'Server Time': healthData.timestamp || 'Unknown'
+      };
+      
+      Object.entries(testResults).forEach(([key, value]) => {
+        const item = document.createElement('div');
+        item.className = 'env-item';
+        let valueClass = '';
+        if (key === 'Connection Status') {
+          valueClass = value === 'Connected' ? 'success' : 'error';
+        } else if (key === 'Response Time' && value !== 'Unknown') {
+          const ms = parseInt(value);
+          valueClass = ms < 100 ? 'success' : ms < 500 ? 'warning' : 'error';
+        }
+        item.innerHTML = `
+          <div class="env-label">${key}</div>
+          <div class="env-value ${valueClass}">${value}</div>
+        `;
+        connectionTestEl.appendChild(item);
+      });
+    } catch (healthError) {
+      const item = document.createElement('div');
+      item.className = 'env-item';
+      item.innerHTML = `
+        <div class="env-label">Connection Status</div>
+        <div class="env-value error">Failed: ${healthError.message}</div>
+      `;
+      connectionTestEl.appendChild(item);
+    }
+    
+  } catch (error) {
+    console.error('Failed to load environment info:', error);
+    
+    // Show error state
+    envVarsEl.innerHTML = '<div class="env-value error">Failed to load environment variables</div>';
+    connectionInfoEl.innerHTML = '<div class="env-value error">Failed to load connection details</div>';
+    connectionTestEl.innerHTML = '<div class="env-value error">Failed to test connection</div>';
+    
+    showToast('Failed to load environment information', 'error');
+  }
+}
+
 // Students Management
 async function loadStudents() {
   const studentsBody = $('#studentsBody');
@@ -503,6 +603,7 @@ function initEventListeners() {
   
   // Health and stats
   $('#refreshStats')?.addEventListener('click', loadStats);
+  $('#refreshEnv')?.addEventListener('click', loadEnvironmentInfo);
   
   // Students
   $('#studentForm')?.addEventListener('submit', async (e) => {
@@ -550,6 +651,9 @@ function startAutoRefresh() {
   
   // Refresh stats every 2 minutes
   setInterval(loadStats, 120000);
+  
+  // Refresh environment info every 5 minutes
+  setInterval(loadEnvironmentInfo, 300000);
 }
 
 // Initialize application
@@ -565,6 +669,7 @@ async function init() {
     await Promise.all([
       loadHealth(),
       loadStats(),
+      loadEnvironmentInfo(),
       loadStudents(),
       loadCourses(),
       loadLogs()
