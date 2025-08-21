@@ -283,6 +283,7 @@ footer{margin:3rem 0 2rem;color:var(--muted);text-align:center}
             <div><label>Phone</label><input id="scPhone"></div>
             <div><label>Address</label><input id="scAddress" placeholder="Street, Kansas City, MO"></div>
             <div><label>Year Starts</label><select id="scYearStart"><option value="07-01" selected>July 1</option><option value="08-01">August 1</option><option value="09-01">September 1</option></select></div>
+            <div style="grid-column: 1 / -1"><label><input type="checkbox" id="scNeonSync"> Enable Neon Sync (multi-device)</label><div class="muted">When enabled, the app pulls the latest data from Neon on startup and periodically while still working offline.</div></div>
           </div>
           <div class="row" style="margin-top:.6rem"><button class="primary" id="scSave">Save</button><button class="ghost" id="scReset">Reset</button></div>
         </div>
@@ -389,7 +390,7 @@ function validateStudentData(data) {
 }
 
 /* Settings & year helpers */
-function getSettings(){ return Object.assign({name:'Peaceful Academy of Kansas City, Missouri',phone:'',address:'',yearStart:'07-01'}, JSON.parse(localStorage.getItem('pa_settings')||'{}'));}
+function getSettings(){ return Object.assign({name:'Peaceful Academy of Kansas City, Missouri',phone:'',address:'',yearStart:'07-01', neonSync:false}, JSON.parse(localStorage.getItem('pa_settings')||'{}'));}
 function setSettings(v){ localStorage.setItem('pa_settings', JSON.stringify(v)); renderSettings(); }
 function yearForDate(d){ const [Y,M,D]=d.split('-').map(Number); const s=getSettings().yearStart; const anchor=new Date(Y, Number(s.slice(0,2))-1, Number(s.slice(3,5))); const dt=new Date(d+'T12:00:00'); return dt>=anchor?Y:Y-1; }
 function yearLabel(y){ return y+'–'+(y+1); }
@@ -693,13 +694,14 @@ async function renderReports(){
 }
 
 /* Events */
-function renderSettings(){ const s=getSettings(); $('#scName').value=s.name; $('#scPhone').value=s.phone; $('#scAddress').value=s.address; $('#scYearStart').value=s.yearStart; $('#yearNow').textContent=new Date().getFullYear(); }
+function renderSettings(){ const s=getSettings(); $('#scName').value=s.name; $('#scPhone').value=s.phone; $('#scAddress').value=s.address; $('#scYearStart').value=s.yearStart; $('#scNeonSync').checked=!!s.neonSync; $('#yearNow').textContent=new Date().getFullYear(); }
 $('#scSave')?.addEventListener('click', ()=>{
   const settings = {
     name: $('#scName').value.trim(),
     phone: $('#scPhone').value.trim(),
     address: $('#scAddress').value.trim(),
-    yearStart: $('#scYearStart').value
+    yearStart: $('#scYearStart').value,
+    neonSync: $('#scNeonSync').checked
   };
   
   if (!settings.name) {
@@ -715,6 +717,7 @@ $('#scSave')?.addEventListener('click', ()=>{
   renderReports(); 
 });
 $('#scReset')?.addEventListener('click', ()=>{ if(confirm('Reset to defaults?')) setSettings({name:'Peaceful Academy of Kansas City, Missouri',phone:'',address:'',yearStart:'07-01'}); });
+$('#scNeonSync')?.addEventListener('change', ()=>{ const s=getSettings(); s.neonSync = $('#scNeonSync').checked; setSettings(s); });
 // Build a rich snapshot including denormalized names/subjects for logs
 async function buildSnapshotPayload(){
   const [students,courses,logs,portfolio,files] = await Promise.all([
@@ -1163,6 +1166,33 @@ async function init(){
     await renderCourses(); 
     await renderYearSelectors(); 
     await renderDashboard();
+
+    // Optional Neon sync: pull latest on startup and every 5 minutes
+    const s = getSettings();
+    if (s.neonSync) {
+      try {
+        appendLog('info', ['Neon sync: initial pull started']);
+        const res = await fetch('/.netlify/functions/db', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ action: 'backup.latest' }) });
+        const raw=await res.text(); let json=null; try{ json=JSON.parse(raw);}catch(_){ }
+        if(res.ok && json && json.backup && json.backup.payload){
+          const data=json.backup.payload; await clearStoresSafely(['students','courses','logs','portfolio','files']); if(data.settings) setSettings(Object.assign(getSettings(), data.settings)); for(const st of (data.students||[])) await DB.add('students', st); for(const c of (data.courses||[])) await DB.add('courses', c); for(const l of (data.logs||[])) await DB.add('logs', l); for(const p of (data.portfolio||[])) await DB.add('portfolio', p); for(const f of (data.files||[])) await DB.add('files', f);
+          appendLog('info', ['Neon sync: initial pull applied']);
+          await renderStudents(); await renderCourses(); await renderYearSelectors(); await renderDashboard();
+        }
+      } catch(e) { appendLog('warn', ['Neon sync: initial pull failed', String(e&&e.message||e)]); }
+
+      // periodic background pull
+      setInterval(async()=>{
+        try{
+          const res = await fetch('/.netlify/functions/db', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ action: 'backup.latest' }) });
+          const json=await res.json().catch(()=>null);
+          if(res.ok && json && json.backup && json.backup.payload){
+            const data=json.backup.payload; await clearStoresSafely(['students','courses','logs','portfolio','files']); if(data.settings) setSettings(Object.assign(getSettings(), data.settings)); for(const st of (data.students||[])) await DB.add('students', st); for(const c of (data.courses||[])) await DB.add('courses', c); for(const l of (data.logs||[])) await DB.add('logs', l); for(const p of (data.portfolio||[])) await DB.add('portfolio', p); for(const f of (data.files||[])) await DB.add('files', f);
+            appendLog('info', ['Neon sync: periodic pull applied']);
+          }
+        }catch(_){}
+      }, 5*60*1000);
+    }
     
     // Initialize hamburger menu
     initHamburgerMenu();
