@@ -214,6 +214,8 @@ export async function handler(event) {
     try {
       await sql`ALTER TABLE logs ADD COLUMN IF NOT EXISTS student_name TEXT`;
       await sql`ALTER TABLE logs ADD COLUMN IF NOT EXISTS course_title TEXT`;
+      // Ensure a unique index exists for upsert by (student_id, date)
+      await sql`CREATE UNIQUE INDEX IF NOT EXISTS logs_student_date_unique ON logs (student_id, date)`;
     } catch (alterError) {
       // Non-fatal; continue
       console.warn('Optional column ensure failed:', alterError);
@@ -669,11 +671,11 @@ export async function handler(event) {
             const studentId = parseInt(l.studentId);
             const courseId = parseInt(l.courseId);
             const hours = parseFloat(l.hours);
-            // Upsert based on user-defined unique constraint (e.g., student_id + date)
+            // Upsert based on unique index (student_id, date)
             await sql`
               INSERT INTO logs (id, student_id, course_id, student_name, course_title, subject, date, hours, location, notes)
               VALUES (${l.id || null}, ${studentId}, ${courseId}, ${l.studentName || null}, ${l.courseTitle || null}, ${l.subject || null}, ${l.date}, ${hours}, ${l.location}, ${l.notes || null})
-              ON CONFLICT ON CONSTRAINT logs_student_date_unique DO UPDATE SET
+              ON CONFLICT (student_id, date) DO UPDATE SET
                 student_id = EXCLUDED.student_id,
                 course_id = EXCLUDED.course_id,
                 student_name = EXCLUDED.student_name,
