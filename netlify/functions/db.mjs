@@ -137,66 +137,64 @@ export async function handler(event) {
 
     // Ensure tables exist with proper schema
     try {
-      await sql`
-        CREATE TABLE IF NOT EXISTS students (
-          id SERIAL PRIMARY KEY,
-          name TEXT NOT NULL,
-          dob DATE,
-          grade VARCHAR(50),
-          start_year INTEGER,
-          notes TEXT,
-          created_at TIMESTAMP DEFAULT NOW() NOT NULL,
-          updated_at TIMESTAMP DEFAULT NOW() NOT NULL
-        );
-        
-        CREATE TABLE IF NOT EXISTS courses (
-          id SERIAL PRIMARY KEY,
-          title TEXT NOT NULL,
-          subject VARCHAR(100) NOT NULL,
-          description TEXT,
-          created_at TIMESTAMP DEFAULT NOW() NOT NULL,
-          updated_at TIMESTAMP DEFAULT NOW() NOT NULL
-        );
-        
-        CREATE TABLE IF NOT EXISTS logs (
-          id SERIAL PRIMARY KEY,
-          student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
-          course_id INTEGER NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
-          subject VARCHAR(100),
-          date DATE NOT NULL,
-          hours NUMERIC(5,2) NOT NULL,
-          location VARCHAR(50) NOT NULL DEFAULT 'home',
-          notes TEXT,
-          created_at TIMESTAMP DEFAULT NOW() NOT NULL
-        );
-        
-        CREATE TABLE IF NOT EXISTS portfolio (
-          id SERIAL PRIMARY KEY,
-          student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
-          course_id INTEGER NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
-          title TEXT NOT NULL,
-          description TEXT,
-          tags TEXT[],
-          date DATE NOT NULL,
-          file_id INTEGER,
-          created_at TIMESTAMP DEFAULT NOW() NOT NULL
-        );
-        
-        CREATE TABLE IF NOT EXISTS files (
-          id SERIAL PRIMARY KEY,
-          name VARCHAR(255) NOT NULL,
-          type VARCHAR(100) NOT NULL,
-          size INTEGER NOT NULL,
-          created_at TIMESTAMP DEFAULT NOW() NOT NULL
-        );
-        
-        CREATE TABLE IF NOT EXISTS settings (
-          id SERIAL PRIMARY KEY,
-          key VARCHAR(100) NOT NULL UNIQUE,
-          value TEXT NOT NULL,
-          updated_at TIMESTAMP DEFAULT NOW() NOT NULL
-        );
-      `;
+      await sql`CREATE TABLE IF NOT EXISTS students (
+        id SERIAL PRIMARY KEY,
+        name TEXT NOT NULL,
+        dob DATE,
+        grade VARCHAR(50),
+        start_year INTEGER,
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT NOW() NOT NULL,
+        updated_at TIMESTAMP DEFAULT NOW() NOT NULL
+      )`;
+
+      await sql`CREATE TABLE IF NOT EXISTS courses (
+        id SERIAL PRIMARY KEY,
+        title TEXT NOT NULL,
+        subject VARCHAR(100) NOT NULL,
+        description TEXT,
+        created_at TIMESTAMP DEFAULT NOW() NOT NULL,
+        updated_at TIMESTAMP DEFAULT NOW() NOT NULL
+      )`;
+
+      await sql`CREATE TABLE IF NOT EXISTS logs (
+        id SERIAL PRIMARY KEY,
+        student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+        course_id INTEGER NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+        subject VARCHAR(100),
+        date DATE NOT NULL,
+        hours NUMERIC(5,2) NOT NULL,
+        location VARCHAR(50) NOT NULL DEFAULT 'home',
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT NOW() NOT NULL
+      )`;
+
+      await sql`CREATE TABLE IF NOT EXISTS portfolio (
+        id SERIAL PRIMARY KEY,
+        student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+        course_id INTEGER NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+        title TEXT NOT NULL,
+        description TEXT,
+        tags TEXT[],
+        date DATE NOT NULL,
+        file_id INTEGER,
+        created_at TIMESTAMP DEFAULT NOW() NOT NULL
+      )`;
+
+      await sql`CREATE TABLE IF NOT EXISTS files (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        type VARCHAR(100) NOT NULL,
+        size INTEGER NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW() NOT NULL
+      )`;
+
+      await sql`CREATE TABLE IF NOT EXISTS settings (
+        id SERIAL PRIMARY KEY,
+        key VARCHAR(100) NOT NULL UNIQUE,
+        value TEXT NOT NULL,
+        updated_at TIMESTAMP DEFAULT NOW() NOT NULL
+      )`;
     } catch (schemaError) {
       console.error('Schema creation failed:', schemaError);
       return errorResponse(`Schema creation failed: ${schemaError?.message || schemaError}`, 500);
