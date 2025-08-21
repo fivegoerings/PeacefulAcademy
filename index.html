@@ -1519,6 +1519,124 @@ if ('serviceWorker' in navigator) { window.addEventListener('load', ()=> navigat
 const $ = s=>document.querySelector(s), $$ = s=>Array.from(document.querySelectorAll(s));
 const fmt = new Intl.NumberFormat(undefined,{maximumFractionDigits:2});
 
+// Platform detection using NETLIFY_CONTEXT
+let platformInfo = {
+  context: 'unknown',
+  platform: 'unknown',
+  isProduction: false,
+  isPreview: false,
+  isBranchDeploy: false
+};
+
+// Function to get platform context from Netlify
+async function getPlatformContext() {
+  try {
+    const response = await fetch('/api/platform-context');
+    if (response.ok) {
+      platformInfo = await response.json();
+      console.log('Platform context:', platformInfo);
+      
+      // Add platform indicator to the UI if not in production
+      if (!platformInfo.isProduction) {
+        addPlatformIndicator();
+      }
+      
+      return platformInfo;
+    }
+  } catch (error) {
+    console.warn('Could not fetch platform context:', error);
+    // Fallback: try to detect from URL patterns
+    if (window.location.hostname.includes('netlify.app')) {
+      if (window.location.hostname.includes('--')) {
+        platformInfo = {
+          context: 'deploy-preview',
+          platform: 'preview',
+          isProduction: false,
+          isPreview: true,
+          isBranchDeploy: false
+        };
+      } else {
+        platformInfo = {
+          context: 'production',
+          platform: 'production',
+          isProduction: true,
+          isPreview: false,
+          isBranchDeploy: false
+        };
+      }
+    }
+  }
+  return platformInfo;
+}
+
+// Function to add a visual indicator for non-production environments
+function addPlatformIndicator() {
+  const indicator = document.createElement('div');
+  indicator.id = 'platform-indicator';
+  indicator.style.cssText = `
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: ${platformInfo.isPreview ? '#f59e0b' : '#3b82f6'};
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    z-index: 1000;
+    text-transform: uppercase;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  `;
+  indicator.textContent = platformInfo.platform;
+  document.body.appendChild(indicator);
+}
+
+// Initialize platform detection
+getPlatformContext();
+
+// Platform utility functions
+function isProduction() {
+  return platformInfo.isProduction;
+}
+
+function isPreview() {
+  return platformInfo.isPreview;
+}
+
+function isBranchDeploy() {
+  return platformInfo.isBranchDeploy;
+}
+
+function getPlatformContextValue() {
+  return platformInfo.context;
+}
+
+function getPlatform() {
+  return platformInfo.platform;
+}
+
+// Example function showing how to use platform detection
+function logPlatformInfo() {
+  console.log('Current platform:', getPlatform());
+  console.log('Is production:', isProduction());
+  console.log('Is preview:', isPreview());
+  console.log('Is branch deploy:', isBranchDeploy());
+  console.log('Context:', getPlatformContextValue());
+}
+
+// Function to conditionally execute code based on platform
+function runInEnvironment(environments, callback) {
+  const currentPlatform = getPlatform();
+  if (environments.includes(currentPlatform) || environments.includes('all')) {
+    callback();
+  }
+}
+
+// Example usage:
+// runInEnvironment(['preview', 'branch'], () => {
+//   console.log('This code only runs in preview or branch deployments');
+// });
+
 // Fix timezone handling for dates
 const todayISO = ()=> {
   const now = new Date();

@@ -12,6 +12,12 @@
   to = "/.netlify/functions/api/:splat"
   status = 200
 
+# Platform context endpoint
+[[redirects]]
+  from = "/api/platform-context"
+  to = "/.netlify/functions/platform-context"
+  status = 200
+
 # Route /admin to the admin SPA
 [[redirects]]
   from = "/admin"
