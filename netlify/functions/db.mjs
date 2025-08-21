@@ -496,17 +496,24 @@ export async function handler(event) {
         // Students
         if (Array.isArray(payload.students)) {
           for (const s of payload.students) {
-            await sql`
-              INSERT INTO students (id, name, dob, grade, start_year, notes, created_at, updated_at)
-              VALUES (${s.id || null}, ${s.name}, ${s.dob || null}, ${s.grade || null}, ${s.startYear || null}, ${s.notes || null}, ${s.createdAt || null}, ${s.updatedAt || null})
-              ON CONFLICT (id) DO UPDATE SET 
-                name = EXCLUDED.name,
-                dob = EXCLUDED.dob,
-                grade = EXCLUDED.grade,
-                start_year = EXCLUDED.start_year,
-                notes = EXCLUDED.notes,
-                updated_at = NOW()
-            `;
+            if (s.id != null) {
+              await sql`
+                INSERT INTO students (id, name, dob, grade, start_year, notes)
+                VALUES (${s.id}, ${s.name}, ${s.dob || null}, ${s.grade || null}, ${s.startYear || null}, ${s.notes || null})
+                ON CONFLICT (id) DO UPDATE SET 
+                  name = EXCLUDED.name,
+                  dob = EXCLUDED.dob,
+                  grade = EXCLUDED.grade,
+                  start_year = EXCLUDED.start_year,
+                  notes = EXCLUDED.notes,
+                  updated_at = NOW()
+              `;
+            } else {
+              await sql`
+                INSERT INTO students (name, dob, grade, start_year, notes)
+                VALUES (${s.name}, ${s.dob || null}, ${s.grade || null}, ${s.startYear || null}, ${s.notes || null})
+              `;
+            }
             resultSummary.students++;
           }
         }
@@ -514,15 +521,22 @@ export async function handler(event) {
         // Courses
         if (Array.isArray(payload.courses)) {
           for (const c of payload.courses) {
-            await sql`
-              INSERT INTO courses (id, title, subject, description, created_at, updated_at)
-              VALUES (${c.id || null}, ${c.title}, ${c.subject}, ${c.description || null}, ${c.createdAt || null}, ${c.updatedAt || null})
-              ON CONFLICT (id) DO UPDATE SET 
-                title = EXCLUDED.title,
-                subject = EXCLUDED.subject,
-                description = EXCLUDED.description,
-                updated_at = NOW()
-            `;
+            if (c.id != null) {
+              await sql`
+                INSERT INTO courses (id, title, subject, description)
+                VALUES (${c.id}, ${c.title}, ${c.subject}, ${c.description || null})
+                ON CONFLICT (id) DO UPDATE SET 
+                  title = EXCLUDED.title,
+                  subject = EXCLUDED.subject,
+                  description = EXCLUDED.description,
+                  updated_at = NOW()
+              `;
+            } else {
+              await sql`
+                INSERT INTO courses (title, subject, description)
+                VALUES (${c.title}, ${c.subject}, ${c.description || null})
+              `;
+            }
             resultSummary.courses++;
           }
         }
@@ -530,18 +544,28 @@ export async function handler(event) {
         // Logs
         if (Array.isArray(payload.logs)) {
           for (const l of payload.logs) {
-            await sql`
-              INSERT INTO logs (id, student_id, course_id, subject, date, hours, location, notes, created_at)
-              VALUES (${l.id || null}, ${parseInt(l.studentId)}, ${parseInt(l.courseId)}, ${l.subject || null}, ${l.date}, ${parseFloat(l.hours)}, ${l.location}, ${l.notes || null}, ${l.createdAt || null})
-              ON CONFLICT (id) DO UPDATE SET 
-                student_id = EXCLUDED.student_id,
-                course_id = EXCLUDED.course_id,
-                subject = EXCLUDED.subject,
-                date = EXCLUDED.date,
-                hours = EXCLUDED.hours,
-                location = EXCLUDED.location,
-                notes = EXCLUDED.notes
-            `;
+            const studentId = parseInt(l.studentId);
+            const courseId = parseInt(l.courseId);
+            const hours = parseFloat(l.hours);
+            if (l.id != null) {
+              await sql`
+                INSERT INTO logs (id, student_id, course_id, subject, date, hours, location, notes)
+                VALUES (${l.id}, ${studentId}, ${courseId}, ${l.subject || null}, ${l.date}, ${hours}, ${l.location}, ${l.notes || null})
+                ON CONFLICT (id) DO UPDATE SET 
+                  student_id = EXCLUDED.student_id,
+                  course_id = EXCLUDED.course_id,
+                  subject = EXCLUDED.subject,
+                  date = EXCLUDED.date,
+                  hours = EXCLUDED.hours,
+                  location = EXCLUDED.location,
+                  notes = EXCLUDED.notes
+              `;
+            } else {
+              await sql`
+                INSERT INTO logs (student_id, course_id, subject, date, hours, location, notes)
+                VALUES (${studentId}, ${courseId}, ${l.subject || null}, ${l.date}, ${hours}, ${l.location}, ${l.notes || null})
+              `;
+            }
             resultSummary.logs++;
           }
         }
@@ -549,18 +573,27 @@ export async function handler(event) {
         // Portfolio (map desc -> description)
         if (Array.isArray(payload.portfolio)) {
           for (const p of payload.portfolio) {
-            await sql`
-              INSERT INTO portfolio (id, student_id, course_id, title, description, tags, date, file_id, created_at)
-              VALUES (${p.id || null}, ${parseInt(p.studentId)}, ${parseInt(p.courseId)}, ${p.title}, ${p.desc || null}, ${p.tags || null}, ${p.date}, ${p.fileId || null}, ${p.createdAt || null})
-              ON CONFLICT (id) DO UPDATE SET 
-                student_id = EXCLUDED.student_id,
-                course_id = EXCLUDED.course_id,
-                title = EXCLUDED.title,
-                description = EXCLUDED.description,
-                tags = EXCLUDED.tags,
-                date = EXCLUDED.date,
-                file_id = EXCLUDED.file_id
-            `;
+            const studentId = parseInt(p.studentId);
+            const courseId = parseInt(p.courseId);
+            if (p.id != null) {
+              await sql`
+                INSERT INTO portfolio (id, student_id, course_id, title, description, tags, date, file_id)
+                VALUES (${p.id}, ${studentId}, ${courseId}, ${p.title}, ${p.desc || null}, ${p.tags || null}, ${p.date}, ${p.fileId || null})
+                ON CONFLICT (id) DO UPDATE SET 
+                  student_id = EXCLUDED.student_id,
+                  course_id = EXCLUDED.course_id,
+                  title = EXCLUDED.title,
+                  description = EXCLUDED.description,
+                  tags = EXCLUDED.tags,
+                  date = EXCLUDED.date,
+                  file_id = EXCLUDED.file_id
+              `;
+            } else {
+              await sql`
+                INSERT INTO portfolio (student_id, course_id, title, description, tags, date, file_id)
+                VALUES (${studentId}, ${courseId}, ${p.title}, ${p.desc || null}, ${p.tags || null}, ${p.date}, ${p.fileId || null})
+              `;
+            }
             resultSummary.portfolio++;
           }
         }
@@ -568,14 +601,22 @@ export async function handler(event) {
         // Files (metadata only)
         if (Array.isArray(payload.files)) {
           for (const f of payload.files) {
-            await sql`
-              INSERT INTO files (id, name, type, size, created_at)
-              VALUES (${f.id || null}, ${f.name}, ${f.type}, ${parseInt(f.size)}, ${f.createdAt || null})
-              ON CONFLICT (id) DO UPDATE SET 
-                name = EXCLUDED.name,
-                type = EXCLUDED.type,
-                size = EXCLUDED.size
-            `;
+            const size = parseInt(f.size);
+            if (f.id != null) {
+              await sql`
+                INSERT INTO files (id, name, type, size)
+                VALUES (${f.id}, ${f.name}, ${f.type}, ${size})
+                ON CONFLICT (id) DO UPDATE SET 
+                  name = EXCLUDED.name,
+                  type = EXCLUDED.type,
+                  size = EXCLUDED.size
+              `;
+            } else {
+              await sql`
+                INSERT INTO files (name, type, size)
+                VALUES (${f.name}, ${f.type}, ${size})
+              `;
+            }
             resultSummary.files++;
           }
         }
@@ -583,7 +624,7 @@ export async function handler(event) {
         return jsonResponse({ ok: true, message: 'Bulk upsert completed', counts: resultSummary });
       } catch (error) {
         console.error('bulk.upsertAll failed:', error);
-        return errorResponse('Failed to upsert all data to Neon', 500);
+        return errorResponse(`Failed to upsert all data to Neon: ${error?.message || error}`, 500);
       }
     }
 
