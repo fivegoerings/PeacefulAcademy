@@ -669,25 +669,21 @@ export async function handler(event) {
             const studentId = parseInt(l.studentId);
             const courseId = parseInt(l.courseId);
             const hours = parseFloat(l.hours);
-            if (l.id != null) {
-              await sql`
-                INSERT INTO logs (id, student_id, course_id, subject, date, hours, location, notes)
-                VALUES (${l.id}, ${studentId}, ${courseId}, ${l.subject || null}, ${l.date}, ${hours}, ${l.location}, ${l.notes || null})
-                ON CONFLICT (id) DO UPDATE SET 
-                  student_id = EXCLUDED.student_id,
-                  course_id = EXCLUDED.course_id,
-                  subject = EXCLUDED.subject,
-                  date = EXCLUDED.date,
-                  hours = EXCLUDED.hours,
-                  location = EXCLUDED.location,
-                  notes = EXCLUDED.notes
-              `;
-            } else {
-              await sql`
-                INSERT INTO logs (student_id, course_id, subject, date, hours, location, notes)
-                VALUES (${studentId}, ${courseId}, ${l.subject || null}, ${l.date}, ${hours}, ${l.location}, ${l.notes || null})
-              `;
-            }
+            // Upsert based on user-defined unique constraint (e.g., student_id + date)
+            await sql`
+              INSERT INTO logs (id, student_id, course_id, student_name, course_title, subject, date, hours, location, notes)
+              VALUES (${l.id || null}, ${studentId}, ${courseId}, ${l.studentName || null}, ${l.courseTitle || null}, ${l.subject || null}, ${l.date}, ${hours}, ${l.location}, ${l.notes || null})
+              ON CONFLICT ON CONSTRAINT logs_student_date_unique DO UPDATE SET
+                student_id = EXCLUDED.student_id,
+                course_id = EXCLUDED.course_id,
+                student_name = EXCLUDED.student_name,
+                course_title = EXCLUDED.course_title,
+                subject = EXCLUDED.subject,
+                date = EXCLUDED.date,
+                hours = EXCLUDED.hours,
+                location = EXCLUDED.location,
+                notes = EXCLUDED.notes
+            `;
             resultSummary.logs++;
           }
         }
