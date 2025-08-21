@@ -320,6 +320,22 @@ if ('serviceWorker' in navigator) { window.addEventListener('load', ()=> navigat
 const $ = s=>document.querySelector(s), $$ = s=>Array.from(document.querySelectorAll(s));
 const fmt = new Intl.NumberFormat(undefined,{maximumFractionDigits:2});
 
+// Log console sink shared with Admin Console
+const LOG_STORAGE_KEY = 'pa_log_console_v1';
+function appendLog(level, parts){
+  try{
+    const now=new Date().toISOString();
+    const entry={ ts:now, level, msg: (parts||[]).map(p=>{ try{ return typeof p==='string'? p : JSON.stringify(p); }catch(_){ return String(p);} }).join(' ') };
+    const arr=JSON.parse(localStorage.getItem(LOG_STORAGE_KEY)||'[]');
+    arr.push(entry);
+    if(arr.length>2000) arr.splice(0, arr.length-2000);
+    localStorage.setItem(LOG_STORAGE_KEY, JSON.stringify(arr));
+  }catch(_){/* ignore */}
+}
+['log','info','warn','error'].forEach(l=>{ const orig=console[l]; console[l]=function(){ try{ appendLog(l, Array.from(arguments)); }catch(_){ } return orig.apply(console, arguments); }; });
+window.addEventListener('error', e=>{ appendLog('error', [e.message||'error', e.filename||'', String(e.lineno||''), String(e.colno||'')]); });
+window.addEventListener('unhandledrejection', e=>{ appendLog('error', ['unhandledrejection', String(e.reason&&e.reason.message||e.reason||'')]); });
+
 // Fix timezone handling for dates
 const todayISO = ()=> {
   const now = new Date();
@@ -551,6 +567,7 @@ async function netlifySubmitFormData(formName, fd){
 
 // Enhanced notification system
 function showNotification(message, type = 'info') {
+  try{ appendLog(type==='error'?'error':type==='warning'?'warn':'info', [message]); }catch(_){}
   const notification = document.createElement('div');
   notification.className = `notification ${type}`;
   notification.textContent = message;
@@ -700,16 +717,19 @@ $('#scExportNeon')?.addEventListener('click', async()=>{
       portfolio: await listPortfolio(),
       files: await DB.all('files')
     };
+    appendLog('info', ['Export to Neon started']);
     const res = await fetch('/.netlify/functions/db', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ action: 'bulk.upsertAll', data: payload })
     });
     const json = await res.json().catch(()=>({}));
-    if(!res.ok || json.error){ throw new Error(json.error || `HTTP ${res.status}`); }
+    if(!res.ok || json.error){ appendLog('error', ['Export to Neon failed', json.error || `HTTP ${res.status}`]); throw new Error(json.error || `HTTP ${res.status}`); }
+    appendLog('info', ['Export to Neon completed', JSON.stringify(json.counts||{})]);
     showNotification('Exported to Neon successfully!', 'success');
   } catch(e){
     console.error('Export to Neon failed', e);
+    appendLog('error', ['Export to Neon exception', String(e&&e.message||e)]);
     showNotification('Export to Neon failed. See console.', 'error');
   }
 });
@@ -718,13 +738,14 @@ $('#scExportNeon')?.addEventListener('click', async()=>{
 $('#scImportNeon')?.addEventListener('click', async()=>{
   if(!confirm('Import from Neon will REPLACE local data. Continue?')) return;
   try {
+    appendLog('info', ['Import from Neon started']);
     const res = await fetch('/.netlify/functions/db', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ action: 'bulk.readAll' })
     });
     const json = await res.json();
-    if(!res.ok || json.error){ throw new Error(json.error || `HTTP ${res.status}`); }
+    if(!res.ok || json.error){ appendLog('error', ['Import from Neon failed', json.error || `HTTP ${res.status}`]); throw new Error(json.error || `HTTP ${res.status}`); }
     const data = json.data || {};
     await Promise.all(['students','courses','logs','portfolio','files'].map(s=>new Promise((res2,rej)=>{ const r=tx([s],'readwrite').objectStore(s).clear(); r.onsuccess=()=>res2(); r.onerror=()=>rej(r.error);}))); 
     if(data.settings) setSettings(data.settings);
@@ -733,10 +754,12 @@ $('#scImportNeon')?.addEventListener('click', async()=>{
     for(const l of (data.logs||[])) await DB.add('logs', l);
     for(const p of (data.portfolio||[])) await DB.add('portfolio', p);
     for(const f of (data.files||[])) await DB.add('files', f);
+    appendLog('info', ['Import from Neon completed', `students=${(data.students||[]).length}`, `courses=${(data.courses||[]).length}`, `logs=${(data.logs||[]).length}`, `portfolio=${(data.portfolio||[]).length}`]);
     showNotification('Imported from Neon successfully!', 'success');
     renderDashboard(); renderStudents(); renderCourses(); renderLogsTable(); renderPortfolio(); renderReports();
   } catch(e){
     console.error('Import from Neon failed', e);
+    appendLog('error', ['Import from Neon exception', String(e&&e.message||e)]);
     showNotification('Import from Neon failed. See console.', 'error');
   }
 });
