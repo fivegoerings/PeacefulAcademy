@@ -195,6 +195,14 @@ export async function handler(event) {
         value TEXT NOT NULL,
         updated_at TIMESTAMP DEFAULT NOW() NOT NULL
       )`;
+
+      // Backups table for full JSON snapshots
+      await sql`CREATE TABLE IF NOT EXISTS backups (
+        id BIGSERIAL PRIMARY KEY,
+        created_at TIMESTAMP DEFAULT NOW() NOT NULL,
+        note TEXT,
+        payload JSONB NOT NULL
+      )`;
     } catch (schemaError) {
       console.error('Schema creation failed:', schemaError);
       return errorResponse(`Schema creation failed: ${schemaError?.message || schemaError}`, 500);
@@ -394,6 +402,61 @@ export async function handler(event) {
       } catch (error) {
         console.error('Setting upsert failed:', error);
         return errorResponse('Failed to save setting', 500);
+      }
+    }
+
+    // Backup operations (store entire app snapshot as JSONB)
+    if (action === 'backup.save') {
+      if (!data || !data.payload) {
+        return errorResponse('Missing payload for backup.save');
+      }
+      try {
+        const note = data.note || null;
+        const payloadJson = JSON.stringify(data.payload);
+        const [row] = await sql`
+          INSERT INTO backups (note, payload)
+          VALUES (${note}, ${payloadJson}::jsonb)
+          RETURNING id, created_at
+        `;
+        return jsonResponse({ ok: true, id: row.id, created_at: row.created_at });
+      } catch (error) {
+        console.error('backup.save failed:', error);
+        return errorResponse(`Failed to save backup: ${error?.message || error}`, 500);
+      }
+    }
+
+    if (action === 'backup.list') {
+      try {
+        const rows = await sql`SELECT id, created_at, note FROM backups ORDER BY id DESC LIMIT 50`;
+        return jsonResponse({ ok: true, backups: rows });
+      } catch (error) {
+        console.error('backup.list failed:', error);
+        return errorResponse('Failed to list backups', 500);
+      }
+    }
+
+    if (action === 'backup.latest') {
+      try {
+        const rows = await sql`SELECT id, created_at, note, payload FROM backups ORDER BY id DESC LIMIT 1`;
+        const latest = rows[0] || null;
+        return jsonResponse({ ok: true, backup: latest });
+      } catch (error) {
+        console.error('backup.latest failed:', error);
+        return errorResponse('Failed to fetch latest backup', 500);
+      }
+    }
+
+    if (action === 'backup.read') {
+      if (!data || !data.id) return errorResponse('Backup id is required');
+      try {
+        const id = parseInt(data.id);
+        const rows = await sql`SELECT id, created_at, note, payload FROM backups WHERE id = ${id}`;
+        const b = rows[0] || null;
+        if (!b) return errorResponse('Backup not found', 404);
+        return jsonResponse({ ok: true, backup: b });
+      } catch (error) {
+        console.error('backup.read failed:', error);
+        return errorResponse('Failed to read backup', 500);
       }
     }
 

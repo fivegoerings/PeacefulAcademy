@@ -294,6 +294,8 @@ footer{margin:3rem 0 2rem;color:var(--muted);text-align:center}
             <button class="danger" id="scWipe">Erase Everything</button>
             <button id="scExportNeon" title="Push all local data to Neon (upsert)">Export to Neon</button>
             <button id="scImportNeon" title="Replace local data with Neon data">Import from Neon</button>
+            <button id="scBackupNeon" title="Save a full JSON snapshot into Neon backups">Backup to Neon</button>
+            <button id="scRestoreNeon" title="Replace local data with the latest Neon backup">Restore from Neon</button>
           </div>
         </div>
       </div>
@@ -772,6 +774,59 @@ $('#scImportNeon')?.addEventListener('click', async()=>{
     appendLog('error', ['Import from Neon exception', String(e&&e.message||e)]);
     showNotification('Import from Neon failed. See console.', 'error');
   }
+});
+
+// Backup to Neon (store JSON in backups table)
+$('#scBackupNeon')?.addEventListener('click', async()=>{
+  try {
+    appendLog('info', ['Backup to Neon started']);
+    const payload = {
+      settings: getSettings(),
+      students: await listStudents(),
+      courses: await listCourses(),
+      logs: await listLogs(),
+      portfolio: await listPortfolio(),
+      files: await DB.all('files')
+    };
+    const res = await fetch('/.netlify/functions/db', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ action: 'backup.save', data: { payload, note: 'manual backup' } })
+    });
+    const raw = await res.text(); let json=null; try{ json=JSON.parse(raw);}catch(_){ }
+    if(!res.ok || (json && json.error)){
+      const msg=(json&&json.error)||`HTTP ${res.status}`; appendLog('error',['Backup to Neon failed', msg, 'raw:', raw.slice(0,500)]); throw new Error(msg);
+    }
+    appendLog('info', ['Backup to Neon completed', JSON.stringify(json)]);
+    showNotification('Backup saved in Neon', 'success');
+  } catch(e){ console.error('Backup to Neon failed', e); appendLog('error', ['Backup to Neon exception', String(e&&e.message||e)]); showNotification('Backup to Neon failed', 'error'); }
+});
+
+// Restore from latest Neon backup
+$('#scRestoreNeon')?.addEventListener('click', async()=>{
+  if(!confirm('Restore will REPLACE local data with the latest Neon backup. Continue?')) return;
+  try {
+    appendLog('info', ['Restore from Neon started']);
+    const res = await fetch('/.netlify/functions/db', {
+      method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'backup.latest' })
+    });
+    const raw=await res.text(); let json=null; try{ json=JSON.parse(raw);}catch(_){ }
+    if(!res.ok || (json && json.error)){
+      const msg=(json&&json.error)||`HTTP ${res.status}`; appendLog('error',['Restore from Neon failed', msg, 'raw:', raw.slice(0,500)]); throw new Error(msg);
+    }
+    const backup = json.backup; if(!backup || !backup.payload){ showNotification('No backup found in Neon', 'warning'); return; }
+    const data = backup.payload;
+    await Promise.all(['students','courses','logs','portfolio','files'].map(s=>new Promise((res2,rej)=>{ const r=tx([s],'readwrite').objectStore(s).clear(); r.onsuccess=()=>res2(); r.onerror=()=>rej(r.error);}))); 
+    if(data.settings) setSettings(data.settings);
+    for(const s of (data.students||[])) await DB.add('students', s);
+    for(const c of (data.courses||[])) await DB.add('courses', c);
+    for(const l of (data.logs||[])) await DB.add('logs', l);
+    for(const p of (data.portfolio||[])) await DB.add('portfolio', p);
+    for(const f of (data.files||[])) await DB.add('files', f);
+    appendLog('info', ['Restore from Neon completed']);
+    showNotification('Restored from Neon backup', 'success');
+    renderDashboard(); renderStudents(); renderCourses(); renderLogsTable(); renderPortfolio(); renderReports();
+  } catch(e){ console.error('Restore from Neon failed', e); appendLog('error',['Restore from Neon exception', String(e&&e.message||e)]); showNotification('Restore from Neon failed','error'); }
 });
 
 /* Students */
