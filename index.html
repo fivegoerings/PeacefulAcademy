@@ -292,6 +292,8 @@ footer{margin:3rem 0 2rem;color:var(--muted);text-align:center}
             <button id="scExportAll">Export ALL (JSON)</button>
             <label class="pill muted">Import ALL <input type="file" id="scImportAll" accept="application/json" style="display:none"></label>
             <button class="danger" id="scWipe">Erase Everything</button>
+            <button id="scExportNeon" title="Push all local data to Neon (upsert)">Export to Neon</button>
+            <button id="scImportNeon" title="Replace local data with Neon data">Import from Neon</button>
           </div>
         </div>
       </div>
@@ -685,6 +687,58 @@ $('#scReset')?.addEventListener('click', ()=>{ if(confirm('Reset to defaults?'))
 $('#scExportAll')?.addEventListener('click', async()=>{ const blob=new Blob([JSON.stringify({settings:getSettings(),students:await listStudents(),courses:await listCourses(),logs:await listLogs(),portfolio:await listPortfolio()},null,2)],{type:'application/json'}); const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:'peaceful-academy-backup.json'}); a.click(); });
 $('#scImportAll')?.addEventListener('change', async(e)=>{ const f=e.target.files?.[0]; if(!f) return; if(!confirm('Import will REPLACE existing data. Continue?')) return; const data=JSON.parse(await f.text()); await Promise.all(['students','courses','logs','portfolio','files'].map(s=>new Promise((res,rej)=>{ const r=tx([s],'readwrite').objectStore(s).clear(); r.onsuccess=()=>res(); r.onerror=()=>rej(r.error);}))); if(data.settings) setSettings(data.settings); for(const s of (data.students||[])) await DB.add('students', s); for(const c of (data.courses||[])) await DB.add('courses', c); for(const l of (data.logs||[])) await DB.add('logs', l); for(const p of (data.portfolio||[])) await DB.add('portfolio', p); alert('Imported.'); renderDashboard(); renderStudents(); renderCourses(); renderLogsTable(); renderPortfolio(); renderReports(); });
 $('#scWipe')?.addEventListener('click', async()=>{ if(!confirm('Erase ALL data?')) return; await Promise.all(['students','courses','logs','portfolio','files'].map(s=>new Promise((res,rej)=>{ const r=tx([s],'readwrite').objectStore(s).clear(); r.onsuccess=()=>res(); r.onerror=()=>rej(r.error);}))); alert('Cleared.'); renderDashboard(); renderStudents(); renderCourses(); renderLogsTable(); renderPortfolio(); renderReports(); });
+
+// Export all local data to Neon (bulk upsert)
+$('#scExportNeon')?.addEventListener('click', async()=>{
+  try {
+    const payload = {
+      settings: getSettings(),
+      students: await listStudents(),
+      courses: await listCourses(),
+      logs: await listLogs(),
+      portfolio: await listPortfolio(),
+      files: await DB.all('files')
+    };
+    const res = await fetch('/.netlify/functions/db', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ action: 'bulk.upsertAll', data: payload })
+    });
+    const json = await res.json().catch(()=>({}));
+    if(!res.ok || json.error){ throw new Error(json.error || `HTTP ${res.status}`); }
+    showNotification('Exported to Neon successfully!', 'success');
+  } catch(e){
+    console.error('Export to Neon failed', e);
+    showNotification('Export to Neon failed. See console.', 'error');
+  }
+});
+
+// Import all data from Neon (replace local)
+$('#scImportNeon')?.addEventListener('click', async()=>{
+  if(!confirm('Import from Neon will REPLACE local data. Continue?')) return;
+  try {
+    const res = await fetch('/.netlify/functions/db', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ action: 'bulk.readAll' })
+    });
+    const json = await res.json();
+    if(!res.ok || json.error){ throw new Error(json.error || `HTTP ${res.status}`); }
+    const data = json.data || {};
+    await Promise.all(['students','courses','logs','portfolio','files'].map(s=>new Promise((res2,rej)=>{ const r=tx([s],'readwrite').objectStore(s).clear(); r.onsuccess=()=>res2(); r.onerror=()=>rej(r.error);}))); 
+    if(data.settings) setSettings(data.settings);
+    for(const s of (data.students||[])) await DB.add('students', s);
+    for(const c of (data.courses||[])) await DB.add('courses', c);
+    for(const l of (data.logs||[])) await DB.add('logs', l);
+    for(const p of (data.portfolio||[])) await DB.add('portfolio', p);
+    for(const f of (data.files||[])) await DB.add('files', f);
+    showNotification('Imported from Neon successfully!', 'success');
+    renderDashboard(); renderStudents(); renderCourses(); renderLogsTable(); renderPortfolio(); renderReports();
+  } catch(e){
+    console.error('Import from Neon failed', e);
+    showNotification('Import from Neon failed. See console.', 'error');
+  }
+});
 
 /* Students */
 document.body.addEventListener('click', async(e)=>{ if(e.target.classList.contains('stDel')){ await DB.del('students', Number(e.target.dataset.id)); renderStudents(); renderDashboard(); renderLogsTable(); renderPortfolio(); renderReports(); } });

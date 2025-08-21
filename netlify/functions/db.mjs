@@ -394,6 +394,195 @@ export async function handler(event) {
       }
     }
 
+    // Bulk: read all tables from Neon
+    if (action === 'bulk.readAll') {
+      try {
+        const [studentsRows, coursesRows, logsRows, portfolioRows, filesRows, settingsRows] = await Promise.all([
+          sql`SELECT id, name, dob, grade, start_year, notes, created_at, updated_at FROM students ORDER BY id`,
+          sql`SELECT id, title, subject, description, created_at, updated_at FROM courses ORDER BY id`,
+          sql`SELECT id, student_id, course_id, subject, date, hours, location, notes, created_at FROM logs ORDER BY id`,
+          sql`SELECT id, student_id, course_id, title, description, tags, date, file_id, created_at FROM portfolio ORDER BY id`,
+          sql`SELECT id, name, type, size, created_at FROM files ORDER BY id`,
+          sql`SELECT key, value FROM settings`
+        ]);
+
+        const settings = settingsRows.reduce((acc, row) => {
+          acc[row.key] = row.value;
+          return acc;
+        }, {});
+
+        const data = {
+          settings: {
+            name: settings.name || null,
+            phone: settings.phone || null,
+            address: settings.address || null,
+            yearStart: settings.yearStart || '07-01'
+          },
+          students: studentsRows.map(r => ({
+            id: r.id,
+            name: r.name,
+            dob: r.dob || null,
+            grade: r.grade || null,
+            startYear: r.start_year || null,
+            notes: r.notes || null,
+            createdAt: r.created_at,
+            updatedAt: r.updated_at
+          })),
+          courses: coursesRows.map(r => ({
+            id: r.id,
+            title: r.title,
+            subject: r.subject,
+            description: r.description || null,
+            createdAt: r.created_at,
+            updatedAt: r.updated_at
+          })),
+          logs: logsRows.map(r => ({
+            id: r.id,
+            studentId: r.student_id,
+            courseId: r.course_id,
+            subject: r.subject || null,
+            date: r.date,
+            hours: parseFloat(r.hours),
+            location: r.location,
+            notes: r.notes || null,
+            createdAt: r.created_at
+          })),
+          portfolio: portfolioRows.map(r => ({
+            id: r.id,
+            studentId: r.student_id,
+            courseId: r.course_id,
+            title: r.title,
+            desc: r.description || null,
+            tags: r.tags || [],
+            date: r.date,
+            fileId: r.file_id || null,
+            createdAt: r.created_at
+          })),
+          files: filesRows.map(r => ({
+            id: r.id,
+            name: r.name,
+            type: r.type,
+            size: r.size,
+            createdAt: r.created_at
+          }))
+        };
+
+        return jsonResponse({ ok: true, data });
+      } catch (error) {
+        console.error('bulk.readAll failed:', error);
+        return errorResponse('Failed to read all data from Neon', 500);
+      }
+    }
+
+    // Bulk: upsert all tables into Neon
+    if (action === 'bulk.upsertAll') {
+      try {
+        const payload = data || {};
+        await sql`BEGIN`;
+
+        // Settings: store each field as its own key
+        if (payload.settings && typeof payload.settings === 'object') {
+          const entries = Object.entries(payload.settings).filter(([_, v]) => v !== undefined);
+          for (const [key, value] of entries) {
+            await sql`
+              INSERT INTO settings (key, value)
+              VALUES (${key}, ${String(value)})
+              ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
+            `;
+          }
+        }
+
+        // Students
+        if (Array.isArray(payload.students)) {
+          for (const s of payload.students) {
+            await sql`
+              INSERT INTO students (id, name, dob, grade, start_year, notes, created_at, updated_at)
+              VALUES (${s.id || null}, ${s.name}, ${s.dob || null}, ${s.grade || null}, ${s.startYear || null}, ${s.notes || null}, ${s.createdAt || null}, ${s.updatedAt || null})
+              ON CONFLICT (id) DO UPDATE SET 
+                name = EXCLUDED.name,
+                dob = EXCLUDED.dob,
+                grade = EXCLUDED.grade,
+                start_year = EXCLUDED.start_year,
+                notes = EXCLUDED.notes,
+                updated_at = NOW()
+            `;
+          }
+        }
+
+        // Courses
+        if (Array.isArray(payload.courses)) {
+          for (const c of payload.courses) {
+            await sql`
+              INSERT INTO courses (id, title, subject, description, created_at, updated_at)
+              VALUES (${c.id || null}, ${c.title}, ${c.subject}, ${c.description || null}, ${c.createdAt || null}, ${c.updatedAt || null})
+              ON CONFLICT (id) DO UPDATE SET 
+                title = EXCLUDED.title,
+                subject = EXCLUDED.subject,
+                description = EXCLUDED.description,
+                updated_at = NOW()
+            `;
+          }
+        }
+
+        // Logs
+        if (Array.isArray(payload.logs)) {
+          for (const l of payload.logs) {
+            await sql`
+              INSERT INTO logs (id, student_id, course_id, subject, date, hours, location, notes, created_at)
+              VALUES (${l.id || null}, ${parseInt(l.studentId)}, ${parseInt(l.courseId)}, ${l.subject || null}, ${l.date}, ${parseFloat(l.hours)}, ${l.location}, ${l.notes || null}, ${l.createdAt || null})
+              ON CONFLICT (id) DO UPDATE SET 
+                student_id = EXCLUDED.student_id,
+                course_id = EXCLUDED.course_id,
+                subject = EXCLUDED.subject,
+                date = EXCLUDED.date,
+                hours = EXCLUDED.hours,
+                location = EXCLUDED.location,
+                notes = EXCLUDED.notes
+            `;
+          }
+        }
+
+        // Portfolio (map desc -> description)
+        if (Array.isArray(payload.portfolio)) {
+          for (const p of payload.portfolio) {
+            await sql`
+              INSERT INTO portfolio (id, student_id, course_id, title, description, tags, date, file_id, created_at)
+              VALUES (${p.id || null}, ${parseInt(p.studentId)}, ${parseInt(p.courseId)}, ${p.title}, ${p.desc || null}, ${p.tags || null}, ${p.date}, ${p.fileId || null}, ${p.createdAt || null})
+              ON CONFLICT (id) DO UPDATE SET 
+                student_id = EXCLUDED.student_id,
+                course_id = EXCLUDED.course_id,
+                title = EXCLUDED.title,
+                description = EXCLUDED.description,
+                tags = EXCLUDED.tags,
+                date = EXCLUDED.date,
+                file_id = EXCLUDED.file_id
+            `;
+          }
+        }
+
+        // Files (metadata only)
+        if (Array.isArray(payload.files)) {
+          for (const f of payload.files) {
+            await sql`
+              INSERT INTO files (id, name, type, size, created_at)
+              VALUES (${f.id || null}, ${f.name}, ${f.type}, ${parseInt(f.size)}, ${f.createdAt || null})
+              ON CONFLICT (id) DO UPDATE SET 
+                name = EXCLUDED.name,
+                type = EXCLUDED.type,
+                size = EXCLUDED.size
+            `;
+          }
+        }
+
+        await sql`COMMIT`;
+        return jsonResponse({ ok: true, message: 'Bulk upsert completed' });
+      } catch (error) {
+        console.error('bulk.upsertAll failed:', error);
+        try { await sql`ROLLBACK`; } catch(_) {}
+        return errorResponse('Failed to upsert all data to Neon', 500);
+      }
+    }
+
     return errorResponse(`Unknown action: ${action}`, 400);
 
   } catch (error) {
