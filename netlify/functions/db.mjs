@@ -678,9 +678,9 @@ export async function handler(event) {
               ON CONFLICT (student_id, date) DO UPDATE SET
                 student_id = EXCLUDED.student_id,
                 course_id = EXCLUDED.course_id,
-                student_name = EXCLUDED.student_name,
-                course_title = EXCLUDED.course_title,
-                subject = EXCLUDED.subject,
+                student_name = COALESCE(EXCLUDED.student_name, logs.student_name),
+                course_title = COALESCE(EXCLUDED.course_title, logs.course_title),
+                subject = COALESCE(EXCLUDED.subject, logs.subject),
                 date = EXCLUDED.date,
                 hours = EXCLUDED.hours,
                 location = EXCLUDED.location,

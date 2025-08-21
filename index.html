@@ -705,21 +705,30 @@ $('#scSave')?.addEventListener('click', ()=>{
   renderReports(); 
 });
 $('#scReset')?.addEventListener('click', ()=>{ if(confirm('Reset to defaults?')) setSettings({name:'Peaceful Academy of Kansas City, Missouri',phone:'',address:'',yearStart:'07-01'}); });
-$('#scExportAll')?.addEventListener('click', async()=>{ const blob=new Blob([JSON.stringify({settings:getSettings(),students:await listStudents(),courses:await listCourses(),logs:await listLogs(),portfolio:await listPortfolio()},null,2)],{type:'application/json'}); const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:'peaceful-academy-backup.json'}); a.click(); });
+// Build a rich snapshot including denormalized names/subjects for logs
+async function buildSnapshotPayload(){
+  const [students,courses,logs,portfolio,files] = await Promise.all([
+    listStudents(), listCourses(), listLogs(), listPortfolio(), DB.all('files')
+  ]);
+  const cMap = new Map(courses.map(c=>[Number(c.id), c]));
+  const sMap = new Map(students.map(s=>[Number(s.id), s]));
+  const logsRich = logs.map(l=>({
+    ...l,
+    studentName: sMap.get(Number(l.studentId))?.name || null,
+    courseTitle: cMap.get(Number(l.courseId))?.title || null,
+    subject: cMap.get(Number(l.courseId))?.subject || null
+  }));
+  return { settings: getSettings(), students, courses, logs: logsRich, portfolio, files };
+}
+
+$('#scExportAll')?.addEventListener('click', async()=>{ const payload = await buildSnapshotPayload(); const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}); const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:'peaceful-academy-backup.json'}); a.click(); });
 $('#scImportAll')?.addEventListener('change', async(e)=>{ const f=e.target.files?.[0]; if(!f) return; if(!confirm('Import will REPLACE existing data. Continue?')) return; const data=JSON.parse(await f.text()); await Promise.all(['students','courses','logs','portfolio','files'].map(s=>new Promise((res,rej)=>{ const r=tx([s],'readwrite').objectStore(s).clear(); r.onsuccess=()=>res(); r.onerror=()=>rej(r.error);}))); if(data.settings) setSettings(data.settings); for(const s of (data.students||[])) await DB.add('students', s); for(const c of (data.courses||[])) await DB.add('courses', c); for(const l of (data.logs||[])) await DB.add('logs', l); for(const p of (data.portfolio||[])) await DB.add('portfolio', p); alert('Imported.'); renderDashboard(); renderStudents(); renderCourses(); renderLogsTable(); renderPortfolio(); renderReports(); });
 $('#scWipe')?.addEventListener('click', async()=>{ if(!confirm('Erase ALL data?')) return; await Promise.all(['students','courses','logs','portfolio','files'].map(s=>new Promise((res,rej)=>{ const r=tx([s],'readwrite').objectStore(s).clear(); r.onsuccess=()=>res(); r.onerror=()=>rej(r.error);}))); alert('Cleared.'); renderDashboard(); renderStudents(); renderCourses(); renderLogsTable(); renderPortfolio(); renderReports(); });
 
 // Export all local data to Neon (bulk upsert)
 $('#scExportNeon')?.addEventListener('click', async()=>{
   try {
-    const payload = {
-      settings: getSettings(),
-      students: await listStudents(),
-      courses: await listCourses(),
-      logs: await listLogs(),
-      portfolio: await listPortfolio(),
-      files: await DB.all('files')
-    };
+    const payload = await buildSnapshotPayload();
     appendLog('info', ['Export to Neon started']);
     const res = await fetch('/.netlify/functions/db', {
       method: 'POST',
@@ -781,14 +790,7 @@ $('#scImportNeon')?.addEventListener('click', async()=>{
 $('#scBackupNeon')?.addEventListener('click', async()=>{
   try {
     appendLog('info', ['Backup to Neon started']);
-    const payload = {
-      settings: getSettings(),
-      students: await listStudents(),
-      courses: await listCourses(),
-      logs: await listLogs(),
-      portfolio: await listPortfolio(),
-      files: await DB.all('files')
-    };
+    const payload = await buildSnapshotPayload();
     const res = await fetch('/.netlify/functions/db', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
