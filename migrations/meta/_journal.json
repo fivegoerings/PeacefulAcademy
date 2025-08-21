@@ -1,0 +1,20 @@
+{
+  "version": "5",
+  "dialect": "pg",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1755803291512,
+      "tag": "0000_loud_oracle",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1755803339650,
+      "tag": "0001_whole_terrax",
+      "breakpoints": true
+    }
+  ]
+}

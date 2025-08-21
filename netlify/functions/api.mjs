@@ -1,267 +1,234 @@
 import { neon } from '@netlify/neon';
+import { drizzle } from 'drizzle-orm/neon-http';
+import { 
+  students, 
+  courses, 
+  logs, 
+  portfolio, 
+  files, 
+  settings 
+} from '../../db/schema.js';
+import { eq, and, desc, asc, sql, count } from 'drizzle-orm';
 
-// Import schema manually since ES modules don't support relative imports in Netlify functions
-const schema = {
-  students: { id: 'id', name: 'name', dob: 'dob', grade: 'grade', startYear: 'start_year', notes: 'notes', createdAt: 'created_at', updatedAt: 'updated_at' },
-  courses: { id: 'id', title: 'title', subject: 'subject', description: 'description', createdAt: 'created_at', updatedAt: 'updated_at' },
-  logs: { id: 'id', studentId: 'student_id', courseId: 'course_id', subject: 'subject', date: 'date', hours: 'hours', location: 'location', notes: 'notes', createdAt: 'created_at' },
-  portfolio: { id: 'id', studentId: 'student_id', courseId: 'course_id', title: 'title', description: 'description', tags: 'tags', date: 'date', fileId: 'file_id', createdAt: 'created_at' }
-};
+// Use Netlify's automatic database URL handling
+const sqlClient = neon();
+const db = drizzle(sqlClient);
 
-// Input validation helpers
-function validateStudentId(studentId) {
-  const id = parseInt(studentId);
-  return !isNaN(id) && id > 0;
-}
-
-function validateYear(year) {
-  const y = parseInt(year);
-  return !isNaN(y) && y >= 1900 && y <= 2100;
-}
-
-function validateHours(hours) {
-  const h = parseFloat(hours);
-  return !isNaN(h) && h >= 0.25 && h <= 24;
-}
-
-function validateDate(dateString) {
-  const date = new Date(dateString);
-  return !isNaN(date.getTime()) && date <= new Date();
-}
-
-// CORS headers
-function corsHeaders() {
+// Helper function to create error response
+function errorResponse(message, statusCode = 500) {
   return {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
-    "Access-Control-Max-Age": "86400"
+    statusCode,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ error: message })
   };
 }
 
-// JSON response helper
-function jsonResponse(data, statusCode = 200) {
+// Helper function to create success response
+function jsonResponse(data) {
   return {
-    statusCode,
-    headers: { 
-      "Content-Type": "application/json", 
-      ...corsHeaders() 
-    },
+    statusCode: 200,
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
   };
 }
 
-// Error response helper
-function errorResponse(message, statusCode = 400) {
-  return jsonResponse({ 
-    error: message,
-    timestamp: new Date().toISOString()
-  }, statusCode);
-}
-
 export async function handler(event) {
-  // Handle CORS preflight
-  if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 200, headers: corsHeaders() };
-  }
-
   try {
     // Use Netlify's automatic database URL handling
     const sql = neon();
-    const context = process.env.CONTEXT || 'unknown';
-    const isDev = ['dev', 'develop', 'development', 'deploy-preview', 'branch-deploy'].includes(context.toLowerCase());
-    const isProd = context === 'production';
-    const path = event.path || '';
+    const action = (event.queryStringParameters?.action) ||
+                   (JSON.parse(event.body || '{}').action);
 
-    // Health check endpoint
-    if (path.includes('/health')) {
+    if (!action) {
+      return errorResponse('No action specified', 400);
+    }
+
+    // Test database connection
+    if (action === 'test') {
       try {
-        const startTime = Date.now();
-        const [result] = await sql`SELECT version() AS version, now() AS now`;
-        const latency = Date.now() - startTime;
-        
-        return jsonResponse({
-          ok: true,
-          version: result.version,
-          timestamp: result.now,
-          latency_ms: latency
+        await sql`SELECT 1 as test`;
+        return jsonResponse({ 
+          connected: true, 
+          message: 'Database connection successful',
+          timestamp: new Date().toISOString()
         });
       } catch (error) {
-        console.error('Health check failed:', error);
-        return errorResponse('Database connection failed', 503);
+        return jsonResponse({ 
+          connected: false, 
+          message: 'Database connection failed',
+          error: error.message,
+          timestamp: new Date().toISOString()
+        });
       }
     }
 
-    // Database statistics endpoint
-    if (path.includes('/stats')) {
+    // Get database statistics
+    if (action === 'stats') {
       try {
-        const stats = await getDatabaseStats(sql);
-        return jsonResponse({ stats });
+        const [studentsCount, coursesCount, logsCount, portfolioCount] = await Promise.all([
+          db.select({ count: count() }).from(students),
+          db.select({ count: count() }).from(courses),
+          db.select({ count: count() }).from(logs),
+          db.select({ count: count() }).from(portfolio)
+        ]);
+
+        return jsonResponse({
+          stats: {
+            students: studentsCount[0]?.count || 0,
+            courses: coursesCount[0]?.count || 0,
+            logs: logsCount[0]?.count || 0,
+            portfolio: portfolioCount[0]?.count || 0
+          }
+        });
       } catch (error) {
-        console.error('Stats query failed:', error);
-        return errorResponse('Failed to retrieve statistics', 500);
+        console.error('Failed to get stats:', error);
+        return errorResponse('Failed to get statistics', 500);
       }
     }
 
-    // Yearly reports endpoint
-    if (path.includes('/reports/yearly')) {
-      const { studentId, year } = event.queryStringParameters || {};
-      
-      if (!validateStudentId(studentId)) {
-        return errorResponse('Invalid student ID');
-      }
-      
-      if (!validateYear(year)) {
-        return errorResponse('Invalid year');
-      }
-
+    // Health check
+    if (action === 'health') {
       try {
-        const rows = await sql`
-          SELECT 
-            ${year} AS academic_year,
-            SUM(hours)::float AS total_hours,
-            SUM(CASE 
-              WHEN subject IN ('Reading','Language Arts','Mathematics','Science','Social Studies') 
-              THEN hours ELSE 0 END)::float AS core_hours,
-            SUM(CASE 
-              WHEN subject IN ('Reading','Language Arts','Mathematics','Science','Social Studies') 
-              AND location='home' THEN hours ELSE 0 END)::float AS home_core_hours
-          FROM logs
-          WHERE student_id = ${parseInt(studentId)} 
-          AND (EXTRACT(YEAR FROM date) = ${parseInt(year)} 
-               OR EXTRACT(YEAR FROM date) = ${parseInt(year) + 1})
-        `;
-        
-        return jsonResponse({ rows });
+        await sql`SELECT 1`;
+        return jsonResponse({ 
+          status: 'healthy', 
+          timestamp: new Date().toISOString(),
+          database: 'connected'
+        });
       } catch (error) {
-        console.error('Yearly report query failed:', error);
-        return errorResponse('Failed to generate yearly report', 500);
+        return jsonResponse({ 
+          status: 'unhealthy', 
+          timestamp: new Date().toISOString(),
+          database: 'disconnected',
+          error: error.message
+        });
       }
     }
 
-    // Transcript endpoint
-    if (path.includes('/transcript/')) {
-      const studentId = path.split('/transcript/')[1]?.split('?')[0];
-      const q = event.queryStringParameters || {};
-      const years = (q.years || '').split(',').filter(Boolean).map(y => parseInt(y));
-      const scale = parseInt(q.scale) || 120;
-
-      if (!validateStudentId(studentId)) {
-        return errorResponse('Invalid student ID');
-      }
-
-      if (years.length === 0) {
-        return errorResponse('No years specified');
-      }
-
-      if (scale < 1 || scale > 1000) {
-        return errorResponse('Invalid scale value');
-      }
-
+    // Student operations
+    if (action === 'student.insert') {
+      const { data } = JSON.parse(event.body || '{}');
       try {
-        const rows = await sql`
-          SELECT 
-            EXTRACT(YEAR FROM date) AS academic_year,
-            c.title AS course_title, 
-            l.subject, 
-            SUM(l.hours)::float AS hours_total,
-            ROUND(SUM(l.hours) / ${scale}::float, 2) AS credits_scale
-          FROM logs l
-          JOIN courses c ON l.course_id = c.id
-          WHERE l.student_id = ${parseInt(studentId)} 
-          AND EXTRACT(YEAR FROM date) = ANY(${years})
-          GROUP BY academic_year, c.title, l.subject
-          ORDER BY academic_year, c.title
-        `;
+        const result = await db.insert(students).values({
+          name: data.name,
+          dob: data.dob || null,
+          grade: data.grade || null,
+          startYear: data.startYear || null,
+          notes: data.notes || null
+        }).returning();
         
-        return jsonResponse({ rows });
+        return jsonResponse({ id: result[0].id });
       } catch (error) {
-        console.error('Transcript query failed:', error);
-        return errorResponse('Failed to generate transcript', 500);
+        console.error('Student insert error:', error);
+        return errorResponse('Failed to insert student', 500);
       }
     }
 
-    // Student list endpoint
-    if (path.includes('/students')) {
+    if (action === 'student.list') {
       try {
-        const students = await sql`SELECT * FROM students ORDER BY name`;
-        return jsonResponse({ students });
+        const result = await db.select().from(students).orderBy(asc(students.name));
+        return jsonResponse({ students: result });
       } catch (error) {
-        console.error('Students query failed:', error);
-        return errorResponse('Failed to retrieve students', 500);
+        console.error('Student list error:', error);
+        return errorResponse('Failed to list students', 500);
       }
     }
 
-    // Course list endpoint
-    if (path.includes('/courses')) {
+    // Course operations
+    if (action === 'course.insert') {
+      const { data } = JSON.parse(event.body || '{}');
       try {
-        const courses = await sql`SELECT * FROM courses ORDER BY title`;
-        return jsonResponse({ courses });
+        const result = await db.insert(courses).values({
+          title: data.title,
+          subject: data.subject,
+          description: data.description || null
+        }).returning();
+        
+        return jsonResponse({ id: result[0].id });
       } catch (error) {
-        console.error('Courses query failed:', error);
-        return errorResponse('Failed to retrieve courses', 500);
+        console.error('Course insert error:', error);
+        return errorResponse('Failed to insert course', 500);
       }
     }
 
-    // Logs endpoint
-    if (path.includes('/logs')) {
-      const { studentId, year, subject } = event.queryStringParameters || {};
-      
+    if (action === 'course.list') {
       try {
-        let query = 'SELECT * FROM logs';
-        const params = [];
-        let whereClauses = [];
-        
-        if (studentId && validateStudentId(studentId)) {
-          whereClauses.push(`student_id = $${params.length + 1}`);
-          params.push(parseInt(studentId));
-        }
-        
-        if (year && validateYear(year)) {
-          whereClauses.push(`EXTRACT(YEAR FROM date) = $${params.length + 1}`);
-          params.push(parseInt(year));
-        }
-        
-        if (subject) {
-          whereClauses.push(`subject = $${params.length + 1}`);
-          params.push(subject);
-        }
-        
-        if (whereClauses.length > 0) {
-          query += ' WHERE ' + whereClauses.join(' AND ');
-        }
-        
-        query += ' ORDER BY date DESC';
-        
-        const logs = await sql.unsafe(query, ...params);
-        return jsonResponse({ logs });
+        const result = await db.select().from(courses).orderBy(asc(courses.title));
+        return jsonResponse({ courses: result });
       } catch (error) {
-        console.error('Logs query failed:', error);
-        return errorResponse('Failed to retrieve logs', 500);
+        console.error('Course list error:', error);
+        return errorResponse('Failed to list courses', 500);
       }
     }
 
-    return errorResponse('Unknown endpoint', 404);
+    // Log operations
+    if (action === 'log.insert') {
+      const { data } = JSON.parse(event.body || '{}');
+      try {
+        const result = await db.insert(logs).values({
+          studentId: data.studentId,
+          courseId: data.courseId,
+          studentName: data.studentName || null,
+          courseTitle: data.courseTitle || null,
+          subject: data.subject || null,
+          date: data.date,
+          hours: data.hours,
+          location: data.location || 'home',
+          notes: data.notes || null
+        }).returning();
+        
+        return jsonResponse({ id: result[0].id });
+      } catch (error) {
+        console.error('Log insert error:', error);
+        return errorResponse('Failed to insert log', 500);
+      }
+    }
+
+    if (action === 'log.list') {
+      try {
+        const result = await db.select().from(logs).orderBy(desc(logs.date));
+        return jsonResponse({ logs: result });
+      } catch (error) {
+        console.error('Log list error:', error);
+        return errorResponse('Failed to list logs', 500);
+      }
+    }
+
+    // Portfolio operations
+    if (action === 'portfolio.insert') {
+      const { data } = JSON.parse(event.body || '{}');
+      try {
+        const result = await db.insert(portfolio).values({
+          studentId: data.studentId,
+          courseId: data.courseId,
+          title: data.title,
+          description: data.description || null,
+          tags: data.tags || null,
+          date: data.date,
+          fileId: data.fileId || null
+        }).returning();
+        
+        return jsonResponse({ id: result[0].id });
+      } catch (error) {
+        console.error('Portfolio insert error:', error);
+        return errorResponse('Failed to insert portfolio item', 500);
+      }
+    }
+
+    if (action === 'portfolio.list') {
+      try {
+        const result = await db.select().from(portfolio).orderBy(desc(portfolio.date));
+        return jsonResponse({ portfolio: result });
+      } catch (error) {
+        console.error('Portfolio list error:', error);
+        return errorResponse('Failed to list portfolio items', 500);
+      }
+    }
+
+    return errorResponse(`Unknown action: ${action}`, 400);
 
   } catch (error) {
-    console.error('API handler error:', error);
+    console.error('Function error:', error);
     return errorResponse('Internal server error', 500);
   }
-}
-
-// Helper function to get database statistics
-async function getDatabaseStats(sql) {
-  const [studentsCount, coursesCount, logsCount, portfolioCount] = await Promise.all([
-    sql`SELECT COUNT(*)::int AS count FROM students`,
-    sql`SELECT COUNT(*)::int AS count FROM courses`,
-    sql`SELECT COUNT(*)::int AS count FROM logs`,
-    sql`SELECT COUNT(*)::int AS count FROM portfolio`
-  ]);
-
-  return {
-    students: studentsCount[0]?.count || 0,
-    courses: coursesCount[0]?.count || 0,
-    logs: logsCount[0]?.count || 0,
-    portfolio: portfolioCount[0]?.count || 0
-  };
 }

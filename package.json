@@ -12,8 +12,8 @@
     "functions:build": "netlify functions:build",
     "test": "echo 'No tests specified' && exit 0",
     "generate-icons": "node generate-icons.cjs",
-    "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
+    "db:generate": "drizzle-kit generate:pg",
+    "db:migrate": "node migrate.js",
     "db:studio": "drizzle-kit studio",
     "lint": "echo 'No linter configured' && exit 0",
     "format": "echo 'No formatter configured' && exit 0"

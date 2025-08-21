@@ -7,13 +7,16 @@ import {
   numeric, 
   timestamp,
   primaryKey,
-  index
+  index,
+  jsonb,
+  bigint,
+  serial
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 // Students table
 export const students = pgTable('students', {
-  id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+  id: serial('id').primaryKey(),
   name: varchar('name', { length: 255 }).notNull(),
   dob: date('dob'),
   grade: varchar('grade', { length: 50 }),
@@ -28,7 +31,7 @@ export const students = pgTable('students', {
 
 // Courses table
 export const courses = pgTable('courses', {
-  id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+  id: serial('id').primaryKey(),
   title: varchar('title', { length: 255 }).notNull(),
   subject: varchar('subject', { length: 100 }).notNull(),
   description: text('description'),
@@ -41,9 +44,11 @@ export const courses = pgTable('courses', {
 
 // Logs table for tracking hours
 export const logs = pgTable('logs', {
-  id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+  id: serial('id').primaryKey(),
   studentId: integer('student_id').notNull().references(() => students.id, { onDelete: 'cascade' }),
   courseId: integer('course_id').notNull().references(() => courses.id, { onDelete: 'cascade' }),
+  studentName: varchar('student_name', { length: 255 }), // Denormalized for performance
+  courseTitle: varchar('course_title', { length: 255 }), // Denormalized for performance
   subject: varchar('subject', { length: 100 }),
   date: date('date').notNull(),
   hours: numeric('hours', { precision: 5, scale: 2 }).notNull(),
@@ -54,12 +59,14 @@ export const logs = pgTable('logs', {
   studentIdIdx: index('logs_student_id_idx').on(table.studentId),
   courseIdIdx: index('logs_course_id_idx').on(table.courseId),
   dateIdx: index('logs_date_idx').on(table.date),
-  subjectIdx: index('logs_subject_idx').on(table.subject)
+  subjectIdx: index('logs_subject_idx').on(table.subject),
+  studentNameIdx: index('logs_student_name_idx').on(table.studentName),
+  courseTitleIdx: index('logs_course_title_idx').on(table.courseTitle)
 }));
 
 // Portfolio table for work samples
 export const portfolio = pgTable('portfolio', {
-  id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+  id: serial('id').primaryKey(),
   studentId: integer('student_id').notNull().references(() => students.id, { onDelete: 'cascade' }),
   courseId: integer('course_id').notNull().references(() => courses.id, { onDelete: 'cascade' }),
   title: varchar('title', { length: 255 }).notNull(),
@@ -76,7 +83,7 @@ export const portfolio = pgTable('portfolio', {
 
 // Files table for storing file metadata
 export const files = pgTable('files', {
-  id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+  id: serial('id').primaryKey(),
   name: varchar('name', { length: 255 }).notNull(),
   type: varchar('type', { length: 100 }).notNull(),
   size: integer('size').notNull(),
@@ -85,11 +92,21 @@ export const files = pgTable('files', {
 
 // Settings table for application configuration
 export const settings = pgTable('settings', {
-  id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+  id: serial('id').primaryKey(),
   key: varchar('key', { length: 100 }).notNull().unique(),
   value: text('value').notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull()
 });
+
+// Backups table for storing full JSON snapshots
+export const backups = pgTable('backups', {
+  id: serial('id').primaryKey(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  note: text('note'),
+  payload: jsonb('payload').notNull()
+}, (table) => ({
+  createdAtIdx: index('backups_created_at_idx').on(table.createdAt)
+}));
 
 // Relations
 export const studentsRelations = relations(students, ({ many }) => ({
@@ -137,3 +154,5 @@ export type File = typeof files.$inferSelect;
 export type NewFile = typeof files.$inferInsert;
 export type Setting = typeof settings.$inferSelect;
 export type NewSetting = typeof settings.$inferInsert;
+export type Backup = typeof backups.$inferSelect;
+export type NewBackup = typeof backups.$inferInsert;

@@ -68,30 +68,7 @@ function debugFormData(form) {
   console.log('=== End Debug ===');
 }
 
-// API helper with error handling
-async function apiCall(endpoint, options = {}) {
-  try {
-    const response = await fetch(`/.netlify/functions/api/${endpoint}`, {
-      headers: { 
-        'Content-Type': 'application/json',
-        ...options.headers 
-      },
-      ...options
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
-    }
-    
-    return await response.json();
-  } catch (error) {
-    console.error(`API call failed for ${endpoint}:`, error);
-    throw error;
-  }
-}
-
-// Database helper with error handling
+// Database helper with error handling - Updated for Drizzle ORM
 async function dbCall(action, data = {}) {
   try {
     console.log(`Making database call: ${action}`, data);
@@ -200,7 +177,7 @@ function initTabs() {
   });
 }
 
-// Database Monitor
+// Database Monitor - Updated for Drizzle ORM
 async function loadHealth() {
   const healthEl = $('#health');
   const healthJsonEl = $('#healthJson');
@@ -209,10 +186,10 @@ async function loadHealth() {
     healthEl.textContent = 'Checking...';
     healthEl.className = 'muted';
     
-    const data = await apiCall('health');
+    const data = await dbCall('health');
     
-    if (data.ok) {
-      healthEl.textContent = `OK (${data.latency_ms}ms)`;
+    if (data.status === 'healthy') {
+      healthEl.textContent = 'OK';
       healthEl.className = 'ok';
     } else {
       healthEl.textContent = 'ERROR';
@@ -235,7 +212,7 @@ async function loadStats() {
   const statsBody = $('#statsBody');
   
   try {
-    const data = await apiCall('stats');
+    const data = await dbCall('stats');
     statsBody.innerHTML = '';
     
     if (data.stats) {
@@ -308,11 +285,11 @@ async function loadEnvironmentInfo() {
     // Test connection and display results
     connectionTestEl.innerHTML = '';
     try {
-      const healthData = await apiCall('health');
+      const healthData = await dbCall('system.testConnection');
       const testResults = {
-        'Connection Status': healthData.ok ? 'Connected' : 'Failed',
-        'Response Time': healthData.latency_ms ? `${healthData.latency_ms}ms` : 'Unknown',
-        'Database Version': healthData.version || 'Unknown',
+        'Connection Status': healthData.connected ? 'Connected' : 'Failed',
+        'Response Time': 'N/A', // Not provided in new API
+        'Database Version': 'N/A', // Not provided in new API
         'Server Time': healthData.timestamp || 'Unknown'
       };
       
@@ -322,9 +299,6 @@ async function loadEnvironmentInfo() {
         let valueClass = '';
         if (key === 'Connection Status') {
           valueClass = value === 'Connected' ? 'success' : 'error';
-        } else if (key === 'Response Time' && value !== 'Unknown') {
-          const ms = parseInt(value);
-          valueClass = ms < 100 ? 'success' : ms < 500 ? 'warning' : 'error';
         }
         item.innerHTML = `
           <div class="env-label">${key}</div>
@@ -354,12 +328,12 @@ async function loadEnvironmentInfo() {
   }
 }
 
-// Students Management
+// Students Management - Updated for Drizzle ORM
 async function loadStudents() {
   const studentsBody = $('#studentsBody');
   
   try {
-    const data = await apiCall('students');
+    const data = await dbCall('student.list');
     studentsBody.innerHTML = '';
     
     if (data.students && data.students.length > 0) {
@@ -369,7 +343,7 @@ async function loadStudents() {
           <td>${student.name}</td>
           <td>${student.dob || '—'}</td>
           <td>${student.grade || '—'}</td>
-          <td>${student.start_year || '—'}</td>
+          <td>${student.startYear || '—'}</td>
           <td>
             <button class="btn-edit" data-id="${student.id}" aria-label="Edit student">Edit</button>
             <button class="btn-delete" data-id="${student.id}" aria-label="Delete student">Delete</button>
@@ -408,7 +382,7 @@ async function addStudent(form) {
     console.log('Adding student with data:', studentData);
     const result = await dbCall('student.insert', studentData);
     
-    if (result.ok) {
+    if (result.id) {
       showToast('Student added successfully', 'success');
       form.reset();
       await loadStudents();
@@ -419,12 +393,12 @@ async function addStudent(form) {
   }
 }
 
-// Courses Management
+// Courses Management - Updated for Drizzle ORM
 async function loadCourses() {
   const coursesBody = $('#coursesBody');
   
   try {
-    const data = await apiCall('courses');
+    const data = await dbCall('course.list');
     coursesBody.innerHTML = '';
     
     if (data.courses && data.courses.length > 0) {
@@ -434,7 +408,7 @@ async function loadCourses() {
           <td>${course.title}</td>
           <td>${course.subject}</td>
           <td>${course.description || '—'}</td>
-          <td>${course.created_at ? new Date(course.created_at).toLocaleDateString() : '—'}</td>
+          <td>${course.createdAt ? new Date(course.createdAt).toLocaleDateString() : '—'}</td>
           <td>
             <button class="btn-edit" data-id="${course.id}" aria-label="Edit course">Edit</button>
             <button class="btn-delete" data-id="${course.id}" aria-label="Delete course">Delete</button>
@@ -475,7 +449,7 @@ async function addCourse(form) {
     console.log('Adding course with data:', courseData);
     const result = await dbCall('course.insert', courseData);
     
-    if (result.ok) {
+    if (result.id) {
       showToast('Course added successfully', 'success');
       form.reset();
       await loadCourses();
@@ -486,12 +460,12 @@ async function addCourse(form) {
   }
 }
 
-// Logs Management
+// Logs Management - Updated for Drizzle ORM
 async function loadLogs() {
   const logsBody = $('#logsBody');
   
   try {
-    const data = await apiCall('logs');
+    const data = await dbCall('log.list');
     logsBody.innerHTML = '';
     
     if (data.logs && data.logs.length > 0) {
@@ -499,8 +473,8 @@ async function loadLogs() {
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td>${log.date}</td>
-          <td>${log.student_name || '—'}</td>
-          <td>${log.course_title || '—'}</td>
+          <td>${log.studentName || '—'}</td>
+          <td>${log.courseTitle || '—'}</td>
           <td>${log.subject || '—'}</td>
           <td>${log.hours}</td>
           <td>${log.location}</td>
@@ -556,7 +530,7 @@ async function addLog(form) {
     console.log('Adding log with data:', logData);
     const result = await dbCall('log.insert', logData);
     
-    if (result.ok) {
+    if (result.id) {
       showToast('Log entry added successfully', 'success');
       form.reset();
       await loadLogs();
