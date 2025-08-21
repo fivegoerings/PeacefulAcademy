@@ -523,6 +523,17 @@ const DB={
   }) 
 };
 
+// Safely clear data stores whether IndexedDB is available or not
+async function clearStoresSafely(storeNames){
+  try{
+    if (db) {
+      await Promise.all(storeNames.map(s=> new Promise((res,rej)=>{ const r=tx([s],'readwrite').objectStore(s).clear(); r.onsuccess=()=>res(); r.onerror=()=>rej(r.error);} )));
+    } else {
+      storeNames.forEach(s=>{ lsWrite(s, []); localStorage.setItem(lsCounterKey(s), '0'); });
+    }
+  }catch(e){ console.error('clearStoresSafely failed', e); throw e; }
+}
+
 // Clean up object URLs to prevent memory leaks
 function cleanupObjectUrls() {
   for (const [key, url] of objectUrlCache.entries()) {
@@ -721,7 +732,7 @@ async function buildSnapshotPayload(){
 }
 
 $('#scExportAll')?.addEventListener('click', async()=>{ const payload = await buildSnapshotPayload(); const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}); const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:'peaceful-academy-backup.json'}); a.click(); });
-$('#scImportAll')?.addEventListener('change', async(e)=>{ const f=e.target.files?.[0]; if(!f) return; if(!confirm('Import will REPLACE existing data. Continue?')) return; const data=JSON.parse(await f.text()); await Promise.all(['students','courses','logs','portfolio','files'].map(s=>new Promise((res,rej)=>{ const r=tx([s],'readwrite').objectStore(s).clear(); r.onsuccess=()=>res(); r.onerror=()=>rej(r.error);}))); if(data.settings) setSettings(data.settings); for(const s of (data.students||[])) await DB.add('students', s); for(const c of (data.courses||[])) await DB.add('courses', c); for(const l of (data.logs||[])) await DB.add('logs', l); for(const p of (data.portfolio||[])) await DB.add('portfolio', p); alert('Imported.'); renderDashboard(); renderStudents(); renderCourses(); renderLogsTable(); renderPortfolio(); renderReports(); });
+$('#scImportAll')?.addEventListener('change', async(e)=>{ const f=e.target.files?.[0]; if(!f) return; if(!confirm('Import will REPLACE existing data. Continue?')) return; const data=JSON.parse(await f.text()); await clearStoresSafely(['students','courses','logs','portfolio','files']); if(data.settings) setSettings(data.settings); for(const s of (data.students||[])) await DB.add('students', s); for(const c of (data.courses||[])) await DB.add('courses', c); for(const l of (data.logs||[])) await DB.add('logs', l); for(const p of (data.portfolio||[])) await DB.add('portfolio', p); alert('Imported.'); renderDashboard(); renderStudents(); renderCourses(); renderLogsTable(); renderPortfolio(); renderReports(); });
 $('#scWipe')?.addEventListener('click', async()=>{ if(!confirm('Erase ALL data?')) return; await Promise.all(['students','courses','logs','portfolio','files'].map(s=>new Promise((res,rej)=>{ const r=tx([s],'readwrite').objectStore(s).clear(); r.onsuccess=()=>res(); r.onerror=()=>rej(r.error);}))); alert('Cleared.'); renderDashboard(); renderStudents(); renderCourses(); renderLogsTable(); renderPortfolio(); renderReports(); });
 
 // Export all local data to Neon (bulk upsert)
@@ -768,7 +779,7 @@ $('#scImportNeon')?.addEventListener('click', async()=>{
       throw new Error(msg);
     }
     const data = json.data || {};
-    await Promise.all(['students','courses','logs','portfolio','files'].map(s=>new Promise((res2,rej)=>{ const r=tx([s],'readwrite').objectStore(s).clear(); r.onsuccess=()=>res2(); r.onerror=()=>rej(r.error);}))); 
+    await clearStoresSafely(['students','courses','logs','portfolio','files']); 
     if(data.settings) setSettings(data.settings);
     for(const s of (data.students||[])) await DB.add('students', s);
     for(const c of (data.courses||[])) await DB.add('courses', c);
@@ -818,7 +829,7 @@ $('#scRestoreNeon')?.addEventListener('click', async()=>{
     }
     const backup = json.backup; if(!backup || !backup.payload){ showNotification('No backup found in Neon', 'warning'); return; }
     const data = backup.payload;
-    await Promise.all(['students','courses','logs','portfolio','files'].map(s=>new Promise((res2,rej)=>{ const r=tx([s],'readwrite').objectStore(s).clear(); r.onsuccess=()=>res2(); r.onerror=()=>rej(r.error);}))); 
+    await clearStoresSafely(['students','courses','logs','portfolio','files']); 
     if(data.settings) setSettings(data.settings);
     for(const s of (data.students||[])) await DB.add('students', s);
     for(const c of (data.courses||[])) await DB.add('courses', c);
