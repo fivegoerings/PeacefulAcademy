@@ -575,8 +575,6 @@ async function init() {
     
     // Remove loading state
     document.body.classList.remove('loading');
-    
-    showToast('Admin panel loaded successfully', 'success');
   } catch (error) {
     console.error('Failed to initialize admin panel:', error);
     showToast('Failed to initialize admin panel', 'error');
