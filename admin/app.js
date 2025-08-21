@@ -121,7 +121,13 @@ async function dbCall(action, data = {}) {
 
 // Toast notification system
 function showToast(message, type = 'info') {
-  try { appendLog(type==='error'?'error':type==='warning'?'warn':'info', [message]); } catch(_){}
+  try {
+    // Skip noisy entries that aren't useful in the log console
+    const IGNORE = new Set(['Admin panel loaded successfully']);
+    if (!IGNORE.has(String(message))) {
+      appendLog(type==='error'?'error':type==='warning'?'warn':'info', [message]);
+    }
+  } catch(_){}
   const toast = document.createElement('div');
   toast.className = `toast toast-${type}`;
   toast.textContent = message;
