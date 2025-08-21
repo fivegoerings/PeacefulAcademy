@@ -761,40 +761,59 @@ async function deleteLog(logId) {
 
 // Edit form management
 function showEditForm(type, data) {
+  console.log('showEditForm called with:', { type, data });
+  
   const formId = `${type}EditForm`;
   const form = document.getElementById(formId);
   const addForm = document.getElementById(`${type}Form`);
   
+  console.log('Form elements found:', { formId, form, addForm });
+  
   if (form && addForm) {
-    // Hide add form, show edit form
-    addForm.style.display = 'none';
-    form.style.display = 'block';
-    
-    // Populate form with data
-    if (type === 'student') {
-      const [firstName, ...lastNameParts] = data.name.split(' ');
-      const lastName = lastNameParts.join(' ');
-      form.querySelector('[name="first_name"]').value = firstName || '';
-      form.querySelector('[name="last_name"]').value = lastName || '';
-      form.querySelector('[name="birth_date"]').value = data.dob || '';
-      form.querySelector('[name="grade"]').value = data.grade || '';
-      form.querySelector('[name="start_year"]').value = data.startYear || '';
-      form.querySelector('[name="notes"]').value = data.notes || '';
-      form.dataset.studentId = data.id;
-    } else if (type === 'course') {
-      form.querySelector('[name="title"]').value = data.title || '';
-      form.querySelector('[name="subject"]').value = data.subject || '';
-      form.querySelector('[name="description"]').value = data.description || '';
-      form.dataset.courseId = data.id;
-    } else if (type === 'log') {
-      form.querySelector('[name="student_id"]').value = data.studentId || '';
-      form.querySelector('[name="course_id"]').value = data.courseId || '';
-      form.querySelector('[name="date"]').value = data.date || '';
-      form.querySelector('[name="hours"]').value = Number(data.hours) || '';
-      form.querySelector('[name="location"]').value = data.location || 'home';
-      form.querySelector('[name="notes"]').value = data.notes || '';
-      form.dataset.logId = data.id;
+    // For log forms, ensure dropdowns are populated first
+    if (type === 'log') {
+      populateDropdowns().then(() => {
+        // Hide add form, show edit form
+        addForm.style.display = 'none';
+        form.style.display = 'block';
+        
+        console.log('Populating log form with data:', data);
+        form.querySelector('[name="student_id"]').value = data.studentId || '';
+        form.querySelector('[name="course_id"]').value = data.courseId || '';
+        form.querySelector('[name="date"]').value = data.date || '';
+        form.querySelector('[name="hours"]').value = Number(data.hours) || '';
+        form.querySelector('[name="location"]').value = data.location || 'home';
+        form.querySelector('[name="notes"]').value = data.notes || '';
+        form.dataset.logId = data.id;
+      }).catch(error => {
+        console.error('Failed to populate dropdowns:', error);
+        showToast('Failed to load dropdown data', 'error');
+      });
+    } else {
+      // Hide add form, show edit form
+      addForm.style.display = 'none';
+      form.style.display = 'block';
+      
+      // Populate form with data
+      if (type === 'student') {
+        const [firstName, ...lastNameParts] = data.name.split(' ');
+        const lastName = lastNameParts.join(' ');
+        form.querySelector('[name="first_name"]').value = firstName || '';
+        form.querySelector('[name="last_name"]').value = lastName || '';
+        form.querySelector('[name="birth_date"]').value = data.dob || '';
+        form.querySelector('[name="grade"]').value = data.grade || '';
+        form.querySelector('[name="start_year"]').value = data.startYear || '';
+        form.querySelector('[name="notes"]').value = data.notes || '';
+        form.dataset.studentId = data.id;
+      } else if (type === 'course') {
+        form.querySelector('[name="title"]').value = data.title || '';
+        form.querySelector('[name="subject"]').value = data.subject || '';
+        form.querySelector('[name="description"]').value = data.description || '';
+        form.dataset.courseId = data.id;
+      }
     }
+  } else {
+    console.error('Form elements not found:', { formId, form, addForm });
   }
 }
 
@@ -891,19 +910,32 @@ function initEventListeners() {
       const id = parseInt(e.target.dataset.id);
       const type = e.target.closest('section').id;
       
+      console.log('Edit button clicked:', { 
+        id, 
+        type, 
+        datasetId: e.target.dataset.id,
+        sectionId: e.target.closest('section').id,
+        sectionElement: e.target.closest('section')
+      });
+      
       try {
         // Get the data for the item to edit
         let data;
         if (type === 'students') {
           const studentsData = await dbCall('student.list');
-          data = studentsData.students.find(s => s.id === id);
+          console.log('Students data:', studentsData.students);
+          data = studentsData.students.find(s => Number(s.id) === id);
         } else if (type === 'courses') {
           const coursesData = await dbCall('course.list');
-          data = coursesData.courses.find(c => c.id === id);
+          console.log('Courses data:', coursesData.courses);
+          data = coursesData.courses.find(c => Number(c.id) === id);
         } else if (type === 'logs') {
           const logsData = await dbCall('log.list');
-          data = logsData.logs.find(l => l.id === id);
+          console.log('Logs data:', logsData.logs);
+          data = logsData.logs.find(l => Number(l.id) === id);
         }
+        
+        console.log('Found data for editing:', data);
         
         if (data) {
           showEditForm(type.slice(0, -1), data); // Remove 's' from end
@@ -911,6 +943,7 @@ function initEventListeners() {
           showToast('Item not found', 'error');
         }
       } catch (error) {
+        console.error('Error in edit button handler:', error);
         showToast(`Failed to load item for editing: ${error.message}`, 'error');
       }
     } else if (e.target.classList.contains('btn-delete')) {
