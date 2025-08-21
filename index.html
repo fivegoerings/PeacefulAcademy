@@ -398,15 +398,35 @@ let db;
     }
   }; 
   req.onsuccess=()=>{db=req.result; init();}; 
-  req.onerror=(e)=>{console.error('IndexedDB error:', e); alert('Database error. Please refresh the page.');}; 
+  req.onerror=(e)=>{
+    console.error('IndexedDB error:', e);
+    // Fallback: continue without IndexedDB (will use localStorage-based DB)
+    db=null;
+    init();
+  }; 
 })();
 function tx(names,mode='readonly'){ return db.transaction(names,mode); }
+// LocalStorage fallback helpers
+function lsKey(s){ return 'pa_store_'+s; }
+function lsCounterKey(s){ return 'pa_store_'+s+'_id'; }
+function lsRead(s){ try{ return JSON.parse(localStorage.getItem(lsKey(s))||'[]'); }catch(_){ return []; } }
+function lsWrite(s, arr){ localStorage.setItem(lsKey(s), JSON.stringify(arr)); }
+function lsNextId(s){ const k=lsCounterKey(s); const v=Number(localStorage.getItem(k)||'0')+1; localStorage.setItem(k, String(v)); return v; }
 const DB={ 
   add:(s,o)=>new Promise((res,rej)=>{
     try {
-      const r=tx([s],'readwrite').objectStore(s).add(o); 
-      r.onsuccess=()=>res(r.result); 
-      r.onerror=(e)=>{console.error('DB add error:', e); rej(r.error);}
+      if (db) {
+        const r=tx([s],'readwrite').objectStore(s).add(o); 
+        r.onsuccess=()=>res(r.result); 
+        r.onerror=(e)=>{console.error('DB add error:', e); rej(r.error);} 
+      } else {
+        const arr=lsRead(s);
+        const obj=Object.assign({}, o);
+        if (obj.id==null) obj.id=lsNextId(s);
+        arr.push(obj);
+        lsWrite(s, arr);
+        res(obj.id);
+      }
     } catch(e) {
       console.error('DB add exception:', e);
       rej(e);
@@ -414,9 +434,17 @@ const DB={
   }), 
   put:(s,o)=>new Promise((res,rej)=>{
     try {
-      const r=tx([s],'readwrite').objectStore(s).put(o); 
-      r.onsuccess=()=>res(r.result); 
-      r.onerror=(e)=>{console.error('DB put error:', e); rej(r.error);}
+      if (db) {
+        const r=tx([s],'readwrite').objectStore(s).put(o); 
+        r.onsuccess=()=>res(r.result); 
+        r.onerror=(e)=>{console.error('DB put error:', e); rej(r.error);} 
+      } else {
+        const arr=lsRead(s);
+        const idx=arr.findIndex(it=>String(it.id)===String(o.id));
+        if (idx>=0) arr[idx]=Object.assign({}, o); else arr.push(Object.assign({}, o));
+        lsWrite(s, arr);
+        res(o.id);
+      }
     } catch(e) {
       console.error('DB put exception:', e);
       rej(e);
@@ -424,9 +452,19 @@ const DB={
   }), 
   get:(s,k)=>new Promise((res,rej)=>{
     try {
-      const r=tx([s]).objectStore(s).get(k); 
-      r.onsuccess=()=>res(r.result); 
-      r.onerror=(e)=>{console.error('DB get error:', e); rej(r.error);}
+      if (db) {
+        const r=tx([s]).objectStore(s).get(k); 
+        r.onsuccess=()=>res(r.result); 
+        r.onerror=(e)=>{console.error('DB get error:', e); rej(r.error);} 
+      } else {
+        const arr=lsRead(s);
+        const v=arr.find(it=>String(it.id)===String(k));
+        // Provide safe placeholder for files without blobs
+        if (s==='files' && v && !v.blob) {
+          v.blob=new Blob([], { type: v.type||'application/octet-stream' });
+        }
+        res(v||null);
+      }
     } catch(e) {
       console.error('DB get exception:', e);
       rej(e);
@@ -434,9 +472,13 @@ const DB={
   }), 
   all:(s)=>new Promise((res,rej)=>{
     try {
-      const r=tx([s]).objectStore(s).getAll(); 
-      r.onsuccess=()=>res(r.result || []); 
-      r.onerror=(e)=>{console.error('DB all error:', e); rej(r.error);}
+      if (db) {
+        const r=tx([s]).objectStore(s).getAll(); 
+        r.onsuccess=()=>res(r.result || []); 
+        r.onerror=(e)=>{console.error('DB all error:', e); rej(r.error);} 
+      } else {
+        res(lsRead(s));
+      }
     } catch(e) {
       console.error('DB all exception:', e);
       rej(e);
@@ -444,9 +486,15 @@ const DB={
   }), 
   del:(s,k)=>new Promise((res,rej)=>{
     try {
-      const r=tx([s],'readwrite').objectStore(s).delete(k); 
-      r.onsuccess=()=>res(); 
-      r.onerror=(e)=>{console.error('DB delete error:', e); rej(r.error);}
+      if (db) {
+        const r=tx([s],'readwrite').objectStore(s).delete(k); 
+        r.onsuccess=()=>res(); 
+        r.onerror=(e)=>{console.error('DB delete error:', e); rej(r.error);} 
+      } else {
+        const arr=lsRead(s).filter(it=>String(it.id)!==String(k));
+        lsWrite(s, arr);
+        res();
+      }
     } catch(e) {
       console.error('DB delete exception:', e);
       rej(e);

@@ -11,7 +11,7 @@
     "functions:dev": "netlify dev --functions",
     "functions:build": "netlify functions:build",
     "test": "echo 'No tests specified' && exit 0",
-    "generate-icons": "node generate-icons.js",
+    "generate-icons": "node generate-icons.cjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
