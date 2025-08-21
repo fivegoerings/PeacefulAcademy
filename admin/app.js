@@ -21,6 +21,9 @@ function appendLog(level, args) {
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
+// Number formatter for consistent display (same as main dashboard)
+const fmt = new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 });
+
 // Robust form data extraction
 function getFormValue(form, fieldName) {
   try {
@@ -615,13 +618,19 @@ async function loadLogs() {
     
     if (data.logs && data.logs.length > 0) {
       data.logs.forEach(log => {
+        // Debug: Log the first few entries to see the data structure
+        if (data.logs.indexOf(log) < 3) {
+          console.log('Log entry data:', log);
+          console.log('Hours value:', log.hours, 'Type:', typeof log.hours);
+        }
+        
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td>${log.date}</td>
           <td>${log.studentName || '—'}</td>
           <td>${log.courseTitle || '—'}</td>
           <td>${log.subject || '—'}</td>
-          <td>${log.hours}</td>
+          <td>${fmt.format(Number(log.hours) || 0)}</td>
           <td>${log.location}</td>
           <td>${log.notes || '—'}</td>
           <td>
@@ -781,7 +790,7 @@ function showEditForm(type, data) {
       form.querySelector('[name="student_id"]').value = data.studentId || '';
       form.querySelector('[name="course_id"]').value = data.courseId || '';
       form.querySelector('[name="date"]').value = data.date || '';
-      form.querySelector('[name="hours"]').value = data.hours || '';
+      form.querySelector('[name="hours"]').value = Number(data.hours) || '';
       form.querySelector('[name="location"]').value = data.location || 'home';
       form.querySelector('[name="notes"]').value = data.notes || '';
       form.dataset.logId = data.id;
