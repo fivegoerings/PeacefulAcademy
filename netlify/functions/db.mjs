@@ -1,4 +1,4 @@
-import { neon } from '@neondatabase/serverless';
+import { neon } from '@netlify/neon';
 
 // Input validation helpers
 function validateStudentData(data) {
@@ -126,23 +126,11 @@ export async function handler(event) {
   }
 
   try {
-    // Choose database URL based on environment (dev vs prod)
-    const isDevEnv = (
-      process.env.NETLIFY_DEV === 'true' ||
-      (process.env.NODE_ENV && process.env.NODE_ENV !== 'production') ||
-      ['dev', 'develop', 'development', 'deploy-preview', 'branch-deploy'].includes((process.env.CONTEXT || '').toLowerCase())
-    );
-
-    const databaseUrl = (isDevEnv && process.env.NETLIFY_DATABASE_URL_DEV)
-      ? process.env.NETLIFY_DATABASE_URL_DEV
-      : process.env.NETLIFY_DATABASE_URL;
-
-    // Validate database connection
-    if (!databaseUrl) {
-      return errorResponse('Database configuration error', 500);
-    }
-
-    const sql = neon(databaseUrl);
+    // @netlify/neon automatically uses NETLIFY_DATABASE_URL
+    // For development vs production, you can set different NETLIFY_DATABASE_URL values
+    // in your Netlify environment variables based on the context
+    
+    const sql = neon();
     const action = (event.queryStringParameters?.action) ||
                    (JSON.parse(event.body || '{}').action);
 

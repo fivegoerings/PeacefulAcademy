@@ -1,4 +1,4 @@
-import { neon } from '@neondatabase/serverless';
+import { neon } from '@netlify/neon';
 
 // Import schema manually since ES modules don't support relative imports in Netlify functions
 const schema = {
@@ -66,12 +66,8 @@ export async function handler(event) {
   }
 
   try {
-    // Validate database connection
-    if (!process.env.NETLIFY_DATABASE_URL) {
-      return errorResponse('Database configuration error', 500);
-    }
-
-    const sql = neon(process.env.NETLIFY_DATABASE_URL);
+    // @netlify/neon automatically uses NETLIFY_DATABASE_URL
+    const sql = neon();
     const path = event.path || '';
 
     // Health check endpoint

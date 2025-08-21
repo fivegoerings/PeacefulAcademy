@@ -1,14 +1,10 @@
-import { neon } from '@neondatabase/serverless';
+import { neon } from '@netlify/neon';
 import { drizzle } from 'drizzle-orm/neon-http';
 import * as schema from './schema';
 
-// Validate environment variable
-if (!process.env.NETLIFY_DATABASE_URL) {
-  throw new Error('NETLIFY_DATABASE_URL environment variable is required');
-}
-
 // Create database connection with error handling
-const sql = neon(process.env.NETLIFY_DATABASE_URL);
+// @netlify/neon automatically uses NETLIFY_DATABASE_URL
+const sql = neon();
 
 export const db = drizzle(sql, { schema });
 
