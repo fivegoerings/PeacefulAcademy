@@ -5,7 +5,7 @@
 <title>Peaceful Academy — Kansas City, Missouri</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="description" content="Missouri-compliant homeschool hours, courses, portfolio tracker with Netlify Forms, Neon DB, and PWA." />
-    <meta name="theme-color" content="#0b1226" />
+    <meta name="theme-color" content="#1e293b" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="manifest" href="./manifest.webmanifest">
@@ -15,70 +15,1083 @@
 <link rel="icon" href="./favicon.ico" sizes="any" />
 <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
 <style>
-:root{--bg:#0f172a;--card:#0b1226;--ink:#e5e7eb;--muted:#94a3b8;--border:#1f2937;--accent:#22c55e;--accent2:#06b6d4;--danger:#ef4444;--ok:#10b981}
-*{box-sizing:border-box}html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto}
-.wrap{max-width:1100px;margin:0 auto;padding:24px}
-.topbar{position:sticky;top:0;z-index:3;background:rgba(15,23,42,.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
-.topbar .wrap{display:flex;justify-content:space-between;align-items:center}
-.hamburger{display:none;flex-direction:column;gap:4px;background:none;border:none;cursor:pointer;padding:8px}
-.hamburger span{width:24px;height:3px;background:var(--ink);border-radius:2px;transition:all 0.3s ease}
-.hamburger.active span:nth-child(1){transform:rotate(45deg) translate(6px,6px)}
-.hamburger.active span:nth-child(2){opacity:0}
-.hamburger.active span:nth-child(3){transform:rotate(-45deg) translate(6px,-6px)}
-nav{display:flex;gap:.5rem;flex-wrap:wrap}
-nav a{padding:.5rem .8rem;border-radius:999px;border:1px solid var(--border);background:#0a1123;color:inherit;text-decoration:none;transition:all 0.2s ease}
-nav a.active{background:linear-gradient(135deg,#1e293b,#0b1226)}
-nav a.admin-link{background:linear-gradient(135deg,#dc2626,#b91c1c);color:white;border-color:#dc2626}
-nav a.admin-link:hover{background:linear-gradient(135deg,#b91c1c,#991b1b)}
-@media(max-width:768px){
-  .hamburger{display:flex}
-  nav{position:absolute;top:100%;left:0;right:0;background:rgba(15,23,42,.95);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);flex-direction:column;padding:1rem;transform:translateY(-100%);opacity:0;visibility:hidden;transition:all 0.3s ease}
-  nav.active{transform:translateY(0);opacity:1;visibility:visible}
-  nav a{border-radius:8px;margin-bottom:0.5rem}
+:root{
+  --bg: #f8fafc;
+  --card: #ffffff;
+  --ink: #1e293b;
+  --muted: #64748b;
+  --border: #e2e8f0;
+  --accent: #3b82f6;
+  --accent2: #06b6d4;
+  --danger: #ef4444;
+  --ok: #10b981;
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
-h1{font-size:1.4rem;margin:.6rem 0 .2rem} h2{font-size:1.15rem;margin:.2rem 0 .6rem;color:#d1d5db}
-.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1rem}
-.grid{display:grid;gap:1rem}.two{grid-template-columns:1fr 1fr}.three{grid-template-columns:repeat(3,1fr)}.four{grid-template-columns:repeat(4,1fr)}@media(max-width:800px){.two,.three,.four{grid-template-columns:1fr}}
-label{font-weight:600}.row{display:flex;gap:1rem;flex-wrap:wrap;align-items:center}
-input,select,textarea,button{font:inherit;color:inherit}
-input,select,textarea{width:100%;background:#0b1226;border:1px solid var(--border);border-radius:10px;padding:.55rem .7rem}
-button{border:1px solid var(--border);background:#0a1123;border-radius:10px;padding:.55rem .9rem;cursor:pointer}
-button.primary{background:linear-gradient(135deg,#0ea5e9,#22c55e);border:none;color:white}
-button.ghost{background:transparent;border:1px dashed var(--border)}
-button.danger{background:var(--danger);border:none;color:white}
-.admin-button:hover{background:linear-gradient(135deg,#b91c1c,#991b1b) !important;transform:translateY(-1px);box-shadow:0 4px 12px rgba(220,38,38,0.3)}
-table{width:100%;border-collapse:collapse}th,td{padding:.5rem;border-bottom:1px solid var(--border);text-align:left}tr:hover td{background:#0c142a}
-.right{text-align:right}.muted{color:var(--muted)}.hide{display:none !important}.num{font-weight:800;font-size:1.6rem}
-.bar{height:10px;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:#0a1123}.bar>span{display:block;height:100%;background:linear-gradient(90deg,#22c55e,#06b6d4)}
-.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}.tile{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:#0a1123}
-.pill{padding:.25rem .5rem;border-radius:999px;border:1px solid var(--border)}
-footer{margin:3rem 0 2rem;color:var(--muted);text-align:center}
-.diploma-page{background:linear-gradient(180deg,#ffffff,#f8fafc);color:#111827;border:8px double #d1d5db;border-radius:12px;padding:48px;position:relative}
-.watermark{position:absolute;inset:0;opacity:0.06;background:url('assets/icon.svg') center/60% no-repeat;pointer-events:none}
-@media print{ nav,.no-print{display:none !important} .diploma-page{box-shadow:none} body{background:white}}
+
+*{box-sizing:border-box}
+
+html,body{
+  margin:0;
+  height:100%;
+  background:var(--bg);
+  color:var(--ink);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.wrap{
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.topbar{
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+.topbar .wrap{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+}
+
+.header-brand h1 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--ink);
+}
+
+.brand-subtitle {
+  font-size: 0.875rem;
+  color: var(--muted);
+  font-weight: 500;
+  margin-left: 8px;
+}
+
+.hamburger{
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.hamburger:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.hamburger span{
+  width: 24px;
+  height: 2px;
+  background: var(--ink);
+  border-radius: 1px;
+  transition: all 0.3s ease;
+}
+
+.hamburger.active span:nth-child(1){
+  transform: rotate(45deg) translate(6px, 6px);
+}
+
+.hamburger.active span:nth-child(2){
+  opacity: 0;
+}
+
+.hamburger.active span:nth-child(3){
+  transform: rotate(-45deg) translate(6px, -6px);
+}
+
+nav{
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+nav a{
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+nav a:hover{
+  background: rgba(59, 130, 246, 0.05);
+  color: var(--accent);
+  border-color: rgba(59, 130, 246, 0.2);
+}
+
+nav a.active{
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+  box-shadow: var(--shadow);
+}
+
+nav a.admin-link{
+  background: linear-gradient(135deg, var(--danger), #dc2626);
+  color: white;
+  border-color: var(--danger);
+}
+
+nav a.admin-link:hover{
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lg);
+}
+
+@media(max-width: 768px){
+  .hamburger{display: flex}
+  nav{
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    flex-direction: column;
+    padding: 16px;
+    transform: translateY(-100%);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow-lg);
+  }
+  nav.active{
+    transform: translateY(0);
+    opacity: 1;
+    visibility: visible;
+  }
+  nav a{
+    border-radius: 8px;
+    margin-bottom: 4px;
+    text-align: center;
+  }
+}
+
+h1{
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--ink);
+  letter-spacing: -0.025em;
+}
+
+h2{
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 1rem 0;
+  color: var(--ink);
+  letter-spacing: -0.025em;
+}
+
+h3{
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem 0;
+  color: var(--ink);
+}
+
+.card{
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: var(--shadow);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.card:hover{
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-1px);
+}
+
+.grid{
+  display: grid;
+  gap: 24px;
+}
+
+.two{
+  grid-template-columns: 1fr 1fr;
+}
+
+.three{
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.four{
+  grid-template-columns: repeat(4, 1fr);
+}
+
+@media(max-width: 800px){
+  .two, .three, .four{
+    grid-template-columns: 1fr;
+  }
+}
+
+label{
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--ink);
+  margin-bottom: 6px;
+  display: block;
+}
+
+.row{
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+input, select, textarea, button{
+  font: inherit;
+  color: inherit;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  transition: all 0.2s ease;
+}
+
+input, select, textarea{
+  width: 100%;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+input:focus, select:focus, textarea:focus{
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+button{
+  border: 1px solid var(--border);
+  background: var(--card);
+  border-radius: 8px;
+  padding: 12px 20px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+button:hover{
+  background: rgba(0, 0, 0, 0.05);
+  border-color: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow);
+}
+
+button.primary{
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  color: white;
+  font-weight: 600;
+}
+
+button.primary:hover{
+  background: #2563eb;
+  border-color: #2563eb;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+button.ghost{
+  background: transparent;
+  border: 1px dashed var(--border);
+  color: var(--muted);
+}
+
+button.ghost:hover{
+  background: rgba(0, 0, 0, 0.05);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+button.danger{
+  background: var(--danger);
+  border: 1px solid var(--danger);
+  color: white;
+}
+
+button.danger:hover{
+  background: #dc2626;
+  border-color: #dc2626;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.admin-button:hover{
+  background: linear-gradient(135deg, #dc2626, #b91c1c) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+
+table{
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 16px;
+  background: var(--card);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+th, td{
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  font-size: 14px;
+}
+
+th{
+  background: rgba(0, 0, 0, 0.02);
+  font-weight: 600;
+  color: var(--ink);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+tr:hover td{
+  background: rgba(59, 130, 246, 0.02);
+}
+
+.right{
+  text-align: right;
+}
+
+.muted{
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.hide{
+  display: none !important;
+}
+
+.num{
+  font-weight: 700;
+  font-size: 1.75rem;
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+.bar{
+  height: 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.05);
+  margin-top: 8px;
+}
+
+.bar > span{
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--success), var(--accent2));
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.gallery{
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.tile{
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--card);
+  transition: all 0.2s ease;
+}
+
+.tile:hover{
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.pill{
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pill:hover{
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+footer{
+  margin: 48px 0 24px;
+  color: var(--muted);
+  text-align: center;
+  font-size: 14px;
+}
+
+/* Professional footer styling */
+.footer {
+  background: var(--card);
+  border-top: 1px solid var(--border);
+  padding: 48px 0 24px;
+  margin-top: 64px;
+}
+
+.footer-content {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 48px;
+  margin-bottom: 32px;
+}
+
+.footer-brand {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.footer-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.footer-brand h3 {
+  margin: 0 0 8px 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.footer-brand p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.footer-links {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+}
+
+.footer-section h4 {
+  margin: 0 0 16px 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.footer-section ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer-section li {
+  margin-bottom: 8px;
+}
+
+.footer-section a {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 0.2s ease;
+}
+
+.footer-section a:hover {
+  color: var(--accent);
+}
+
+.footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+.footer-bottom p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.footer-badges {
+  display: flex;
+  gap: 8px;
+}
+
+.footer-badges .badge {
+  font-size: 12px;
+  padding: 4px 8px;
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--accent);
+  border-color: rgba(59, 130, 246, 0.2);
+}
+
+@media (max-width: 768px) {
+  .footer-content {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+  
+  .footer-links {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  
+  .footer-bottom {
+    flex-direction: column;
+    gap: 16px;
+    text-align: center;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+  }
+  
+  .form-actions button {
+    width: 100%;
+  }
+  
+  .header-brand {
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+  }
+  
+  .brand-subtitle {
+    margin-left: 0;
+  }
+}
+
+/* Enhanced animations and interactions */
+.card {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stat-card {
+  animation: fadeInUp 0.6s ease-out;
+  animation-delay: calc(var(--animation-order, 0) * 0.1s);
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Focus styles for accessibility */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Loading skeleton animation */
+@keyframes shimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200px 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
+.diploma-page{
+  background: linear-gradient(180deg, #ffffff, #f8fafc);
+  color: #111827;
+  border: 8px double #d1d5db;
+  border-radius: 12px;
+  padding: 48px;
+  position: relative;
+  box-shadow: var(--shadow-xl);
+}
+
+.watermark{
+  position: absolute;
+  inset: 0;
+  opacity: 0.06;
+  background: url('assets/icon.svg') center/60% no-repeat;
+  pointer-events: none;
+}
+
+@media print{
+  nav, .no-print{
+    display: none !important;
+  }
+  .diploma-page{
+    box-shadow: none;
+  }
+  body{
+    background: white;
+  }
+}
+
+/* Professional enhancements */
+.view {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Status indicators */
+.status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status-success {
+  background: rgba(34, 197, 94, 0.1);
+  color: var(--success);
+}
+
+.status-warning {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--warning);
+}
+
+.status-danger {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--danger);
+}
+
+/* Enhanced form styling */
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  margin-bottom: 8px;
+}
+
+/* Enhanced card variations */
+.card-stats {
+  text-align: center;
+  padding: 20px;
+}
+
+.card-stats .num {
+  font-size: 2rem;
+  margin-bottom: 4px;
+}
+
+.card-stats .muted {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Loading states */
+.loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border: 2px solid var(--border);
+  border-top: 2px solid var(--accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Dashboard enhancements */
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.card-header h2 {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  margin-bottom: 32px;
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.stat-card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+.stat-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: rgba(59, 130, 246, 0.1);
+  border-radius: 12px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.stat-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: var(--muted);
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.stat-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.2;
+  margin-bottom: 8px;
+}
+
+.stat-bar {
+  height: 6px;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.stat-bar > span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--success), var(--accent2));
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.filters-section {
+  margin-bottom: 32px;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+.recent-activity {
+  margin-bottom: 24px;
+}
+
+.recent-activity h3 {
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-section {
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.admin-button {
+  background: linear-gradient(135deg, var(--danger), #dc2626) !important;
+  border: none !important;
+  color: white !important;
+  padding: 12px 20px !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.admin-button:hover {
+  background: linear-gradient(135deg, #dc2626, #b91c1c) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3) !important;
+}
+
+/* Enhanced form styling */
+.quick-add-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.form-actions button {
+  min-width: 120px;
+}
+
+/* Enhanced input styling */
+input::placeholder, select::placeholder {
+  color: var(--muted);
+  opacity: 0.7;
+}
+
+select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 12px center;
+  background-repeat: no-repeat;
+  background-size: 16px;
+  padding-right: 40px;
+  appearance: none;
+}
 </style>
 </head>
 <body>
 <header class="topbar">
   <div class="wrap">
-    <h1>Peaceful Academy • Kansas City, MO</h1>
+    <div class="header-brand">
+      <img src="./assets/icon.svg" alt="Peaceful Academy" class="brand-icon">
+      <h1>Peaceful Academy</h1>
+      <span class="brand-subtitle">Kansas City, Missouri</span>
+    </div>
     <button class="hamburger" id="hamburger" aria-label="Toggle menu">
       <span></span>
       <span></span>
       <span></span>
     </button>
     <nav id="nav">
-      <a href="#dashboard" class="active">Dashboard</a>
-      <a href="#students">Students</a>
-      <a href="#courses">Courses</a>
-      <a href="#log">Log Hours</a>
-      <a href="#portfolio">Portfolio</a>
-      <a href="#reports">Reports</a>
-      <a href="#transcript">Transcript</a>
-      <a href="#diploma">Diploma</a>
-      <a href="#settings">Settings</a>
-      <a href="#help">Help</a>
-      <a href="./admin/index.html" target="_blank" class="admin-link">Admin</a>
+      <a href="#dashboard" class="active">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7"></rect>
+          <rect x="14" y="3" width="7" height="7"></rect>
+          <rect x="14" y="14" width="7" height="7"></rect>
+          <rect x="3" y="14" width="7" height="7"></rect>
+        </svg>
+        Dashboard
+      </a>
+      <a href="#students">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+          <circle cx="9" cy="7" r="4"></circle>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+        </svg>
+        Students
+      </a>
+      <a href="#courses">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+          <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+        </svg>
+        Courses
+      </a>
+      <a href="#log">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12,6 12,12 16,14"></polyline>
+        </svg>
+        Log Hours
+      </a>
+      <a href="#portfolio">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+          <circle cx="8.5" cy="8.5" r="1.5"></circle>
+          <polyline points="21,15 16,10 5,21"></polyline>
+        </svg>
+        Portfolio
+      </a>
+      <a href="#reports">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="20" x2="18" y2="10"></line>
+          <line x1="12" y1="20" x2="12" y2="4"></line>
+          <line x1="6" y1="20" x2="6" y2="14"></line>
+        </svg>
+        Reports
+      </a>
+      <a href="#transcript">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14,2 14,8 20,8"></polyline>
+          <line x1="16" y1="13" x2="8" y2="13"></line>
+          <line x1="16" y1="17" x2="8" y2="17"></line>
+          <polyline points="10,9 9,9 8,9"></polyline>
+        </svg>
+        Transcript
+      </a>
+      <a href="#diploma">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+          <path d="M2 17l10 5 10-5"></path>
+          <path d="M2 12l10 5 10-5"></path>
+        </svg>
+        Diploma
+      </a>
+      <a href="#settings">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1 1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+        Settings
+      </a>
+      <a href="#help">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+        Help
+      </a>
+      <a href="./admin/index.html" target="_blank" class="admin-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+          <path d="M2 17l10 5 10-5"></path>
+          <path d="M2 12l10 5 10-5"></path>
+        </svg>
+        Admin
+      </a>
     </nav>
   </div>
 </header>
@@ -101,39 +1114,179 @@ footer{margin:3rem 0 2rem;color:var(--muted);text-align:center}
   <section id="view-dashboard" class="view">
     <div class="grid two">
       <div class="card">
-        <h2>Progress</h2>
-        <div class="row">
-          <div style="flex:1" class="card"><div class="muted">Total Hours (1000)</div><div class="num" id="kpiTotal">0</div><div class="bar"><span id="barTotal" style="width:0%"></span></div></div>
-          <div style="flex:1" class="card"><div class="muted">Core (600)</div><div class="num" id="kpiCore">0</div><div class="bar"><span id="barCore" style="width:0%"></span></div></div>
-          <div style="flex:1" class="card"><div class="muted">Core @ Home (400)</div><div class="num" id="kpiHome">0</div><div class="bar"><span id="barHome" style="width:0%"></span></div></div>
-          <div style="flex:1" class="card"><div class="muted">Non-Core</div><div class="num" id="kpiNonCore">0</div><div class="bar"><span id="barNonCore" style="width:0%"></span></div></div>
+        <div class="card-header">
+          <h2>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="20" x2="18" y2="10"></line>
+              <line x1="12" y1="20" x2="12" y2="4"></line>
+              <line x1="6" y1="20" x2="6" y2="14"></line>
+            </svg>
+            Progress Overview
+          </h2>
         </div>
-        <div class="row" style="margin-top:1rem">
-          <div style="flex:1" class="card"><div class="muted">Avg Daily Hours</div><div class="num" id="kpiAvgDaily">0</div><div class="bar"><span id="barAvgDaily" style="width:0%"></span></div></div>
-          <div style="flex:1" class="card"><div class="muted">Days Attended</div><div class="num" id="kpiDaysAttended">0</div><div class="bar"><span id="barDaysAttended" style="width:0%"></span></div></div>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12,6 12,12 16,14"></polyline>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <div class="stat-label">Total Hours (1000)</div>
+              <div class="stat-value" id="kpiTotal">0</div>
+              <div class="stat-bar"><span id="barTotal" style="width:0%"></span></div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <div class="stat-label">Core (600)</div>
+              <div class="stat-value" id="kpiCore">0</div>
+              <div class="stat-bar"><span id="barCore" style="width:0%"></span></div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9,22 9,12 15,12 15,22"></polyline>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <div class="stat-label">Core @ Home (400)</div>
+              <div class="stat-value" id="kpiHome">0</div>
+              <div class="stat-bar"><span id="barHome" style="width:0%"></span></div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                <path d="M2 17l10 5 10-5"></path>
+                <path d="M2 12l10 5 10-5"></path>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <div class="stat-label">Non-Core</div>
+              <div class="stat-value" id="kpiNonCore">0</div>
+              <div class="stat-bar"><span id="barNonCore" style="width:0%"></span></div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12,6 12,12 16,14"></polyline>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <div class="stat-label">Avg Daily Hours</div>
+              <div class="stat-value" id="kpiAvgDaily">0</div>
+              <div class="stat-bar"><span id="barAvgDaily" style="width:0%"></span></div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <div class="stat-label">Days Attended</div>
+              <div class="stat-value" id="kpiDaysAttended">0</div>
+              <div class="stat-bar"><span id="barDaysAttended" style="width:0%"></span></div>
+            </div>
+          </div>
         </div>
-        <div class="row" style="margin-top:1rem">
-          <div style="flex:1"><label>Student</label><select id="dashStudent"></select></div>
-          <div style="flex:1"><label>Academic Year</label><select id="dashYear"></select></div>
+        <div class="filters-section">
+          <div class="row">
+            <div style="flex:1"><label>Student</label><select id="dashStudent"></select></div>
+            <div style="flex:1"><label>Academic Year</label><select id="dashYear"></select></div>
+          </div>
         </div>
-        <table id="recentTable" style="margin-top:.8rem"><thead><tr><th>Date</th><th>Course</th><th class="right">Hours</th><th>Loc</th><th>Notes</th></tr></thead><tbody></tbody></table>
-        <div class="row" style="margin-top:1rem">
-          <button class="admin-button" onclick="window.open('./admin/index.html', '_blank')" style="background:linear-gradient(135deg,#dc2626,#b91c1c);border:none;color:white;padding:.75rem 1.5rem;border-radius:10px;font-weight:600;cursor:pointer;transition:all 0.2s ease;">
-            <span style="margin-right:8px;">⚙️</span>Open Admin Panel
+        <div class="recent-activity">
+          <h3>Recent Activity</h3>
+          <table id="recentTable"><thead><tr><th>Date</th><th>Course</th><th class="right">Hours</th><th>Loc</th><th>Notes</th></tr></thead><tbody></tbody></table>
+        </div>
+        <div class="admin-section">
+          <button class="admin-button" onclick="window.open('./admin/index.html', '_blank')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1 1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+            Open Admin Panel
           </button>
         </div>
       </div>
       <div class="card">
-        <h2>Quick Add</h2>
-        <div class="grid two">
-          <div><label>Student</label><select id="qaStudent"></select></div>
-          <div><label>Course</label><select id="qaCourse"></select></div>
-          <div><label>Date</label><input type="date" id="qaDate"></div>
-          <div><label>Hours</label><input type="number" step="0.25" min="0" id="qaHours"></div>
-          <div><label>Location</label><select id="qaLocation"><option value="home">Home</option><option value="offsite">Offsite</option></select></div>
-          <div><label>Notes</label><input id="qaNotes" placeholder="Lesson, lab, trip…"></div>
+        <div class="card-header">
+          <h2>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            Quick Add Hours
+          </h2>
         </div>
-        <div class="row" style="margin-top:.6rem"><button class="primary" id="qaAdd">Add Hours</button><button class="ghost" id="qaToday">Today</button></div>
+        <div class="quick-add-form">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Student</label>
+              <select id="qaStudent"></select>
+            </div>
+            <div class="form-group">
+              <label>Course</label>
+              <select id="qaCourse"></select>
+            </div>
+            <div class="form-group">
+              <label>Date</label>
+              <input type="date" id="qaDate">
+            </div>
+            <div class="form-group">
+              <label>Hours</label>
+              <input type="number" step="0.25" min="0" id="qaHours" placeholder="0.0">
+            </div>
+            <div class="form-group">
+              <label>Location</label>
+              <select id="qaLocation">
+                <option value="home">🏠 Home</option>
+                <option value="offsite">📍 Offsite</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Notes</label>
+              <input id="qaNotes" placeholder="Lesson, lab, trip, activity…">
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="primary" id="qaAdd">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              Add Hours
+            </button>
+            <button class="ghost" id="qaToday">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+              Today
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -306,10 +1459,59 @@ footer{margin:3rem 0 2rem;color:var(--muted);text-align:center}
       <li>School year defaults to <strong>July 1 – June 30</strong>. Adjust in Settings if needed.</li>
       <li>This app works offline (PWA), mirrors to Netlify Forms, and writes to Neon Postgres via Netlify Functions.</li>
     </ul>
-  </div></section>
+  </div>  </section>
 </main>
 
-<footer>© <span id="yearNow"></span> Peaceful Academy • Kansas City, MO</footer>
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer-content">
+      <div class="footer-brand">
+        <img src="./assets/icon.svg" alt="Peaceful Academy" class="footer-icon">
+        <div>
+          <h3>Peaceful Academy</h3>
+          <p>Professional homeschool management for Missouri families</p>
+        </div>
+      </div>
+      <div class="footer-links">
+        <div class="footer-section">
+          <h4>Features</h4>
+          <ul>
+            <li><a href="#dashboard">Dashboard</a></li>
+            <li><a href="#students">Student Management</a></li>
+            <li><a href="#courses">Course Tracking</a></li>
+            <li><a href="#reports">Compliance Reports</a></li>
+          </ul>
+        </div>
+        <div class="footer-section">
+          <h4>Resources</h4>
+          <ul>
+            <li><a href="#help">Help & Support</a></li>
+            <li><a href="#settings">Settings</a></li>
+            <li><a href="./admin/index.html" target="_blank">Admin Panel</a></li>
+            <li><a href="#portfolio">Portfolio</a></li>
+          </ul>
+        </div>
+        <div class="footer-section">
+          <h4>Legal</h4>
+          <ul>
+            <li><a href="#transcript">Transcripts</a></li>
+            <li><a href="#diploma">Diplomas</a></li>
+            <li><a href="#reports">Compliance</a></li>
+            <li><a href="#settings">Data Export</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2024 Peaceful Academy. Missouri-compliant homeschool management system.</p>
+      <div class="footer-badges">
+        <span class="badge">PWA Ready</span>
+        <span class="badge">Offline Support</span>
+        <span class="badge">Secure</span>
+      </div>
+    </div>
+  </div>
+</footer>
 
 <script>
 if ('serviceWorker' in navigator) { window.addEventListener('load', ()=> navigator.serviceWorker.register('./sw.js')); }
