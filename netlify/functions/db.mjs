@@ -1,4 +1,5 @@
 import { neon } from '@netlify/neon';
+import { getEnvironmentConfig, logEnvironmentInfo, createDatabaseConnection, validateDatabaseConnection, getEnvironmentSettings } from './db-config.mjs';
 
 // Input validation helpers
 function validateStudentData(data) {
@@ -127,10 +128,27 @@ export async function handler(event) {
 
   try {
     // @netlify/neon automatically uses NETLIFY_DATABASE_URL
-    // For development vs production, you can set different NETLIFY_DATABASE_URL values
-    // in your Netlify environment variables based on the context
+    // Log environment information for debugging
+    logEnvironmentInfo();
     
-    const sql = neon();
+    // Get environment-specific database configuration and settings
+    const envConfig = getEnvironmentConfig();
+    const envSettings = getEnvironmentSettings();
+    
+    // Create environment-specific database connection
+    let sql;
+    try {
+      sql = createDatabaseConnection();
+      
+      // Validate the connection
+      const isValid = await validateDatabaseConnection(sql);
+      if (!isValid) {
+        throw new Error('Database connection validation failed');
+      }
+    } catch (error) {
+      console.error('Failed to create database connection:', error);
+      return errorResponse(`Database connection failed: ${error.message}`, 503);
+    }
     const action = (event.queryStringParameters?.action) ||
                    (JSON.parse(event.body || '{}').action);
 

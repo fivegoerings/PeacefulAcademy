@@ -66,8 +66,30 @@ export async function handler(event) {
   }
 
   try {
-    // @netlify/neon automatically uses NETLIFY_DATABASE_URL
-    const sql = neon();
+    // Import environment configuration
+    const { getEnvironmentConfig, logEnvironmentInfo, createDatabaseConnection, validateDatabaseConnection, getEnvironmentSettings } = await import('./db-config.mjs');
+    
+    // Log environment information for debugging
+    logEnvironmentInfo();
+    
+    // Get environment-specific database configuration and settings
+    const envConfig = getEnvironmentConfig();
+    const envSettings = getEnvironmentSettings();
+    
+    // Create environment-specific database connection
+    let sql;
+    try {
+      sql = createDatabaseConnection();
+      
+      // Validate the connection
+      const isValid = await validateDatabaseConnection(sql);
+      if (!isValid) {
+        throw new Error('Database connection validation failed');
+      }
+    } catch (error) {
+      console.error('Failed to create database connection:', error);
+      return errorResponse(`Database connection failed: ${error.message}`, 503);
+    }
     const path = event.path || '';
 
     // Health check endpoint
