@@ -332,7 +332,7 @@ async function loadEnvironmentInfo() {
       'Environment': envData.environment || 'Unknown',
       'Context': envData.context || 'Unknown',
       'Context Type': envData.contextType || 'Unknown',
-      'Is Non-Production': envData.isNonProd ? 'Yes' : 'No',
+      'Is Development': envData.isDev ? 'Yes' : 'No',
       'Is Production': envData.isProd ? 'Yes' : 'No',
       'Database URL Source': envData.databaseUrl || 'Unknown'
     };
@@ -349,8 +349,10 @@ async function loadEnvironmentInfo() {
         valueClass = 'warning';
       } else if (key === 'Context Type') {
         valueClass = value === 'Non-Production' ? 'success' : value === 'Production' ? 'warning' : '';
-      } else if (key === 'Context' && value.includes('Not set')) {
-        valueClass = 'warning';
+      } else if (key === 'Context' && value === 'Local Development') {
+        valueClass = 'success';
+      } else if (key === 'Is Development') {
+        valueClass = value === 'Yes' ? 'success' : 'warning';
       }
       
       item.innerHTML = `

@@ -60,7 +60,7 @@ export async function handler(event) {
       // Simple context information based on Netlify docs
       const contextInfo = {
         raw: context,
-        display: context === 'unknown' ? 'Not set (local development)' : context,
+        display: context === 'unknown' ? 'Local Development' : context,
         type: isNonProd ? 'Non-Production' : 'Production'
       };
       
@@ -71,6 +71,7 @@ export async function handler(event) {
         contextType: contextInfo.type,
         isNonProd,
         isProd,
+        isDev: isNonProd, // Add isDev for backward compatibility
         nodeEnv: process.env.NODE_ENV || 'unknown',
         databaseUrl: 'AUTO', // Netlify automatically sets NETLIFY_DATABASE_URL
         databaseUrlInfo: process.env.NETLIFY_DATABASE_URL ? 
