@@ -284,7 +284,7 @@ footer{margin:3rem 0 2rem;color:var(--muted);text-align:center}
             <div><label>Phone</label><input id="scPhone"></div>
             <div><label>Address</label><input id="scAddress" placeholder="Street, Kansas City, MO"></div>
             <div><label>Year Starts</label><select id="scYearStart"><option value="07-01" selected>July 1</option><option value="08-01">August 1</option><option value="09-01">September 1</option></select></div>
-            <div style="grid-column: 1 / -1"><label><input type="checkbox" id="scNeonSync"> Enable Neon Sync (multi-device)</label><div class="muted">When enabled, the app pulls the latest data from Neon on startup and periodically while still working offline.</div></div>
+            <div style="grid-column: 1 / -1"><label><input type="checkbox" id="scNeonSync"> Enable Neon Sync (multi-device)</label><div class="muted">When enabled, the app automatically syncs with Neon every 5 minutes. Manual sync always works regardless of this setting.</div></div>
           </div>
           <div class="row" style="margin-top:.6rem"><button class="primary" id="scSave">Save</button><button class="ghost" id="scReset">Reset</button></div>
         </div>
@@ -294,10 +294,14 @@ footer{margin:3rem 0 2rem;color:var(--muted);text-align:center}
             <button id="scExportAll">Export ALL (JSON)</button>
             <label class="pill muted">Import ALL <input type="file" id="scImportAll" accept="application/json" style="display:none"></label>
             <button class="danger" id="scWipe">Erase Everything</button>
+            <button id="scSyncNow" title="Sync with Neon database now">Sync Now</button>
             <button id="scExportNeon" title="Push all local data to Neon (upsert)">Export to Neon</button>
             <button id="scImportNeon" title="Replace local data with Neon data">Import from Neon</button>
             <button id="scBackupNeon" title="Save a full JSON snapshot into Neon backups">Backup to Neon</button>
             <button id="scRestoreNeon" title="Replace local data with the latest Neon backup">Restore from Neon</button>
+          </div>
+          <div class="row" style="margin-top: 0.5rem;">
+            <div id="syncStatus" class="muted" style="font-size: 0.9rem;"></div>
           </div>
         </div>
       </div>
@@ -363,6 +367,35 @@ const CORE = new Set(['Reading','Language Arts','Mathematics','Science','Social 
 const objectUrlCache = new Map();
 
 // Input validation helpers
+// Notification system
+function showNotification(message, type = 'info') {
+  const notification = document.createElement('div');
+  notification.className = `notification notification-${type}`;
+  notification.textContent = message;
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    border-radius: 8px;
+    color: white;
+    font-weight: 500;
+    z-index: 1000;
+    animation: slideIn 0.3s ease-out;
+    ${type === 'success' ? 'background: #10b981;' : ''}
+    ${type === 'error' ? 'background: #ef4444;' : ''}
+    ${type === 'warning' ? 'background: #f59e0b;' : ''}
+    ${type === 'info' ? 'background: #06b6d4;' : ''}
+  `;
+  
+  document.body.appendChild(notification);
+  
+  setTimeout(() => {
+    notification.style.animation = 'slideOut 0.3s ease-in';
+    setTimeout(() => notification.remove(), 300);
+  }, 3000);
+}
+
 function validateMinutes(minutes) {
   const num = Number(minutes);
   return !isNaN(num) && num >= 1 && num <= 1440; // 1 minute to 24 hours (1440 minutes)
@@ -723,6 +756,7 @@ $('#scSave')?.addEventListener('click', ()=>{
 });
 $('#scReset')?.addEventListener('click', ()=>{ if(confirm('Reset to defaults?')) setSettings({name:'Peaceful Academy of Kansas City, Missouri',phone:'',address:'',yearStart:'07-01'}); });
 $('#scNeonSync')?.addEventListener('change', ()=>{ const s=getSettings(); s.neonSync = $('#scNeonSync').checked; setSettings(s); });
+$('#scSyncNow')?.addEventListener('click', performManualSync);
 // Build a rich snapshot including denormalized names/subjects for logs
 async function buildSnapshotPayload(){
   const [students,courses,logs,portfolio,files] = await Promise.all([
@@ -1246,7 +1280,7 @@ function updateVersionVisibility() {
   versionElement.style.display = isDashboard ? 'block' : 'none';
 }
 
-// Enhanced initialization with error handling
+// Enhanced initialization with automatic Neon sync
 async function init(){
   try {
     if (!location.hash) location.hash = '#dashboard';
@@ -1256,36 +1290,22 @@ async function init(){
     $('#trIssue').value=todayISO();
     $('#dpDate').value=todayISO();
     
+    // Show loading state
+    document.body.classList.add('loading');
+    
+    // Always attempt to sync with Neon on startup (regardless of neonSync setting)
+    await performInitialSync();
+    
+    // Render UI after sync
     await renderStudents(); 
     await renderCourses(); 
     await renderYearSelectors(); 
     await renderDashboard();
 
-    // Optional Neon sync: pull latest on startup and every 5 minutes
+    // Set up periodic sync if enabled
     const s = getSettings();
     if (s.neonSync) {
-      try {
-        appendLog('info', ['Neon sync: initial pull started']);
-        const res = await fetch('/.netlify/functions/db', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ action: 'backup.latest' }) });
-        const raw=await res.text(); let json=null; try{ json=JSON.parse(raw);}catch(_){ }
-        if(res.ok && json && json.backup && json.backup.payload){
-          const data=json.backup.payload; await clearStoresSafely(['students','courses','logs','portfolio','files']); if(data.settings) setSettings(Object.assign(getSettings(), data.settings)); for(const st of (data.students||[])) await DB.add('students', st); for(const c of (data.courses||[])) await DB.add('courses', c); for(const l of (data.logs||[])) await DB.add('logs', l); for(const p of (data.portfolio||[])) await DB.add('portfolio', p); for(const f of (data.files||[])) await DB.add('files', f);
-          appendLog('info', ['Neon sync: initial pull applied']);
-          await renderStudents(); await renderCourses(); await renderYearSelectors(); await renderDashboard();
-        }
-      } catch(e) { appendLog('warn', ['Neon sync: initial pull failed', String(e&&e.message||e)]); }
-
-      // periodic background pull
-      setInterval(async()=>{
-        try{
-          const res = await fetch('/.netlify/functions/db', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ action: 'backup.latest' }) });
-          const json=await res.json().catch(()=>null);
-          if(res.ok && json && json.backup && json.backup.payload){
-            const data=json.backup.payload; await clearStoresSafely(['students','courses','logs','portfolio','files']); if(data.settings) setSettings(Object.assign(getSettings(), data.settings)); for(const st of (data.students||[])) await DB.add('students', st); for(const c of (data.courses||[])) await DB.add('courses', c); for(const l of (data.logs||[])) await DB.add('logs', l); for(const p of (data.portfolio||[])) await DB.add('portfolio', p); for(const f of (data.files||[])) await DB.add('files', f);
-            appendLog('info', ['Neon sync: periodic pull applied']);
-          }
-        }catch(_){}
-      }, 5*60*1000);
+      setupPeriodicSync();
     }
     
     // Initialize hamburger menu
@@ -1294,11 +1314,324 @@ async function init(){
     // Display app version and environment
     await displayAppVersion();
     
-    // Add loading states
+    // Initialize sync status display
+    initializeSyncStatus();
+    
+    // Remove loading state
+    document.body.classList.remove('loading');
     document.body.classList.add('loaded');
   } catch(e) {
     console.error('Initialization error:', e);
-    alert('Error initializing application. Please refresh the page.');
+    appendLog('error', ['Initialization failed', String(e&&e.message||e)]);
+    document.body.classList.remove('loading');
+    showNotification('Error initializing application. Please refresh the page.', 'error');
+  }
+}
+
+// Perform initial sync with Neon database
+async function performInitialSync() {
+  try {
+    updateSyncStatus('Connecting to Neon database...', 'loading');
+    appendLog('info', ['Initial sync: starting...']);
+    
+    // Check if we have network connectivity
+    const hasNetwork = navigator.onLine;
+    if (!hasNetwork) {
+      appendLog('warn', ['Initial sync: offline, using local data only']);
+      updateSyncStatus('Offline - using local data only', 'warning');
+      return;
+    }
+    
+    // Get latest data from Neon
+    const res = await fetch('/.netlify/functions/db', { 
+      method: 'POST', 
+      headers: { 'content-type': 'application/json' }, 
+      body: JSON.stringify({ action: 'bulk.readAll' })
+    });
+    
+    if (!res.ok) {
+      appendLog('warn', ['Initial sync: Neon unavailable, using local data']);
+      updateSyncStatus('Neon unavailable - using local data', 'warning');
+      return;
+    }
+    
+    const json = await res.json().catch(() => null);
+    if (!json || json.error) {
+      appendLog('warn', ['Initial sync: Neon error, using local data', json?.error || 'Unknown error']);
+      updateSyncStatus('Neon error - using local data', 'error');
+      return;
+    }
+    
+    const neonData = json.data || {};
+    const localData = await getLocalDataSnapshot();
+    
+    // Compare and merge data intelligently
+    const mergedData = await mergeDataIntelligently(neonData, localData);
+    
+    // Apply merged data to local storage
+    await applyDataToLocal(mergedData);
+    
+    appendLog('info', ['Initial sync: completed successfully']);
+    updateSyncStatus('Last synced: ' + new Date().toLocaleTimeString(), 'success');
+    showNotification('Data synchronized with Neon database', 'success');
+    
+  } catch(e) {
+    appendLog('warn', ['Initial sync: failed, using local data', String(e&&e.message||e)]);
+    updateSyncStatus('Sync failed - using local data', 'error');
+    // Continue with local data if sync fails
+  }
+}
+
+// Get a snapshot of all local data
+async function getLocalDataSnapshot() {
+  try {
+    const [students, courses, logs, portfolio, files] = await Promise.all([
+      listStudents(),
+      listCourses(), 
+      listLogs(),
+      listPortfolio(),
+      DB.all('files')
+    ]);
+    
+    return {
+      students: students || [],
+      courses: courses || [],
+      logs: logs || [],
+      portfolio: portfolio || [],
+      files: files || [],
+      settings: getSettings(),
+      lastSync: new Date().toISOString()
+    };
+  } catch(e) {
+    appendLog('error', ['Failed to get local data snapshot', String(e&&e.message||e)]);
+    return { students: [], courses: [], logs: [], portfolio: [], files: [], settings: getSettings(), lastSync: new Date().toISOString() };
+  }
+}
+
+// Intelligently merge Neon and local data
+async function mergeDataIntelligently(neonData, localData) {
+  const merged = {
+    students: [],
+    courses: [],
+    logs: [],
+    portfolio: [],
+    files: [],
+    settings: neonData.settings || localData.settings
+  };
+  
+  // Merge students (prefer Neon data, but keep local if newer)
+  merged.students = mergeEntities(neonData.students || [], localData.students || [], 'students');
+  
+  // Merge courses (prefer Neon data, but keep local if newer)
+  merged.courses = mergeEntities(neonData.courses || [], localData.courses || [], 'courses');
+  
+  // Merge logs (prefer Neon data, but keep local if newer)
+  merged.logs = mergeEntities(neonData.logs || [], localData.logs || [], 'logs');
+  
+  // Merge portfolio (prefer Neon data, but keep local if newer)
+  merged.portfolio = mergeEntities(neonData.portfolio || [], localData.portfolio || [], 'portfolio');
+  
+  // Merge files (prefer Neon data, but keep local if newer)
+  merged.files = mergeEntities(neonData.files || [], localData.files || [], 'files');
+  
+  return merged;
+}
+
+// Merge entities with conflict resolution
+function mergeEntities(neonEntities, localEntities, entityType) {
+  const merged = [];
+  const neonMap = new Map(neonEntities.map(e => [e.id, e]));
+  const localMap = new Map(localEntities.map(e => [e.id, e]));
+  
+  // Add all Neon entities
+  for (const [id, entity] of neonMap) {
+    merged.push(entity);
+  }
+  
+  // Add local entities that don't exist in Neon or are newer
+  for (const [id, localEntity] of localMap) {
+    const neonEntity = neonMap.get(id);
+    
+    if (!neonEntity) {
+      // Local entity doesn't exist in Neon, add it
+      merged.push(localEntity);
+      appendLog('info', [`Sync: Added local ${entityType} to merged data`, id]);
+    } else {
+      // Compare timestamps if available
+      const localTime = localEntity.updatedAt || localEntity.createdAt || 0;
+      const neonTime = neonEntity.updatedAt || neonEntity.createdAt || 0;
+      
+      if (localTime > neonTime) {
+        // Local entity is newer, replace Neon entity
+        const index = merged.findIndex(e => e.id === id);
+        if (index !== -1) {
+          merged[index] = localEntity;
+          appendLog('info', [`Sync: Updated ${entityType} with local version`, id]);
+        }
+      }
+    }
+  }
+  
+  return merged;
+}
+
+// Apply merged data to local storage
+async function applyDataToLocal(mergedData) {
+  try {
+    // Clear existing data
+    await clearStoresSafely(['students', 'courses', 'logs', 'portfolio', 'files']);
+    
+    // Apply settings
+    if (mergedData.settings) {
+      setSettings(mergedData.settings);
+    }
+    
+    // Add all entities
+    for (const student of mergedData.students) {
+      await DB.add('students', student);
+    }
+    
+    for (const course of mergedData.courses) {
+      await DB.add('courses', course);
+    }
+    
+    for (const log of mergedData.logs) {
+      await DB.add('logs', log);
+    }
+    
+    for (const portfolio of mergedData.portfolio) {
+      await DB.add('portfolio', portfolio);
+    }
+    
+    for (const file of mergedData.files) {
+      await DB.add('files', file);
+    }
+    
+    // Store sync timestamp
+    localStorage.setItem('pa_last_sync', new Date().toISOString());
+    
+    appendLog('info', ['Local data updated', 
+      `students: ${mergedData.students.length}`,
+      `courses: ${mergedData.courses.length}`,
+      `logs: ${mergedData.logs.length}`,
+      `portfolio: ${mergedData.portfolio.length}`,
+      `files: ${mergedData.files.length}`
+    ]);
+    
+  } catch(e) {
+    appendLog('error', ['Failed to apply merged data to local storage', String(e&&e.message||e)]);
+    throw e;
+  }
+}
+
+// Set up periodic synchronization
+function setupPeriodicSync() {
+  // Sync every 5 minutes
+  setInterval(async () => {
+    try {
+      if (!navigator.onLine) {
+        appendLog('info', ['Periodic sync: offline, skipping']);
+        return;
+      }
+      
+      appendLog('info', ['Periodic sync: starting...']);
+      
+      // Get current local data
+      const localData = await getLocalDataSnapshot();
+      
+      // Get latest Neon data
+      const res = await fetch('/.netlify/functions/db', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ action: 'bulk.readAll' })
+      });
+      
+      if (!res.ok) {
+        appendLog('warn', ['Periodic sync: Neon unavailable']);
+        return;
+      }
+      
+      const json = await res.json().catch(() => null);
+      if (!json || json.error) {
+        appendLog('warn', ['Periodic sync: Neon error', json?.error || 'Unknown error']);
+        return;
+      }
+      
+      const neonData = json.data || {};
+      
+      // Check if Neon data is newer than our last sync
+      const lastSync = localStorage.getItem('pa_last_sync');
+      const neonLastUpdate = neonData.lastUpdate || neonData.updatedAt;
+      
+      if (lastSync && neonLastUpdate && new Date(neonLastUpdate) <= new Date(lastSync)) {
+        appendLog('info', ['Periodic sync: no new data']);
+        return;
+      }
+      
+      // Merge and apply data
+      const mergedData = await mergeDataIntelligently(neonData, localData);
+      await applyDataToLocal(mergedData);
+      
+      // Re-render UI if needed
+      await renderDashboard();
+      
+      appendLog('info', ['Periodic sync: completed']);
+      
+    } catch(e) {
+      appendLog('warn', ['Periodic sync: failed', String(e&&e.message||e)]);
+    }
+  }, 5 * 60 * 1000); // 5 minutes
+  
+  appendLog('info', ['Periodic sync: enabled (every 5 minutes)']);
+}
+
+// Initialize sync status display
+function initializeSyncStatus() {
+  const lastSync = localStorage.getItem('pa_last_sync');
+  if (lastSync) {
+    updateSyncStatus('Last synced: ' + new Date(lastSync).toLocaleTimeString(), 'success');
+  } else {
+    updateSyncStatus('Not synced yet', 'warning');
+  }
+}
+
+// Update sync status display
+function updateSyncStatus(message, type = 'info') {
+  const statusEl = $('#syncStatus');
+  if (statusEl) {
+    statusEl.textContent = message;
+    statusEl.className = `muted sync-status-${type}`;
+  }
+}
+
+// Enhanced sync function for manual sync
+async function performManualSync() {
+  try {
+    document.body.classList.add('loading');
+    updateSyncStatus('Syncing with Neon database...', 'loading');
+    appendLog('info', ['Manual sync: starting...']);
+    
+    await performInitialSync();
+    
+    // Re-render all UI components
+    await renderStudents();
+    await renderCourses();
+    await renderYearSelectors();
+    await renderDashboard();
+    await renderLogsTable();
+    await renderPortfolio();
+    await renderReports();
+    
+    appendLog('info', ['Manual sync: completed']);
+    updateSyncStatus('Last synced: ' + new Date().toLocaleTimeString(), 'success');
+    showNotification('Manual sync completed successfully', 'success');
+    
+  } catch(e) {
+    appendLog('error', ['Manual sync: failed', String(e&&e.message||e)]);
+    updateSyncStatus('Sync failed: ' + (e.message || 'Unknown error'), 'error');
+    showNotification('Manual sync failed. See console for details.', 'error');
+  } finally {
+    document.body.classList.remove('loading');
   }
 }
 
@@ -1336,6 +1669,38 @@ style.textContent = `
   /* Hamburger menu improvements */
   .hamburger:hover span {
     background: var(--accent);
+  }
+  
+  /* Notification animations */
+  @keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  
+  @keyframes slideOut {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(100%); opacity: 0; }
+  }
+  
+  /* Sync status styles */
+  .sync-status-loading {
+    color: #06b6d4 !important;
+    font-weight: 500;
+  }
+  
+  .sync-status-success {
+    color: #10b981 !important;
+    font-weight: 500;
+  }
+  
+  .sync-status-error {
+    color: #ef4444 !important;
+    font-weight: 500;
+  }
+  
+  .sync-status-warning {
+    color: #f59e0b !important;
+    font-weight: 500;
   }
   
   .hamburger:focus {
