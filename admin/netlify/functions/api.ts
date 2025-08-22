@@ -8,27 +8,7 @@ const json = (data: unknown, init: number | ResponseInit = 200) =>
     headers: { "content-type": "application/json", "access-control-allow-origin": "*" },
   });
 
-// Environment-specific database URL handling
-function getDatabaseUrl() {
-  const context = process.env.CONTEXT || 'unknown';
-  
-  // For production, use the production database URL
-  if (context === 'production') {
-    return process.env.PROD_DATABASE_URL || process.env.NETLIFY_DATABASE_URL;
-  }
-  
-  // For non-production environments (dev, deploy-preview, branch-deploy), use the non-prod database URL
-  if (context !== 'production') {
-    return process.env.NONPROD_DATABASE_URL || process.env.NETLIFY_DATABASE_URL;
-  }
-  
-  // Fallback to Netlify's automatic database URL
-  return process.env.NETLIFY_DATABASE_URL;
-}
-
-// Initialize database connection with environment-specific URL
-const databaseUrl = getDatabaseUrl();
-const sql = neon(databaseUrl);
+const sql = neon();
 
 function schemaPath() {
   const base = process.env.LAMBDA_TASK_ROOT || process.cwd();
