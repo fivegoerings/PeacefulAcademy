@@ -11,8 +11,27 @@ import {
 } from '../../db/schema.js';
 import { eq, and, desc, asc, sql, count, sum } from 'drizzle-orm';
 
-// Use Netlify's automatic database URL handling
-const sqlClient = neon();
+// Environment-specific database URL handling
+function getDatabaseUrl() {
+  const context = process.env.CONTEXT || 'unknown';
+  
+  // For production, use the production database URL
+  if (context === 'production') {
+    return process.env.PROD_DATABASE_URL || process.env.NETLIFY_DATABASE_URL;
+  }
+  
+  // For non-production environments (dev, deploy-preview, branch-deploy), use the non-prod database URL
+  if (context !== 'production') {
+    return process.env.NONPROD_DATABASE_URL || process.env.NETLIFY_DATABASE_URL;
+  }
+  
+  // Fallback to Netlify's automatic database URL
+  return process.env.NETLIFY_DATABASE_URL;
+}
+
+// Initialize database connection with environment-specific URL
+const databaseUrl = getDatabaseUrl();
+const sqlClient = neon(databaseUrl);
 const db = drizzle(sqlClient);
 
 // Helper function to create error response
@@ -64,6 +83,9 @@ export async function handler(event) {
         type: isNonProd ? 'Non-Production' : 'Production'
       };
       
+      // Get the actual database URL being used
+      const actualDatabaseUrl = getDatabaseUrl();
+      
       return jsonResponse({
         environment,
         context: contextInfo.display,
@@ -73,31 +95,39 @@ export async function handler(event) {
         isProd,
         isDev: isNonProd, // Add isDev for backward compatibility
         nodeEnv: process.env.NODE_ENV || 'unknown',
-        databaseUrl: 'AUTO', // Netlify automatically sets NETLIFY_DATABASE_URL
-        databaseUrlInfo: process.env.NETLIFY_DATABASE_URL ? 
-          process.env.NETLIFY_DATABASE_URL.replace(/:[^:@]*@/, ':****@') : 'Not set',
-        hasDatabaseUrl: !!process.env.NETLIFY_DATABASE_URL,
+        databaseUrl: context === 'production' ? 'PROD_DATABASE_URL' : 'NONPROD_DATABASE_URL',
+        databaseUrlInfo: actualDatabaseUrl ? 
+          actualDatabaseUrl.replace(/:[^:@]*@/, ':****@') : 'Not set',
+        hasDatabaseUrl: !!actualDatabaseUrl,
         // Additional debugging info
         netlifyEnv: process.env.NETLIFY ? 'Yes' : 'No',
-        deployUrl: process.env.URL || 'Not set'
+        deployUrl: process.env.URL || 'Not set',
+        // Show which environment variables are set
+        prodDbUrlSet: !!process.env.PROD_DATABASE_URL,
+        nonprodDbUrlSet: !!process.env.NONPROD_DATABASE_URL,
+        netlifyDbUrlSet: !!process.env.NETLIFY_DATABASE_URL
       });
     }
 
     // Test database connection
     if (action === 'system.testConnection') {
       try {
-        await sql`SELECT 1 as test`;
+        // Use the same database URL logic for consistency
+        const testSql = neon(getDatabaseUrl());
+        await testSql`SELECT 1 as test`;
         return jsonResponse({ 
           connected: true, 
           message: 'Database connection successful',
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          databaseUrl: getDatabaseUrl() ? 'Environment-specific URL' : 'Fallback URL'
         });
       } catch (error) {
         return jsonResponse({ 
           connected: false, 
           message: 'Database connection failed',
           error: error.message,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          databaseUrl: getDatabaseUrl() ? 'Environment-specific URL' : 'Fallback URL'
         });
       }
     }

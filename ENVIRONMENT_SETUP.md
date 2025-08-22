@@ -1,102 +1,96 @@
-# Environment Setup for Peaceful Academy
+# Environment-Specific Database Setup
 
-This document explains how the application handles different environments (development vs. production) and database connections.
+This document explains how to configure environment-specific database URLs for the Peaceful Academy application.
 
 ## Overview
 
-The application uses Netlify's automatic database URL provisioning and the `@netlify/neon` package to handle database connections seamlessly across different deployment contexts.
+The application now supports environment-specific database connections:
+- **Production**: Uses `PROD_DATABASE_URL` environment variable
+- **Non-Production**: Uses `NONPROD_DATABASE_URL` environment variable (for dev, deploy-preview, branch-deploy contexts)
+- **Fallback**: Uses `NETLIFY_DATABASE_URL` if environment-specific URLs are not set
 
-## Environment Variables
+## Setting Up Environment Variables in Netlify
 
-### Required Environment Variables
+### 1. Production Environment Variables
 
-- **`NETLIFY_DATABASE_URL`**: Automatically set by Netlify when you connect a Neon database to your site. This is the primary database URL that the application uses.
+1. Go to your Netlify dashboard
+2. Navigate to **Site settings** > **Environment variables**
+3. Add the following environment variable:
+   - **Key**: `PROD_DATABASE_URL`
+   - **Value**: Your production database URL (e.g., `postgresql://user:pass@prod-db-host/dbname`)
+   - **Scopes**: Production deploys only
 
-### Optional Environment Variables
+### 2. Non-Production Environment Variables
 
-- **`CONTEXT`**: Automatically set by Netlify to indicate the deployment context:
-  - `production`: Production deployment
-  - `deploy-preview`: Preview deployments for pull requests
-  - `branch-deploy`: Branch deployments
-  - `dev`: Local development
+1. In the same Environment variables section
+2. Add the following environment variable:
+   - **Key**: `NONPROD_DATABASE_URL`
+   - **Value**: Your non-production database URL (e.g., `postgresql://******@ep-solitary-mouse-aeuwmhfm-pooler.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require`)
+   - **Scopes**: All deploys (or specific contexts as needed)
 
-## Database Connection
+### 3. Optional: Netlify Automatic Database URL
 
-The application uses the `@netlify/neon` package which automatically handles database connections:
+If you're using Netlify's automatic database integration:
+- **Key**: `NETLIFY_DATABASE_URL`
+- **Value**: Automatically set by Netlify
+- **Scopes**: All deploys
 
-```javascript
-import { neon } from '@netlify/neon';
+## Environment Variable Priority
 
-// Automatically uses NETLIFY_DATABASE_URL
-const sql = neon();
+The application uses the following priority order for database URLs:
+
+1. **Production context**: `PROD_DATABASE_URL`
+2. **Non-production contexts**: `NONPROD_DATABASE_URL`
+3. **Fallback**: `NETLIFY_DATABASE_URL`
+
+## Context Detection
+
+The application automatically detects the environment using `process.env.CONTEXT`:
+
+- `production` → Uses `PROD_DATABASE_URL`
+- `dev`, `deploy-preview`, `branch-deploy`, `unknown` → Uses `NONPROD_DATABASE_URL`
+
+## Verification
+
+After setting up the environment variables:
+
+1. Deploy your application
+2. Check the admin panel at `/admin`
+3. Go to the **Environment** tab
+4. Verify that:
+   - **Database URL Source** shows the correct environment variable name
+   - **Database URL Info** shows the masked database URL
+   - **PROD_DATABASE_URL Set** and **NONPROD_DATABASE_URL Set** show "Yes" if configured
+
+## Example Configuration
+
+```bash
+# Production environment
+PROD_DATABASE_URL=postgresql://prod-user:prod-pass@prod-host/prod-db
+
+# Non-production environment  
+NONPROD_DATABASE_URL=postgresql://******@ep-solitary-mouse-aeuwmhfm-pooler.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require
 ```
-
-This approach is used in:
-- `netlify/functions/db.mjs`
-- `netlify/functions/api.mjs`
-- `db/index.ts`
-
-## Environment Detection
-
-The application determines the current environment based on the `CONTEXT` environment variable:
-
-```javascript
-const context = process.env.CONTEXT || 'unknown';
-const isDev = ['dev', 'develop', 'development', 'deploy-preview', 'branch-deploy'].includes(context.toLowerCase());
-const isProd = context === 'production';
-```
-
-## Dashboard Display
-
-The dashboard displays the current environment and version information in the bottom-right corner:
-
-- **DEV**: Yellow background (development, preview, or branch deployments)
-- **PROD**: Green background (production deployment)
-- **UNKNOWN**: Default styling (fallback)
-
-The display includes:
-- App version
-- Environment (DEV/PROD/UNKNOWN)
-- Context information
-- Hostname
-- Build date
-
-## Benefits of This Approach
-
-1. **Simplified Configuration**: No need to manually manage separate database URLs for different environments
-2. **Automatic Provisioning**: Netlify automatically sets up the database URL when you connect a Neon database
-3. **Consistent Behavior**: Same database connection logic across all environments
-4. **Reduced Complexity**: Eliminates the need for `NETLIFY_DATABASE_URL_DEV` and `NETLIFY_DATABASE_URL_PROD` variables
-
-## Setup Instructions
-
-1. **Connect Neon Database to Netlify Site**:
-   - In your Netlify dashboard, go to your site settings
-   - Navigate to "Environment variables"
-   - Connect your Neon database (Netlify will automatically set `NETLIFY_DATABASE_URL`)
-
-2. **Deploy Your Application**:
-   - The application will automatically use the correct database URL
-   - Environment detection will work based on the deployment context
-
-3. **Verify Setup**:
-   - Check the dashboard for the environment indicator
-   - Test database operations in different deployment contexts
 
 ## Troubleshooting
 
-If you encounter database connection issues:
+### Database URL Not Changing
 
-1. **Verify Environment Variables**: Ensure `NETLIFY_DATABASE_URL` is set in your Netlify environment
-2. **Check Database Connection**: Use the health check endpoint to verify connectivity
-3. **Review Logs**: Check the application console for detailed error messages
-4. **Environment Display**: The dashboard will show the detected environment and context
+1. Check that environment variables are set correctly in Netlify
+2. Verify the variable names match exactly (case-sensitive)
+3. Ensure the correct scopes are set for each environment
+4. Check the admin panel to see which variables are detected as "Set"
 
-## Migration from Manual URL Management
+### Connection Issues
 
-If you previously used `NETLIFY_DATABASE_URL_DEV` and `NETLIFY_DATABASE_URL_PROD`:
+1. Verify database URLs are valid and accessible
+2. Check that the database server allows connections from Netlify's IP ranges
+3. Ensure SSL settings are correct for your database provider
 
-1. **Remove Custom Variables**: These are no longer needed
-2. **Use Single Database**: Connect one Neon database to your Netlify site
-3. **Update Code**: The code has been updated to use `neon()` without parameters
-4. **Test Deployments**: Verify that both development and production contexts work correctly
+### Local Development
+
+For local development, you can set environment variables in a `.env` file:
+
+```bash
+NONPROD_DATABASE_URL=postgresql://******@ep-solitary-mouse-aeuwmhfm-pooler.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+```

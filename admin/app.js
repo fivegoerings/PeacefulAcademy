@@ -294,9 +294,11 @@ async function loadEnvironmentInfo() {
       'CONTEXT': envData.context || 'Not set',
       'CONTEXT TYPE': envData.contextType || 'Unknown',
       'NODE_ENV': envData.nodeEnv || 'Not set',
-      'NETLIFY_DATABASE_URL': envData.hasDatabaseUrl ? 'Set (auto)' : 'Not set',
-      'Database URL Info': envData.databaseUrlInfo || 'Unknown',
       'Database URL Source': envData.databaseUrl || 'Unknown',
+      'Database URL Info': envData.databaseUrlInfo || 'Unknown',
+      'PROD_DATABASE_URL Set': envData.prodDbUrlSet ? 'Yes' : 'No',
+      'NONPROD_DATABASE_URL Set': envData.nonprodDbUrlSet ? 'Yes' : 'No',
+      'NETLIFY_DATABASE_URL Set': envData.netlifyDbUrlSet ? 'Yes' : 'No',
       'NETLIFY ENVIRONMENT': envData.netlifyEnv || 'Unknown',
       'DEPLOY URL': envData.deployUrl || 'Not set'
     };
@@ -317,6 +319,10 @@ async function loadEnvironmentInfo() {
         valueClass = value === 'Yes' ? 'success' : 'warning';
       } else if (key === 'DEPLOY URL' && value !== 'Not set') {
         valueClass = 'success';
+      } else if (key.includes('DATABASE_URL Set')) {
+        valueClass = value === 'Yes' ? 'success' : 'warning';
+      } else if (key === 'Database URL Source') {
+        valueClass = value === 'NONPROD_DATABASE_URL' ? 'success' : value === 'PROD_DATABASE_URL' ? 'warning' : '';
       }
       
       item.innerHTML = `
