@@ -62,13 +62,13 @@ footer{margin:3rem 0 2rem;color:var(--muted);text-align:center}
 <header class="topbar">
   <div class="wrap">
     <h1>Peaceful Academy • Kansas City, MO</h1>
-    <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+    <button class="hamburger" id="hamburger" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="nav">
       <span></span>
       <span></span>
       <span></span>
     </button>
-    <nav id="nav">
-      <a href="#dashboard" class="active">Dashboard</a>
+    <nav id="nav" role="navigation" aria-label="Main navigation">
+      <a href="#dashboard" class="active" aria-current="page">Dashboard</a>
       <a href="#students">Students</a>
       <a href="#courses">Courses</a>
       <a href="#log">Log Hours</a>
@@ -78,7 +78,7 @@ footer{margin:3rem 0 2rem;color:var(--muted);text-align:center}
       <a href="#diploma">Diploma</a>
       <a href="#settings">Settings</a>
       <a href="#help">Help</a>
-      <a href="./admin/index.html" target="_blank" class="admin-link">Admin</a>
+      <a href="./admin/index.html" target="_blank" class="admin-link" aria-label="Admin panel (opens in new tab)">Admin</a>
     </nav>
   </div>
 </header>
@@ -126,12 +126,12 @@ footer{margin:3rem 0 2rem;color:var(--muted);text-align:center}
       <div class="card">
         <h2>Quick Add</h2>
         <div class="grid two">
-          <div><label>Student</label><select id="qaStudent"></select></div>
-          <div><label>Course</label><select id="qaCourse"></select></div>
-                      <div><label>Date</label><input type="text" id="qaDate" placeholder="mm/dd/yyyy" pattern="\d{1,2}/\d{1,2}/\d{4}"></div>
-                     <div><label>Time (minutes)</label><input type="number" step="1" min="0" id="qaMinutes" placeholder="e.g., 90 for 1.5 hours"></div>
-          <div><label>Location</label><select id="qaLocation"><option value="home">Home</option><option value="offsite">Offsite</option></select></div>
-          <div><label>Notes</label><input id="qaNotes" placeholder="Lesson, lab, trip…"></div>
+                      <div><label for="qaStudent">Student</label><select id="qaStudent" aria-describedby="qaStudent-help"></select></div>
+            <div><label for="qaCourse">Course</label><select id="qaCourse" aria-describedby="qaCourse-help"></select></div>
+            <div><label for="qaDate">Date</label><input type="text" id="qaDate" placeholder="mm/dd/yyyy" pattern="\d{1,2}/\d{1,2}/\d{4}" aria-describedby="qaDate-help"></div>
+            <div><label for="qaMinutes">Time (minutes)</label><input type="number" step="1" min="0" id="qaMinutes" placeholder="e.g., 90 for 1.5 hours" aria-describedby="qaMinutes-help"></div>
+            <div><label for="qaLocation">Location</label><select id="qaLocation" aria-describedby="qaLocation-help"><option value="home">Home</option><option value="offsite">Offsite</option></select></div>
+            <div><label for="qaNotes">Notes</label><input id="qaNotes" placeholder="Lesson, lab, trip…" aria-describedby="qaNotes-help"></div>
         </div>
         <div class="row" style="margin-top:.6rem"><button class="primary" id="qaAdd">Add Hours</button><button class="ghost" id="qaToday">Today</button></div>
       </div>
@@ -574,12 +574,89 @@ let db;
   }; 
 })();
 function tx(names,mode='readonly'){ return db.transaction(names,mode); }
-// LocalStorage fallback helpers
+// LocalStorage fallback helpers with size limits and cleanup
+const LS_SIZE_LIMIT = 5 * 1024 * 1024; // 5MB limit per store
+const LS_TOTAL_LIMIT = 50 * 1024 * 1024; // 50MB total limit
+
 function lsKey(s){ return 'pa_store_'+s; }
 function lsCounterKey(s){ return 'pa_store_'+s+'_id'; }
-function lsRead(s){ try{ return JSON.parse(localStorage.getItem(lsKey(s))||'[]'); }catch(_){ return []; } }
-function lsWrite(s, arr){ localStorage.setItem(lsKey(s), JSON.stringify(arr)); }
-function lsNextId(s){ const k=lsCounterKey(s); const v=Number(localStorage.getItem(k)||'0')+1; localStorage.setItem(k, String(v)); return v; }
+
+function lsRead(s){ 
+  try{ 
+    const data = localStorage.getItem(lsKey(s));
+    if (!data) return [];
+    return JSON.parse(data);
+  } catch(e){ 
+    console.error('Error reading from localStorage:', e);
+    return []; 
+  } 
+}
+
+function lsWrite(s, arr){ 
+  try {
+    // Check size before writing
+    const dataSize = JSON.stringify(arr).length;
+    if (dataSize > LS_SIZE_LIMIT) {
+      console.warn(`Store ${s} exceeds size limit (${dataSize} bytes). Truncating...`);
+      // Keep only the most recent 1000 items
+      arr = arr.slice(-1000);
+    }
+    
+    // Check total localStorage usage
+    const totalSize = Object.keys(localStorage).reduce((total, key) => {
+      return total + (localStorage.getItem(key)?.length || 0);
+    }, 0);
+    
+    if (totalSize > LS_TOTAL_LIMIT) {
+      console.warn('localStorage usage limit exceeded. Cleaning up old data...');
+      cleanupLocalStorage();
+    }
+    
+    localStorage.setItem(lsKey(s), JSON.stringify(arr));
+  } catch(e) {
+    console.error('Error writing to localStorage:', e);
+    // If we can't write, try to clean up and retry
+    try {
+      cleanupLocalStorage();
+      localStorage.setItem(lsKey(s), JSON.stringify(arr.slice(-500))); // Keep only recent items
+    } catch(e2) {
+      console.error('Failed to write to localStorage even after cleanup:', e2);
+    }
+  }
+}
+
+function lsNextId(s){ 
+  const k=lsCounterKey(s); 
+  const v=Number(localStorage.getItem(k)||'0')+1; 
+  localStorage.setItem(k, String(v)); 
+  return v; 
+}
+
+function cleanupLocalStorage() {
+  try {
+    const stores = ['students', 'courses', 'logs', 'portfolio', 'files'];
+    const storeSizes = stores.map(store => ({
+      store,
+      size: JSON.stringify(lsRead(store)).length,
+      count: lsRead(store).length
+    }));
+    
+    // Sort by size (largest first)
+    storeSizes.sort((a, b) => b.size - a.size);
+    
+    // Clean up largest stores first
+    for (const { store, count } of storeSizes) {
+      if (count > 1000) {
+        const data = lsRead(store);
+        const cleaned = data.slice(-500); // Keep only recent 500 items
+        lsWrite(store, cleaned);
+        console.log(`Cleaned up ${store}: kept ${cleaned.length} of ${count} items`);
+      }
+    }
+  } catch(e) {
+    console.error('Error during localStorage cleanup:', e);
+  }
+}
 const DB={ 
   add:(s,o)=>new Promise((res,rej)=>{
     try {
@@ -960,10 +1037,57 @@ async function renderDashboard(){
   }
 }
 async function renderLogsTable(){
-  const [logs,courses,students]=await Promise.all([listLogs(), listCourses(), listStudents()]);
-  const subjF=$('#lgSubjectFilter').value; const y=$('#lgYearFilter').value; const s=$('#lgStudentFilter').value; const cMap=new Map(courses.map(c=>[c.id,c])); const sMap=new Map(students.map(x=>[x.id,x]));
-  const filtered=logs.filter(l=> (!y||yearForDate(l.date)==Number(y)) && (!s||l.studentId==Number(s)) && (!subjF||cMap.get(l.courseId)?.subject===subjF)).sort((a,b)=>b.date.localeCompare(a.date));
-  const tb=$('#lgTable tbody'); tb.innerHTML=''; filtered.forEach(l=>{ const c=cMap.get(Number(l.courseId)), st=sMap.get(Number(l.studentId)); const tr=document.createElement('tr'); tr.innerHTML=`<td>${formatDateForDisplay(l.date)}</td><td>${st?.name||''}</td><td>${c?.title||''}</td><td>${c?.subject||''}</td><td class="right">${fmt.format(l.hours)}</td><td>${l.location==='home'?'Home':'Offsite'}</td><td class="muted">${l.notes||''}</td><td class="right"><button class="lgDel" data-id="${l.id}">Delete</button></td>`; tb.appendChild(tr); });
+  try {
+    const [logs,courses,students]=await Promise.all([
+      listLogs().catch(e => { console.error('Error loading logs:', e); return []; }),
+      listCourses().catch(e => { console.error('Error loading courses:', e); return []; }),
+      listStudents().catch(e => { console.error('Error loading students:', e); return []; })
+    ]);
+    
+    const subjF=$('#lgSubjectFilter').value; 
+    const y=$('#lgYearFilter').value; 
+    const s=$('#lgStudentFilter').value; 
+    const cMap=new Map(courses.map(c=>[c.id,c])); 
+    const sMap=new Map(students.map(x=>[x.id,x]));
+    
+    const filtered=logs.filter(l=> 
+      (!y||yearForDate(l.date)==Number(y)) && 
+      (!s||l.studentId==Number(s)) && 
+      (!subjF||cMap.get(l.courseId)?.subject===subjF)
+    ).sort((a,b)=>b.date.localeCompare(a.date));
+    
+    const tb=$('#lgTable tbody'); 
+    if (tb) {
+      tb.innerHTML=''; 
+      filtered.forEach(l=>{ 
+        const c=cMap.get(Number(l.courseId)), 
+              st=sMap.get(Number(l.studentId)); 
+        const tr=document.createElement('tr'); 
+        
+        // Sanitize data before inserting
+        const sanitizeHtml = (str) => {
+          const div = document.createElement('div');
+          div.textContent = str || '';
+          return div.innerHTML;
+        };
+        
+        tr.innerHTML=`
+          <td>${formatDateForDisplay(l.date)}</td>
+          <td>${sanitizeHtml(st?.name||'')}</td>
+          <td>${sanitizeHtml(c?.title||'')}</td>
+          <td>${sanitizeHtml(c?.subject||'')}</td>
+          <td class="right">${fmt.format(l.hours)}</td>
+          <td>${l.location==='home'?'Home':'Offsite'}</td>
+          <td class="muted">${sanitizeHtml(l.notes||'')}</td>
+          <td class="right"><button class="lgDel" data-id="${l.id}">Delete</button></td>
+        `; 
+        tb.appendChild(tr); 
+      });
+    }
+  } catch (error) {
+    console.error('Error rendering logs table:', error);
+    showNotification('Error loading logs table. Please refresh the page.', 'error');
+  }
 }
 
 async function renderReports(){
@@ -1382,28 +1506,83 @@ $('#importJSON')?.addEventListener('change', async(e)=>{ const f=e.target.files?
 /* Portfolio */
 async function fileToBlob(file){ return file.slice(0,file.size,file.type); }
 $('#pfSave')?.addEventListener('click', async()=>{
-  const file=$('#pfFile').files[0]||null; let fileId=null;
-  if(file){ const blob=await fileToBlob(file); fileId=await DB.add('files', {blob, type:file.type, name:file.name, size:file.size}); }
-  const obj={ 
-    studentId:Number($('#pfStudent').value), 
-    courseId:Number($('#pfCourse').value), 
-    date:parseDisplayDate($('#pfDate').value)||todayISO(), 
-    title:$('#pfTitle').value.trim(), 
-    desc:$('#pfDesc').value.trim(), 
-    tags:$('#pfTags').value.split(',').map(t=>t.trim()).filter(Boolean), 
-    fileId 
-  };
+  try {
+    const file=$('#pfFile').files[0]||null; let fileId=null;
+    if(file){ const blob=await fileToBlob(file); fileId=await DB.add('files', {blob, type:file.type, name:file.name, size:file.size}); }
+    const obj={ 
+      studentId:Number($('#pfStudent').value), 
+      courseId:Number($('#pfCourse').value), 
+      date:parseDisplayDate($('#pfDate').value)||todayISO(), 
+      title:$('#pfTitle').value.trim(), 
+      desc:$('#pfDesc').value.trim(), 
+      tags:$('#pfTags').value.split(',').map(t=>t.trim()).filter(Boolean), 
+      fileId 
+    };
+    
+    // Enhanced validation
+    const errors = [];
+    if(!obj.studentId){ errors.push('Please select a student'); }
+    if(!obj.courseId){ errors.push('Please select a course'); }
+    if(!isValidDisplayDate($('#pfDate').value)){ errors.push('Please enter a valid date in mm/dd/yyyy format'); }
+    if(!obj.title){ errors.push('Please enter a title for the portfolio item'); }
+    if(obj.title && obj.title.length > 255){ errors.push('Title is too long (max 255 characters)'); }
+    if(obj.desc && obj.desc.length > 1000){ errors.push('Description is too long (max 1000 characters)'); }
+    if(obj.tags.length > 10){ errors.push('Too many tags (max 10)'); }
+    if(obj.tags.some(tag => tag.length > 50)){ errors.push('Individual tags cannot exceed 50 characters'); }
+    
+    if(errors.length > 0) {
+      alert('Please fix the following errors:\n' + errors.join('\n'));
+      return;
+    }
   
-  // Enhanced validation
-  if(!obj.studentId){ alert('Please select a student'); return; }
-  if(!obj.courseId){ alert('Please select a course'); return; }
-  if(!isValidDisplayDate($('#pfDate').value)){ alert('Please enter a valid date in mm/dd/yyyy format'); return; }
-  
-  await DB.add('portfolio', obj);
-  const [courses,students]=await Promise.all([listCourses(), listStudents()]); const c=courses.find(x=>x.id===obj.courseId), s=students.find(x=>x.id===obj.studentId);
-  const fd=new FormData(); fd.append('student', s?.name||String(obj.studentId)); fd.append('course', c?.title||String(obj.courseId)); fd.append('date', obj.date); fd.append('title', obj.title); fd.append('tags', (obj.tags||[]).join(', ')); fd.append('description', obj.desc); if(file) fd.append('file', file, file.name); await netlifySubmitFormData('portfolio-upload', fd);
-  await saveToNeon('portfolio', { studentId: obj.studentId, studentName: s?.name||String(obj.studentId), courseId: obj.courseId, courseTitle: c?.title||String(obj.courseId), subject: c?.subject||'', date: obj.date, title: obj.title, tags: obj.tags, description: obj.desc, fileName: (file? file.name : null), fileType: (file? file.type : null), fileSize: (file? file.size : null) });
-  ['pfTitle','pfDesc','pfTags'].forEach(id=>$('#'+id).value=''); $('#pfFile').value=''; renderPortfolio();
+      await DB.add('portfolio', obj);
+    const [courses,students]=await Promise.all([listCourses(), listStudents()]); 
+    const c=courses.find(x=>x.id===obj.courseId), s=students.find(x=>x.id===obj.studentId);
+    
+    // Fire-and-forget operations
+    Promise.allSettled([
+      netlifySubmitFormData('portfolio-upload', (() => {
+        const fd=new FormData(); 
+        fd.append('student', s?.name||String(obj.studentId)); 
+        fd.append('course', c?.title||String(obj.courseId)); 
+        fd.append('date', obj.date); 
+        fd.append('title', obj.title); 
+        fd.append('tags', (obj.tags||[]).join(', ')); 
+        fd.append('description', obj.desc); 
+        if(file) fd.append('file', file, file.name); 
+        return fd;
+      })()),
+      saveToNeon('portfolio', { 
+        studentId: obj.studentId, 
+        studentName: s?.name||String(obj.studentId), 
+        courseId: obj.courseId, 
+        courseTitle: c?.title||String(obj.courseId), 
+        subject: c?.subject||'', 
+        date: obj.date, 
+        title: obj.title, 
+        tags: obj.tags, 
+        description: obj.desc, 
+        fileName: (file? file.name : null), 
+        fileType: (file? file.type : null), 
+        fileSize: (file? file.size : null) 
+      })
+    ]).then(results => {
+      results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          console.warn(`Portfolio background operation ${index} failed:`, result.reason);
+        }
+      });
+    });
+    
+    ['pfTitle','pfDesc','pfTags'].forEach(id=>$('#'+id).value=''); 
+    $('#pfFile').value=''; 
+    renderPortfolio();
+    showNotification('Portfolio item added successfully!', 'success');
+  } catch(e) {
+    console.error('Error adding portfolio item:', e);
+    showNotification('Error adding portfolio item. Please try again.', 'error');
+  }
+});
 });
 $('#pfClear')?.addEventListener('click', ()=>{ ['pfTitle','pfDesc','pfTags','pfFile'].forEach(id=>$('#'+id).value=''); });
 document.body.addEventListener('click', async(e)=>{ if(e.target.classList.contains('pfDel')){ const id=Number(e.target.dataset.id); const item=await DB.get('portfolio', id); if(item?.fileId) await DB.del('files', item.fileId); await DB.del('portfolio', id); renderPortfolio(); } });
@@ -1482,10 +1661,25 @@ async function buildDiploma(){ const stId=Number($('#dpStudent').value); if(!stI
 $('#dpPreview')?.addEventListener('click', buildDiploma);
 $('#dpPrint')?.addEventListener('click', ()=>window.print());
 
-/* Filters & misc */
-['dashStudent','dashYear','lgYearFilter','lgStudentFilter','lgSubjectFilter'].forEach(id=>{ document.getElementById(id)?.addEventListener('change', ()=>{ if(id.startsWith('dash')) renderDashboard(); else renderLogsTable(); }); });
-['pfYearFilter','pfStudentFilter','pfSubjectFilter'].forEach(id=>{ document.getElementById(id)?.addEventListener('change', renderPortfolio); });
-['rpStudent','rpYear','rpGroupBy'].forEach(id=>{ document.getElementById(id)?.addEventListener('change', renderReports); });
+/* Filters & misc with debouncing */
+// Debounced render functions
+const debouncedRenderDashboard = debounce(renderDashboard, 300);
+const debouncedRenderLogsTable = debounce(renderLogsTable, 300);
+const debouncedRenderPortfolio = debounce(renderPortfolio, 300);
+const debouncedRenderReports = debounce(renderReports, 300);
+
+['dashStudent','dashYear','lgYearFilter','lgStudentFilter','lgSubjectFilter'].forEach(id=>{ 
+  document.getElementById(id)?.addEventListener('change', ()=>{
+    if(id.startsWith('dash')) debouncedRenderDashboard(); 
+    else debouncedRenderLogsTable(); 
+  }); 
+});
+['pfYearFilter','pfStudentFilter','pfSubjectFilter'].forEach(id=>{ 
+  document.getElementById(id)?.addEventListener('change', debouncedRenderPortfolio); 
+});
+['rpStudent','rpYear','rpGroupBy'].forEach(id=>{ 
+  document.getElementById(id)?.addEventListener('change', debouncedRenderReports); 
+});
 $('#rpPrint')?.addEventListener('click', ()=>window.print());
 
 // Clean up object URLs when page unloads
@@ -1526,8 +1720,17 @@ function initHamburgerMenu() {
   const nav = $('#nav');
   
   hamburger?.addEventListener('click', () => {
+    const isActive = hamburger.classList.contains('active');
     hamburger.classList.toggle('active');
     nav.classList.toggle('active');
+    
+    // Update ARIA attributes
+    hamburger.setAttribute('aria-expanded', !isActive);
+    if (!isActive) {
+      hamburger.setAttribute('aria-label', 'Close navigation menu');
+    } else {
+      hamburger.setAttribute('aria-label', 'Open navigation menu');
+    }
   });
   
   // Close menu when clicking on a nav link
@@ -1535,6 +1738,8 @@ function initHamburgerMenu() {
     if (e.target.tagName === 'A') {
       hamburger.classList.remove('active');
       nav.classList.remove('active');
+      hamburger.setAttribute('aria-expanded', 'false');
+      hamburger.setAttribute('aria-label', 'Open navigation menu');
     }
   });
   
@@ -1543,6 +1748,8 @@ function initHamburgerMenu() {
     if (!hamburger.contains(e.target) && !nav.contains(e.target)) {
       hamburger.classList.remove('active');
       nav.classList.remove('active');
+      hamburger.setAttribute('aria-expanded', 'false');
+      hamburger.setAttribute('aria-label', 'Open navigation menu');
     }
   });
   
@@ -1551,6 +1758,8 @@ function initHamburgerMenu() {
     if (window.innerWidth > 768) {
       hamburger.classList.remove('active');
       nav.classList.remove('active');
+      hamburger.setAttribute('aria-expanded', 'false');
+      hamburger.setAttribute('aria-label', 'Open navigation menu');
     }
   });
 }
@@ -1636,6 +1845,32 @@ function updateVersionVisibility() {
   const isDashboard = currentView === 'dashboard';
   
   versionElement.style.display = isDashboard ? 'block' : 'none';
+}
+
+// Performance optimization: debounce function
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
+
+// Pagination helper
+function paginateArray(array, page, pageSize) {
+  const start = page * pageSize;
+  const end = start + pageSize;
+  return {
+    items: array.slice(start, end),
+    total: array.length,
+    page,
+    pageSize,
+    totalPages: Math.ceil(array.length / pageSize)
+  };
 }
 
 // Enhanced initialization with error handling
@@ -1825,6 +2060,38 @@ style.textContent = `
   input:focus, select:focus, textarea:focus, button:focus {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
+  }
+  
+  /* Improved keyboard navigation */
+  button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+  }
+  
+  /* Better color contrast for accessibility */
+  .muted {
+    color: #9ca3af !important; /* Better contrast than var(--muted) */
+  }
+  
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    :root {
+      --bg: #000000;
+      --card: #1a1a1a;
+      --ink: #ffffff;
+      --muted: #cccccc;
+      --border: #666666;
+    }
+  }
+  
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
   
   /* Improved button states */
