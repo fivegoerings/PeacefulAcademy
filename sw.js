@@ -1,6 +1,8 @@
-const CACHE_NAME = 'peaceful-academy-v4';
-const STATIC_CACHE = 'peaceful-academy-static-v4';
-const DYNAMIC_CACHE = 'peaceful-academy-dynamic-v4';
+// Auto-increment cache version based on build time or manual version
+const CACHE_VERSION = '5';
+const CACHE_NAME = `peaceful-academy-v${CACHE_VERSION}`;
+const STATIC_CACHE = `peaceful-academy-static-v${CACHE_VERSION}`;
+const DYNAMIC_CACHE = `peaceful-academy-dynamic-v${CACHE_VERSION}`;
 
 // Assets to cache immediately
 const STATIC_ASSETS = [

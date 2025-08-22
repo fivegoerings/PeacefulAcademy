@@ -337,8 +337,20 @@ function appendLog(level, parts){
   }catch(_){/* ignore */}
 }
 ['log','info','warn','error'].forEach(l=>{ const orig=console[l]; console[l]=function(){ try{ appendLog(l, Array.from(arguments)); }catch(_){ } return orig.apply(console, arguments); }; });
-window.addEventListener('error', e=>{ appendLog('error', [e.message||'error', e.filename||'', String(e.lineno||''), String(e.colno||'')]); });
-window.addEventListener('unhandledrejection', e=>{ appendLog('error', ['unhandledrejection', String(e.reason&&e.reason.message||e.reason||'')]); });
+window.addEventListener('error', e=>{ 
+  appendLog('error', [e.message||'error', e.filename||'', String(e.lineno||''), String(e.colno||'')]); 
+  console.error('Global error:', e);
+});
+
+window.addEventListener('unhandledrejection', e=>{ 
+  appendLog('error', ['unhandledrejection', String(e.reason&&e.reason.message||e.reason||'')]); 
+  console.error('Unhandled promise rejection:', e.reason);
+  
+  // Show user-friendly error message for critical errors
+  if (e.reason && typeof e.reason === 'object' && e.reason.message) {
+    showNotification('An unexpected error occurred. Please refresh the page.', 'error');
+  }
+});
 
 // Fix timezone handling for dates
 const todayISO = ()=> {
@@ -350,11 +362,39 @@ const todayISO = ()=> {
   return `${year}-${month}-${day}`;
 };
 
-// Enhanced date validation
+// Enhanced date validation with timezone awareness
 const isValidDate = (dateString) => {
   if (!dateString) return false;
-  const date = new Date(dateString);
-  return !isNaN(date.getTime()) && date <= new Date();
+  
+  // Check if it's a valid date format (YYYY-MM-DD)
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+    return false;
+  }
+  
+  const [year, month, day] = dateString.split('-').map(Number);
+  
+  // Validate year range (reasonable for educational purposes)
+  if (year < 1900 || year > 2100) {
+    return false;
+  }
+  
+  // Validate month
+  if (month < 1 || month > 12) {
+    return false;
+  }
+  
+  // Validate day
+  const daysInMonth = new Date(year, month, 0).getDate();
+  if (day < 1 || day > daysInMonth) {
+    return false;
+  }
+  
+  // Check if date is not in the future
+  const inputDate = new Date(dateString + 'T00:00:00');
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  return inputDate <= today;
 };
 
 const CORE = new Set(['Reading','Language Arts','Mathematics','Science','Social Studies']);
@@ -378,6 +418,26 @@ function validateDate(date) {
 
 function validateRequired(value) {
   return value && value.trim().length > 0;
+}
+
+// Input sanitization helper to prevent XSS
+function sanitizeInput(input) {
+  if (typeof input !== 'string') return '';
+  return input
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+    .replace(/\//g, '&#x2F;');
+}
+
+// Safe HTML insertion helper
+function safeInnerHTML(element, content) {
+  if (!element) return;
+  const div = document.createElement('div');
+  div.textContent = content || '';
+  element.innerHTML = div.innerHTML;
 }
 
 // Enhanced validation for student data
@@ -445,7 +505,13 @@ const DB={
       if (db) {
         const r=tx([s],'readwrite').objectStore(s).add(o); 
         r.onsuccess=()=>res(r.result); 
-        r.onerror=(e)=>{console.error('DB add error:', e); rej(r.error);} 
+        r.onerror=(e)=>{
+          console.error('DB add error:', e); 
+          // Provide more specific error information
+          const error = new Error(`Failed to add to ${s}: ${r.error?.message || 'Unknown error'}`);
+          error.originalError = r.error;
+          rej(error);
+        } 
       } else {
         const arr=lsRead(s);
         const obj=Object.assign({}, o);
@@ -558,6 +624,57 @@ function getObjectUrl(fileId, blob) {
   return url;
 }
 
+// Enhanced portfolio rendering with proper cleanup
+async function renderPortfolio(){
+  // Clean up previous object URLs to prevent memory leaks
+  cleanupObjectUrls();
+  
+  const [items,courses,students]=await Promise.all([listPortfolio(), listCourses(), listStudents()]); 
+  const y=$('#pfYearFilter').value, s=$('#pfStudentFilter').value, subj=$('#pfSubjectFilter').value; 
+  const cMap=new Map(courses.map(c=>[c.id,c])); 
+  const sMap=new Map(students.map(x=>[x.id,x]));
+  const filtered=items.filter(p=> (!y||yearForDate(p.date)==Number(y)) && (!s||p.studentId==Number(s)) && (!subj||cMap.get(Number(p.courseId))?.subject===subj)).sort((a,b)=>b.date.localeCompare(a.date));
+  
+  const gal=$('#pfGallery'); 
+  gal.innerHTML=''; 
+  
+  for(const p of filtered){ 
+    const c=cMap.get(Number(p.courseId)), st=sMap.get(Number(p.studentId)); 
+    const file=p.fileId?await DB.get('files', p.fileId):null; 
+    const url=file?getObjectUrl(p.fileId, file.blob):''; 
+    const isImg = file && file.type.startsWith('image/'); 
+    
+    const div=document.createElement('div'); 
+    div.className='tile'; 
+    
+    // Sanitize user input to prevent XSS
+    const sanitizeHtml = (str) => {
+      const div = document.createElement('div');
+      div.textContent = str || '';
+      return div.innerHTML;
+    };
+    
+    div.innerHTML=`
+      <div style="height:140px;display:flex;align-items:center;justify-content:center;background:#0a1123">
+        ${file?(isImg?`<img src="${url}" style="width:100%;height:140px;object-fit:cover" alt="Portfolio item">`:`<div class="muted">File: ${sanitizeHtml(file.name||file.type)}</div>`):'<div class="muted">No file</div>'}
+      </div>
+      <div style="padding:.6rem">
+        <div><strong>${sanitizeHtml(p.title||'(untitled)')}</strong></div>
+        <div class="muted">${sanitizeHtml(p.date)} • ${sanitizeHtml(st?.name||'')} • ${sanitizeHtml(c?.title||'')}</div>
+        <div style="font-size:.92rem">${sanitizeHtml(p.desc||'')}</div>
+        <div class="row" style="margin-top:.5rem;justify-content:space-between">
+          <div class="muted">${sanitizeHtml((p.tags||[]).join(', '))}</div>
+          <div class="row">
+            ${file?`<a download="${sanitizeHtml(p.title||'portfolio')}" href="${url}">Download</a>`:''}
+            <button class="pfDel" data-id="${p.id}">Delete</button>
+          </div>
+        </div>
+      </div>
+    `; 
+    gal.appendChild(div);
+  }
+}
+
 /* Netlify forms */
 function encode(data){ return Object.keys(data).map(k=> encodeURIComponent(k)+'='+encodeURIComponent(data[k])).join('&'); }
 async function netlifySubmit(formName, data){ 
@@ -657,24 +774,109 @@ async function renderYearSelectors(){
   set('dashYear'); set('lgYearFilter', true); set('pfYearFilter', true); set('rpYear'); const stStart=$('#stStart'); if(stStart){ stStart.innerHTML=years.slice().reverse().map(y=>`<option value="${y}">${yearLabel(y)}</option>`).join(''); } const trYears=$('#trYears'); if(trYears){ trYears.innerHTML=years.map(y=>`<option value="${y}" selected>${yearLabel(y)}</option>`).join(''); }
 }
 async function renderDashboard(){
-  const [logs,courses,students]=await Promise.all([listLogs(), listCourses(), listStudents()]); await renderYearSelectors(); await renderStudents(); await renderCourses();
-  const sId=Number($('#dashStudent').value || (students[0]?.id||0)); $('#dashStudent').value=sId||''; const yStart=Number($('#dashYear').value)||currentAcademicStart();
-  const filtered=logs.filter(l=> Number(l.studentId)===sId && yearForDate(l.date)===yStart); const cMap=new Map(courses.map(c=>[c.id,c]));
-  let total=0, core=0, home=0, nonCore=0; filtered.forEach(l=>{ const subj=cMap.get(Number(l.courseId))?.subject; const hrs=Number(l.hours)||0; total+=hrs; if(CORE.has(subj)){ core+=hrs; if(l.location==='home') home+=hrs; } else { nonCore+=hrs; }});
-  
-  // Calculate average daily hours and days attended
-  const uniqueDays = new Set(filtered.map(l => l.date));
-  const daysAttended = uniqueDays.size;
-  const avgDailyHours = daysAttended > 0 ? total / daysAttended : 0;
-  
-  $('#kpiTotal').textContent=fmt.format(total); $('#kpiCore').textContent=fmt.format(core); $('#kpiHome').textContent=fmt.format(home); $('#kpiNonCore').textContent=fmt.format(nonCore);
-  $('#kpiAvgDaily').textContent=fmt.format(avgDailyHours); $('#kpiDaysAttended').textContent=daysAttended;
-  
-  $('#barTotal').style.width=Math.min(100,(total/1000)*100)+'%'; $('#barCore').style.width=Math.min(100,(core/600)*100)+'%'; $('#barHome').style.width=Math.min(100,(home/400)*100)+'%'; $('#barNonCore').style.width=Math.min(100,(nonCore/400)*100)+'%';
-  $('#barAvgDaily').style.width=Math.min(100,(avgDailyHours/8)*100)+'%'; $('#barDaysAttended').style.width=Math.min(100,(daysAttended/180)*100)+'%';
-  
-  const recent = filtered.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,10); const tb=$('#recentTable tbody'); tb.innerHTML=''; recent.forEach(r=>{ const c=cMap.get(Number(r.courseId)); const tr=document.createElement('tr'); tr.innerHTML=`<td>${r.date}</td><td>${c?.title||''}</td><td class="right">${fmt.format(r.hours)}</td><td>${r.location==='home'?'Home':'Offsite'}</td><td class="muted">${r.notes||''}</td>`; tb.appendChild(tr); });
-  $('#qaStudent').value=sId||''; $('#qaCourse').value=courses[0]?.id||''; $('#qaDate').value=todayISO();
+  try {
+    const [logs,courses,students]=await Promise.all([
+      listLogs().catch(e => { console.error('Error loading logs:', e); return []; }),
+      listCourses().catch(e => { console.error('Error loading courses:', e); return []; }),
+      listStudents().catch(e => { console.error('Error loading students:', e); return []; })
+    ]); 
+    
+    await renderYearSelectors(); 
+    await renderStudents(); 
+    await renderCourses();
+    
+    const sId=Number($('#dashStudent').value || (students[0]?.id||0)); 
+    $('#dashStudent').value=sId||''; 
+    const yStart=Number($('#dashYear').value)||currentAcademicStart();
+    
+    const filtered=logs.filter(l=> Number(l.studentId)===sId && yearForDate(l.date)===yStart); 
+    const cMap=new Map(courses.map(c=>[c.id,c]));
+    
+    let total=0, core=0, home=0, nonCore=0; 
+    filtered.forEach(l=>{ 
+      const subj=cMap.get(Number(l.courseId))?.subject; 
+      const hrs=Number(l.hours)||0; 
+      total+=hrs; 
+      if(CORE.has(subj)){ 
+        core+=hrs; 
+        if(l.location==='home') home+=hrs; 
+      } else { 
+        nonCore+=hrs; 
+      }
+    });
+    
+    // Calculate average daily hours and days attended
+    const uniqueDays = new Set(filtered.map(l => l.date));
+    const daysAttended = uniqueDays.size;
+    const avgDailyHours = daysAttended > 0 ? total / daysAttended : 0;
+    
+    // Safely update DOM elements
+    const updateElement = (id, value) => {
+      const element = $('#' + id);
+      if (element) element.textContent = value;
+    };
+    
+    updateElement('kpiTotal', fmt.format(total)); 
+    updateElement('kpiCore', fmt.format(core)); 
+    updateElement('kpiHome', fmt.format(home)); 
+    updateElement('kpiNonCore', fmt.format(nonCore));
+    updateElement('kpiAvgDaily', fmt.format(avgDailyHours)); 
+    updateElement('kpiDaysAttended', daysAttended);
+    
+    // Update progress bars safely
+    const updateBar = (id, percentage) => {
+      const element = $('#' + id);
+      if (element) element.style.width = Math.min(100, percentage) + '%';
+    };
+    
+    updateBar('barTotal', (total/1000)*100); 
+    updateBar('barCore', (core/600)*100); 
+    updateBar('barHome', (home/400)*100); 
+    updateBar('barNonCore', (nonCore/400)*100);
+    updateBar('barAvgDaily', (avgDailyHours/8)*100); 
+    updateBar('barDaysAttended', (daysAttended/180)*100);
+    
+    // Render recent table with sanitization
+    const recent = filtered.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,10); 
+    const tb=$('#recentTable tbody'); 
+    if (tb) {
+      tb.innerHTML=''; 
+      recent.forEach(r=>{ 
+        const c=cMap.get(Number(r.courseId)); 
+        const tr=document.createElement('tr'); 
+        
+        // Sanitize data before inserting
+        const sanitizeHtml = (str) => {
+          const div = document.createElement('div');
+          div.textContent = str || '';
+          return div.innerHTML;
+        };
+        
+        tr.innerHTML=`
+          <td>${sanitizeHtml(r.date)}</td>
+          <td>${sanitizeHtml(c?.title||'')}</td>
+          <td class="right">${fmt.format(r.hours)}</td>
+          <td>${r.location==='home'?'Home':'Offsite'}</td>
+          <td class="muted">${sanitizeHtml(r.notes||'')}</td>
+        `; 
+        tb.appendChild(tr); 
+      });
+    }
+    
+    // Set form values safely
+    const setValue = (id, value) => {
+      const element = $('#' + id);
+      if (element) element.value = value;
+    };
+    
+    setValue('qaStudent', sId||''); 
+    setValue('qaCourse', courses[0]?.id||''); 
+    setValue('qaDate', todayISO());
+    
+  } catch (error) {
+    console.error('Error rendering dashboard:', error);
+    showNotification('Error loading dashboard data. Please refresh the page.', 'error');
+  }
 }
 async function renderLogsTable(){
   const [logs,courses,students]=await Promise.all([listLogs(), listCourses(), listStudents()]);
@@ -682,13 +884,7 @@ async function renderLogsTable(){
   const filtered=logs.filter(l=> (!y||yearForDate(l.date)==Number(y)) && (!s||l.studentId==Number(s)) && (!subjF||cMap.get(l.courseId)?.subject===subjF)).sort((a,b)=>b.date.localeCompare(a.date));
   const tb=$('#lgTable tbody'); tb.innerHTML=''; filtered.forEach(l=>{ const c=cMap.get(Number(l.courseId)), st=sMap.get(Number(l.studentId)); const tr=document.createElement('tr'); tr.innerHTML=`<td>${l.date}</td><td>${st?.name||''}</td><td>${c?.title||''}</td><td>${c?.subject||''}</td><td class="right">${fmt.format(l.hours)}</td><td>${l.location==='home'?'Home':'Offsite'}</td><td class="muted">${l.notes||''}</td><td class="right"><button class="lgDel" data-id="${l.id}">Delete</button></td>`; tb.appendChild(tr); });
 }
-async function renderPortfolio(){
-  // Clean up previous object URLs to prevent memory leaks
-  cleanupObjectUrls();
-  
-  const [items,courses,students]=await Promise.all([listPortfolio(), listCourses(), listStudents()]); const y=$('#pfYearFilter').value, s=$('#pfStudentFilter').value, subj=$('#pfSubjectFilter').value; const cMap=new Map(courses.map(c=>[c.id,c])); const sMap=new Map(students.map(x=>[x.id,x]));
-  const filtered=items.filter(p=> (!y||yearForDate(p.date)==Number(y)) && (!s||p.studentId==Number(s)) && (!subj||cMap.get(Number(p.courseId))?.subject===subj)).sort((a,b)=>b.date.localeCompare(a.date));
-  const gal=$('#pfGallery'); gal.innerHTML=''; for(const p of filtered){ const c=cMap.get(Number(p.courseId)), st=sMap.get(Number(p.studentId)); const file=p.fileId?await DB.get('files', p.fileId):null; const url=file?getObjectUrl(p.fileId, file.blob):''; const isImg = file && file.type.startsWith('image/'); const div=document.createElement('div'); div.className='tile'; div.innerHTML=`<div style="height:140px;display:flex;align-items:center;justify-content:center;background:#0a1123">${file?(isImg?`<img src="${url}" style="width:100%;height:140px;object-fit:cover">`:`<div class="muted">File: ${file.name||file.type}</div>`):'<div class="muted">No file</div>'}</div><div style="padding:.6rem"><div><strong>${p.title||'(untitled)'}</strong></div><div class="muted">${p.date} • ${st?.name||''} • ${c?.title||''}</div><div style="font-size:.92rem">${p.desc||''}</div><div class="row" style="margin-top:.5rem;justify-content:space-between"><div class="muted">${(p.tags||[]).join(', ')}</div><div class="row">${file?`<a download="${(p.title||'portfolio')}" href="${url}">Download</a>`:''}<button class="pfDel" data-id="${p.id}">Delete</button></div></div></div>`; gal.appendChild(div);} }
+
 async function renderReports(){
   const [logs,courses]=await Promise.all([listLogs(), listCourses()]); const sId=Number($('#rpStudent').value); const yStart=Number($('#rpYear').value); const groupBy=$('#rpGroupBy').value; const cMap=new Map(courses.map(c=>[c.id,c])); const filtered=logs.filter(l=> Number(l.studentId)===sId && yearForDate(l.date)===yStart);
   const totals={total:0,core:0,home:0,nonCore:0}, groups=new Map(); function addG(k,hrs,home,nonCore){ const o=groups.get(k)||{hours:0,home:0,nonCore:0}; o.hours+=hrs; if(home) o.home+=hrs; if(nonCore) o.nonCore+=hrs; groups.set(k,o); }
@@ -958,17 +1154,60 @@ $('#qaAdd')?.addEventListener('click', async()=>{
   }
   
   try {
-    await DB.add('logs', obj);
+    // Disable button to prevent double submission
+    const button = $('#qaAdd');
+    const originalText = button.textContent;
+    button.disabled = true;
+    button.textContent = 'Adding...';
+    
+    // Sequential operations to prevent race conditions
+    const logId = await DB.add('logs', obj);
+    
+    // Get related data after successful DB add
     const [courses,students]=await Promise.all([listCourses(), listStudents()]); 
     const c=courses.find(x=>x.id===obj.courseId), s=students.find(x=>x.id===obj.studentId);
-    await netlifySubmit('log-entry', { student:s?.name||String(obj.studentId), course:c?.title||String(obj.courseId), subject:c?.subject||'', date:obj.date, hours:String(obj.hours), location:obj.location, notes:obj.notes });
-    await saveToNeon('log', { studentId: obj.studentId, studentName: s?.name||String(obj.studentId), courseId: obj.courseId, courseTitle: c?.title||String(obj.courseId), subject: c?.subject||'', date: obj.date, hours: obj.hours, location: obj.location, notes: obj.notes });
+    
+    // Fire-and-forget operations that don't affect the main flow
+    Promise.allSettled([
+      netlifySubmit('log-entry', { 
+        student:s?.name||String(obj.studentId), 
+        course:c?.title||String(obj.courseId), 
+        subject:c?.subject||'', 
+        date:obj.date, 
+        hours:String(obj.hours), 
+        location:obj.location, 
+        notes:obj.notes 
+      }),
+      saveToNeon('log', { 
+        studentId: obj.studentId, 
+        studentName: s?.name||String(obj.studentId), 
+        courseId: obj.courseId, 
+        courseTitle: c?.title||String(obj.courseId), 
+        subject: c?.subject||'', 
+        date: obj.date, 
+        hours: obj.hours, 
+        location: obj.location, 
+        notes: obj.notes 
+      })
+    ]).then(results => {
+      results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          console.warn(`Background operation ${index} failed:`, result.reason);
+        }
+      });
+    });
+    
     $('#qaMinutes').value=''; $('#qaNotes').value=''; 
     renderDashboard(); renderLogsTable(); renderReports();
     showNotification('Log entry added successfully!', 'success');
   } catch(e) {
     console.error('Error adding log entry:', e);
     showNotification('Error adding log entry. Please try again.', 'error');
+  } finally {
+    // Re-enable button
+    const button = $('#qaAdd');
+    button.disabled = false;
+    button.textContent = originalText;
   }
 });
 $('#lgAdd')?.addEventListener('click', async()=>{
@@ -998,17 +1237,60 @@ $('#lgAdd')?.addEventListener('click', async()=>{
   }
   
   try {
-    await DB.add('logs', obj);
+    // Disable button to prevent double submission
+    const button = $('#lgAdd');
+    const originalText = button.textContent;
+    button.disabled = true;
+    button.textContent = 'Adding...';
+    
+    // Sequential operations to prevent race conditions
+    const logId = await DB.add('logs', obj);
+    
+    // Get related data after successful DB add
     const [courses,students]=await Promise.all([listCourses(), listStudents()]); 
     const c=courses.find(x=>x.id===obj.courseId), s=students.find(x=>x.id===obj.studentId);
-    await netlifySubmit('log-entry', { student:s?.name||String(obj.studentId), course:c?.title||String(obj.courseId), subject:c?.subject||'', date:obj.date, hours:String(obj.hours), location:obj.location, notes:obj.notes });
-    await saveToNeon('log', { studentId: obj.studentId, studentName: s?.name||String(obj.studentId), courseId: obj.courseId, courseTitle: c?.title||String(obj.courseId), subject: c?.subject||'', date: obj.date, hours: obj.hours, location: obj.location, notes: obj.notes });
+    
+    // Fire-and-forget operations that don't affect the main flow
+    Promise.allSettled([
+      netlifySubmit('log-entry', { 
+        student:s?.name||String(obj.studentId), 
+        course:c?.title||String(obj.courseId), 
+        subject:c?.subject||'', 
+        date:obj.date, 
+        hours:String(obj.hours), 
+        location:obj.location, 
+        notes:obj.notes 
+      }),
+      saveToNeon('log', { 
+        studentId: obj.studentId, 
+        studentName: s?.name||String(obj.studentId), 
+        courseId: obj.courseId, 
+        courseTitle: c?.title||String(obj.courseId), 
+        subject: c?.subject||'', 
+        date: obj.date, 
+        hours: obj.hours, 
+        location: obj.location, 
+        notes: obj.notes 
+      })
+    ]).then(results => {
+      results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          console.warn(`Background operation ${index} failed:`, result.reason);
+        }
+      });
+    });
+    
     $('#lgMinutes').value=''; $('#lgNotes').value=''; 
     renderLogsTable(); renderDashboard(); renderReports();
     showNotification('Log entry added successfully!', 'success');
   } catch(e) {
     console.error('Error adding log entry:', e);
     showNotification('Error adding log entry. Please try again.', 'error');
+  } finally {
+    // Re-enable button
+    const button = $('#lgAdd');
+    button.disabled = false;
+    button.textContent = originalText;
   }
 });
 document.body.addEventListener('click', async(e)=>{ if(e.target.classList.contains('lgDel')){ await DB.del('logs', Number(e.target.dataset.id)); renderLogsTable(); renderDashboard(); renderReports(); } });
@@ -1250,41 +1532,149 @@ function updateVersionVisibility() {
 async function init(){
   try {
     if (!location.hash) location.hash = '#dashboard';
-    $('#qaDate').value=todayISO(); 
-    $('#lgDate').value=todayISO(); 
-    $('#pfDate').value=todayISO();
-    $('#trIssue').value=todayISO();
-    $('#dpDate').value=todayISO();
     
-    await renderStudents(); 
-    await renderCourses(); 
-    await renderYearSelectors(); 
-    await renderDashboard();
+    // Set default dates safely
+    const setDateSafely = (id) => {
+      const element = $('#' + id);
+      if (element) element.value = todayISO();
+    };
+    
+    setDateSafely('qaDate');
+    setDateSafely('lgDate');
+    setDateSafely('pfDate');
+    setDateSafely('trIssue');
+    setDateSafely('dpDate');
+    
+    // Initialize core components with error recovery
+    try {
+      await renderStudents(); 
+    } catch (e) {
+      console.error('Failed to render students:', e);
+      showNotification('Error loading students. Some features may not work properly.', 'warning');
+    }
+    
+    try {
+      await renderCourses(); 
+    } catch (e) {
+      console.error('Failed to render courses:', e);
+      showNotification('Error loading courses. Some features may not work properly.', 'warning');
+    }
+    
+    try {
+      await renderYearSelectors(); 
+    } catch (e) {
+      console.error('Failed to render year selectors:', e);
+    }
+    
+    try {
+      await renderDashboard();
+    } catch (e) {
+      console.error('Failed to render dashboard:', e);
+      showNotification('Error loading dashboard. Please refresh the page.', 'error');
+    }
 
     // Optional Neon sync: pull latest on startup and every 5 minutes
     const s = getSettings();
     if (s.neonSync) {
       try {
         appendLog('info', ['Neon sync: initial pull started']);
-        const res = await fetch('/.netlify/functions/db', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ action: 'backup.latest' }) });
-        const raw=await res.text(); let json=null; try{ json=JSON.parse(raw);}catch(_){ }
+        const res = await fetch('/.netlify/functions/db', { 
+          method:'POST', 
+          headers:{'content-type':'application/json'}, 
+          body: JSON.stringify({ action: 'backup.latest' }) 
+        });
+        
+        const raw = await res.text(); 
+        let json = null; 
+        try { 
+          json = JSON.parse(raw);
+        } catch(_) { }
+        
         if(res.ok && json && json.backup && json.backup.payload){
-          const data=json.backup.payload; await clearStoresSafely(['students','courses','logs','portfolio','files']); if(data.settings) setSettings(Object.assign(getSettings(), data.settings)); for(const st of (data.students||[])) await DB.add('students', st); for(const c of (data.courses||[])) await DB.add('courses', c); for(const l of (data.logs||[])) await DB.add('logs', l); for(const p of (data.portfolio||[])) await DB.add('portfolio', p); for(const f of (data.files||[])) await DB.add('files', f);
-          appendLog('info', ['Neon sync: initial pull applied']);
-          await renderStudents(); await renderCourses(); await renderYearSelectors(); await renderDashboard();
+          const data = json.backup.payload; 
+          
+          // Clear and reload data safely
+          try {
+            await clearStoresSafely(['students','courses','logs','portfolio','files']); 
+            if(data.settings) setSettings(Object.assign(getSettings(), data.settings)); 
+            
+            // Add data with error handling
+            const addDataSafely = async (store, items) => {
+              for(const item of (items||[])) {
+                try {
+                  await DB.add(store, item);
+                } catch (e) {
+                  console.warn(`Failed to add ${store} item:`, e);
+                }
+              }
+            };
+            
+            await Promise.allSettled([
+              addDataSafely('students', data.students),
+              addDataSafely('courses', data.courses),
+              addDataSafely('logs', data.logs),
+              addDataSafely('portfolio', data.portfolio),
+              addDataSafely('files', data.files)
+            ]);
+            
+            appendLog('info', ['Neon sync: initial pull applied']);
+            
+            // Re-render with new data
+            await Promise.allSettled([
+              renderStudents(), 
+              renderCourses(), 
+              renderYearSelectors(), 
+              renderDashboard()
+            ]);
+            
+          } catch (e) {
+            console.error('Error applying Neon sync data:', e);
+            showNotification('Error syncing with cloud. Using local data.', 'warning');
+          }
         }
-      } catch(e) { appendLog('warn', ['Neon sync: initial pull failed', String(e&&e.message||e)]); }
+      } catch(e) { 
+        appendLog('warn', ['Neon sync: initial pull failed', String(e&&e.message||e)]); 
+        showNotification('Cloud sync unavailable. Using local data.', 'warning');
+      }
 
       // periodic background pull
       setInterval(async()=>{
         try{
-          const res = await fetch('/.netlify/functions/db', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ action: 'backup.latest' }) });
-          const json=await res.json().catch(()=>null);
+          const res = await fetch('/.netlify/functions/db', { 
+            method:'POST', 
+            headers:{'content-type':'application/json'}, 
+            body: JSON.stringify({ action: 'backup.latest' }) 
+          });
+          const json = await res.json().catch(()=>null);
           if(res.ok && json && json.backup && json.backup.payload){
-            const data=json.backup.payload; await clearStoresSafely(['students','courses','logs','portfolio','files']); if(data.settings) setSettings(Object.assign(getSettings(), data.settings)); for(const st of (data.students||[])) await DB.add('students', st); for(const c of (data.courses||[])) await DB.add('courses', c); for(const l of (data.logs||[])) await DB.add('logs', l); for(const p of (data.portfolio||[])) await DB.add('portfolio', p); for(const f of (data.files||[])) await DB.add('files', f);
+            const data = json.backup.payload; 
+            await clearStoresSafely(['students','courses','logs','portfolio','files']); 
+            if(data.settings) setSettings(Object.assign(getSettings(), data.settings)); 
+            
+            // Add data with error handling
+            const addDataSafely = async (store, items) => {
+              for(const item of (items||[])) {
+                try {
+                  await DB.add(store, item);
+                } catch (e) {
+                  console.warn(`Failed to add ${store} item:`, e);
+                }
+              }
+            };
+            
+            await Promise.allSettled([
+              addDataSafely('students', data.students),
+              addDataSafely('courses', data.courses),
+              addDataSafely('logs', data.logs),
+              addDataSafely('portfolio', data.portfolio),
+              addDataSafely('files', data.files)
+            ]);
+            
             appendLog('info', ['Neon sync: periodic pull applied']);
           }
-        }catch(_){}
+        }catch(e){
+          console.warn('Periodic Neon sync failed:', e);
+        }
       }, 5*60*1000);
     }
     
@@ -1296,9 +1686,11 @@ async function init(){
     
     // Add loading states
     document.body.classList.add('loaded');
+    
+    showNotification('Application loaded successfully!', 'success');
   } catch(e) {
     console.error('Initialization error:', e);
-    alert('Error initializing application. Please refresh the page.');
+    showNotification('Error initializing application. Please refresh the page.', 'error');
   }
 }
 
@@ -1326,6 +1718,25 @@ style.textContent = `
   button:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+  }
+  
+  /* Loading spinner for buttons */
+  button.loading::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    margin: auto;
+    border: 2px solid transparent;
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-left: 8px;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
   }
   
   /* Enhanced table hover effects */
@@ -1358,6 +1769,27 @@ style.textContent = `
     .topbar .wrap h1 {
       font-size: 1.2rem;
     }
+  }
+  
+  /* Notification improvements */
+  .notification {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-radius: 8px;
+    font-weight: 500;
+    z-index: 1000;
+  }
+  
+  /* Form validation feedback */
+  .form-error {
+    color: var(--danger);
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+  }
+  
+  .form-success {
+    color: var(--ok);
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
   }
 `;
 document.head.appendChild(style);
