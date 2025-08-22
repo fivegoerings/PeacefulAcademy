@@ -10,39 +10,9 @@ import {
 } from '../../db/schema.js';
 import { eq, and, desc, asc, sql, count } from 'drizzle-orm';
 
-// Environment-specific database URL handling
-function getDatabaseUrl() {
-  const context = process.env.CONTEXT || 'unknown';
-  
-  // For production, use the production database URL
-  if (context === 'production') {
-    return process.env.PROD_DATABASE_URL || process.env.NETLIFY_DATABASE_URL;
-  }
-  
-  // For non-production environments (dev, deploy-preview, branch-deploy), use the non-prod database URL
-  if (context !== 'production') {
-    return process.env.NONPROD_DATABASE_URL || process.env.NETLIFY_DATABASE_URL;
-  }
-  
-  // Fallback to Netlify's automatic database URL
-  return process.env.NETLIFY_DATABASE_URL;
-}
-
-// Initialize database connection with environment-specific URL
-let databaseUrl, sqlClient, db;
-
-try {
-  databaseUrl = getDatabaseUrl();
-  if (!databaseUrl) {
-    console.error('No database URL found. Please set NONPROD_DATABASE_URL for local development or PROD_DATABASE_URL for production.');
-    throw new Error('Database URL not configured');
-  }
-  sqlClient = neon(databaseUrl);
-  db = drizzle(sqlClient);
-} catch (error) {
-  console.error('Failed to initialize database connection:', error.message);
-  // We'll handle this in the handler function
-}
+// Initialize database connection using Netlify's automatic database URL handling
+const sql = neon();
+const db = drizzle(sql);
 
 // Helper function to create error response
 function errorResponse(message, statusCode = 500) {
@@ -64,22 +34,6 @@ function jsonResponse(data) {
 
 export async function handler(event) {
   try {
-    // Check if database is initialized
-    if (!db) {
-      const context = process.env.CONTEXT || 'unknown';
-      const isLocalDev = context === 'unknown';
-      
-      let errorMessage = 'Database connection not configured. ';
-      if (isLocalDev) {
-        errorMessage += 'For local development, please set the NONPROD_DATABASE_URL environment variable. ';
-        errorMessage += 'You can create a .env file with: NONPROD_DATABASE_URL=your_database_url_here';
-      } else {
-        errorMessage += 'Please check your environment variables configuration.';
-      }
-      
-      return errorResponse(errorMessage, 500);
-    }
-
     const action = (event.queryStringParameters?.action) ||
                    (JSON.parse(event.body || '{}').action);
 
@@ -90,22 +44,18 @@ export async function handler(event) {
     // Test database connection
     if (action === 'test') {
       try {
-        // Use the same database URL logic for consistency
-        const testSql = neon(getDatabaseUrl());
-        await testSql`SELECT 1 as test`;
+        await sql`SELECT 1 as test`;
         return jsonResponse({ 
           connected: true, 
           message: 'Database connection successful',
-          timestamp: new Date().toISOString(),
-          databaseUrl: getDatabaseUrl() ? 'Environment-specific URL' : 'Fallback URL'
+          timestamp: new Date().toISOString()
         });
       } catch (error) {
         return jsonResponse({ 
           connected: false, 
           message: 'Database connection failed',
           error: error.message,
-          timestamp: new Date().toISOString(),
-          databaseUrl: getDatabaseUrl() ? 'Environment-specific URL' : 'Fallback URL'
+          timestamp: new Date().toISOString()
         });
       }
     }
@@ -137,9 +87,7 @@ export async function handler(event) {
     // Health check
     if (action === 'health') {
       try {
-        // Use the same database URL logic for consistency
-        const healthSql = neon(getDatabaseUrl());
-        await healthSql`SELECT 1`;
+        await sql`SELECT 1`;
         return jsonResponse({ 
           status: 'healthy', 
           timestamp: new Date().toISOString(),
