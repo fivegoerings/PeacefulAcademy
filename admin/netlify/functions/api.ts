@@ -8,8 +8,7 @@ const json = (data: unknown, init: number | ResponseInit = 200) =>
     headers: { "content-type": "application/json", "access-control-allow-origin": "*" },
   });
 
-// Initialize database connection using Netlify's automatic database URL handling
-const sqlClient = neon();
+const sql = neon();
 
 function schemaPath() {
   const base = process.env.LAMBDA_TASK_ROOT || process.cwd();
@@ -17,10 +16,10 @@ function schemaPath() {
 }
 
 async function ensureSchemaLoaded() {
-  const rows = await sqlClient`SELECT 1 FROM information_schema.tables WHERE table_name = 'students'`;
+  const rows = await sql`SELECT 1 FROM information_schema.tables WHERE table_name = 'students'`;
   if ((rows as any).length === 0) {
     const schema = await readFile(schemaPath(), "utf8");
-    if (schema) await sqlClient(schema as any);
+    if (schema) await sql(schema as any);
   }
 }
 

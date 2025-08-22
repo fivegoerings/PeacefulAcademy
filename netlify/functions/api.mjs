@@ -10,7 +10,7 @@ import {
 } from '../../db/schema.js';
 import { eq, and, desc, asc, sql, count } from 'drizzle-orm';
 
-// Initialize database connection using Netlify's automatic database URL handling
+// Use Netlify's automatic database URL handling
 const sqlClient = neon();
 const db = drizzle(sqlClient);
 
@@ -34,6 +34,8 @@ function jsonResponse(data) {
 
 export async function handler(event) {
   try {
+    // Use Netlify's automatic database URL handling
+    const sql = neon();
     const action = (event.queryStringParameters?.action) ||
                    (JSON.parse(event.body || '{}').action);
 
@@ -44,7 +46,7 @@ export async function handler(event) {
     // Test database connection
     if (action === 'test') {
       try {
-        await sqlClient`SELECT 1 as test`;
+        await sql`SELECT 1 as test`;
         return jsonResponse({ 
           connected: true, 
           message: 'Database connection successful',
@@ -87,7 +89,7 @@ export async function handler(event) {
     // Health check
     if (action === 'health') {
       try {
-        await sqlClient`SELECT 1`;
+        await sql`SELECT 1`;
         return jsonResponse({ 
           status: 'healthy', 
           timestamp: new Date().toISOString(),
@@ -220,29 +222,6 @@ export async function handler(event) {
       } catch (error) {
         console.error('Portfolio list error:', error);
         return errorResponse('Failed to list portfolio items', 500);
-      }
-    }
-
-    // Sync action to pull all data from database for local IndexedDB sync
-    if (action === 'sync.all') {
-      try {
-        const [studentsResult, coursesResult, logsResult, portfolioResult] = await Promise.all([
-          db.select().from(students).orderBy(asc(students.name)),
-          db.select().from(courses).orderBy(asc(courses.title)),
-          db.select().from(logs).orderBy(desc(logs.date)),
-          db.select().from(portfolio).orderBy(desc(portfolio.date))
-        ]);
-
-        return jsonResponse({
-          students: studentsResult,
-          courses: coursesResult,
-          logs: logsResult,
-          portfolio: portfolioResult,
-          timestamp: new Date().toISOString()
-        });
-      } catch (error) {
-        console.error('Sync all error:', error);
-        return errorResponse('Failed to sync data', 500);
       }
     }
 

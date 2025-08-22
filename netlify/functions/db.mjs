@@ -11,8 +11,27 @@ import {
 } from '../../db/schema.js';
 import { eq, and, desc, asc, sql, count, sum } from 'drizzle-orm';
 
-// Initialize database connection using Netlify's automatic database URL handling
-const sqlClient = neon();
+// Environment-specific database URL handling
+function getDatabaseUrl() {
+  const context = process.env.CONTEXT || 'unknown';
+  
+  // For production, use the production database URL
+  if (context === 'production') {
+    return process.env.PROD_DATABASE_URL || process.env.NETLIFY_DATABASE_URL;
+  }
+  
+  // For non-production environments (dev, deploy-preview, branch-deploy), use the non-prod database URL
+  if (context !== 'production') {
+    return process.env.NONPROD_DATABASE_URL || process.env.NETLIFY_DATABASE_URL;
+  }
+  
+  // Fallback to Netlify's automatic database URL
+  return process.env.NETLIFY_DATABASE_URL;
+}
+
+// Initialize database connection with environment-specific URL
+const databaseUrl = getDatabaseUrl();
+const sqlClient = neon(databaseUrl);
 const db = drizzle(sqlClient);
 
 // Helper function to create error response
@@ -35,6 +54,8 @@ function jsonResponse(data) {
 
 export async function handler(event) {
   try {
+    // Use Netlify's automatic database URL handling
+    const sql = neon();
     const action = (event.queryStringParameters?.action) ||
                    (JSON.parse(event.body || '{}').action);
 
@@ -62,6 +83,9 @@ export async function handler(event) {
         type: isNonProd ? 'Non-Production' : 'Production'
       };
       
+      // Get the actual database URL being used
+      const actualDatabaseUrl = getDatabaseUrl();
+      
       return jsonResponse({
         environment,
         context: contextInfo.display,
@@ -71,9 +95,10 @@ export async function handler(event) {
         isProd,
         isDev: isNonProd, // Add isDev for backward compatibility
         nodeEnv: process.env.NODE_ENV || 'unknown',
-        databaseUrl: 'NETLIFY_DATABASE_URL',
-        databaseUrlInfo: 'Using Netlify automatic database URL',
-        hasDatabaseUrl: true,
+        databaseUrl: context === 'production' ? 'PROD_DATABASE_URL' : 'NONPROD_DATABASE_URL',
+        databaseUrlInfo: actualDatabaseUrl ? 
+          actualDatabaseUrl.replace(/:[^:@]*@/, ':****@') : 'Not set',
+        hasDatabaseUrl: !!actualDatabaseUrl,
         // Additional debugging info
         netlifyEnv: process.env.NETLIFY ? 'Yes' : 'No',
         deployUrl: process.env.URL || 'Not set',
@@ -87,18 +112,22 @@ export async function handler(event) {
     // Test database connection
     if (action === 'system.testConnection') {
       try {
-        await sqlClient`SELECT 1 as test`;
+        // Use the same database URL logic for consistency
+        const testSql = neon(getDatabaseUrl());
+        await testSql`SELECT 1 as test`;
         return jsonResponse({ 
           connected: true, 
           message: 'Database connection successful',
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          databaseUrl: getDatabaseUrl() ? 'Environment-specific URL' : 'Fallback URL'
         });
       } catch (error) {
         return jsonResponse({ 
           connected: false, 
           message: 'Database connection failed',
           error: error.message,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          databaseUrl: getDatabaseUrl() ? 'Environment-specific URL' : 'Fallback URL'
         });
       }
     }
@@ -130,7 +159,7 @@ export async function handler(event) {
     // Health check
     if (action === 'health') {
       try {
-        await sqlClient`SELECT 1`;
+        await sql`SELECT 1`;
         return jsonResponse({ 
           status: 'healthy', 
           timestamp: new Date().toISOString(),
@@ -311,8 +340,6 @@ export async function handler(event) {
         const result = await db.insert(logs).values({
           studentId: data.studentId,
           courseId: data.courseId,
-          studentName: data.studentName || null,
-          courseTitle: data.courseTitle || null,
           subject: data.subject || null,
           date: data.date,
           hours: data.hours,
@@ -546,29 +573,6 @@ export async function handler(event) {
       } catch (error) {
         console.error('Backup latest error:', error);
         return errorResponse('Failed to get latest backup', 500);
-      }
-    }
-
-    // Sync action to pull all data from database for local IndexedDB sync
-    if (action === 'sync.all') {
-      try {
-        const [studentsResult, coursesResult, logsResult, portfolioResult] = await Promise.all([
-          db.select().from(students).orderBy(asc(students.name)),
-          db.select().from(courses).orderBy(asc(courses.title)),
-          db.select().from(logs).orderBy(desc(logs.date)),
-          db.select().from(portfolio).orderBy(desc(portfolio.date))
-        ]);
-
-        return jsonResponse({
-          students: studentsResult,
-          courses: coursesResult,
-          logs: logsResult,
-          portfolio: portfolioResult,
-          timestamp: new Date().toISOString()
-        });
-      } catch (error) {
-        console.error('Sync all error:', error);
-        return errorResponse('Failed to sync data', 500);
       }
     }
 
