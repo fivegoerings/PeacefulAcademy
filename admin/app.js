@@ -382,6 +382,7 @@ async function loadStudents() {
     
     if (data.students && data.students.length > 0) {
       data.students.forEach(student => {
+        console.log('Creating student row with ID:', student.id, 'Type:', typeof student.id);
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td>${student.name}</td>
@@ -907,15 +908,19 @@ function initEventListeners() {
   // Edit and Delete buttons (delegated event handling)
   document.addEventListener('click', async (e) => {
     if (e.target.classList.contains('btn-edit')) {
-      const id = parseInt(e.target.dataset.id);
-      const type = e.target.closest('section').id;
+      const buttonId = e.target.dataset.id;
+      const parsedId = parseInt(buttonId);
+      const section = e.target.closest('section');
+      const type = section ? section.id : 'unknown';
       
       console.log('Edit button clicked:', { 
-        id, 
+        buttonId, 
+        parsedId, 
         type, 
         datasetId: e.target.dataset.id,
-        sectionId: e.target.closest('section').id,
-        sectionElement: e.target.closest('section')
+        sectionId: section ? section.id : 'no section found',
+        sectionElement: section,
+        sectionClasses: section ? section.className : 'no section'
       });
       
       try {
@@ -924,15 +929,20 @@ function initEventListeners() {
         if (type === 'students') {
           const studentsData = await dbCall('student.list');
           console.log('Students data:', studentsData.students);
-          data = studentsData.students.find(s => Number(s.id) === id);
+          console.log('Looking for student with ID:', parsedId, 'Type:', typeof parsedId);
+          data = studentsData.students.find(s => {
+            const studentId = Number(s.id);
+            console.log('Comparing student ID:', studentId, 'Type:', typeof studentId, 'with:', parsedId, 'Type:', typeof parsedId);
+            return studentId === parsedId;
+          });
         } else if (type === 'courses') {
           const coursesData = await dbCall('course.list');
           console.log('Courses data:', coursesData.courses);
-          data = coursesData.courses.find(c => Number(c.id) === id);
+          data = coursesData.courses.find(c => Number(c.id) === parsedId);
         } else if (type === 'logs') {
           const logsData = await dbCall('log.list');
           console.log('Logs data:', logsData.logs);
-          data = logsData.logs.find(l => Number(l.id) === id);
+          data = logsData.logs.find(l => Number(l.id) === parsedId);
         }
         
         console.log('Found data for editing:', data);
@@ -940,6 +950,7 @@ function initEventListeners() {
         if (data) {
           showEditForm(type.slice(0, -1), data); // Remove 's' from end
         } else {
+          console.error('Item not found. Button ID:', buttonId, 'Parsed ID:', parsedId, 'Type:', type);
           showToast('Item not found', 'error');
         }
       } catch (error) {
