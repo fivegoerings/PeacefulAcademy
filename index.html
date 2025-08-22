@@ -757,6 +757,51 @@ $('#scSave')?.addEventListener('click', ()=>{
 $('#scReset')?.addEventListener('click', ()=>{ if(confirm('Reset to defaults?')) setSettings({name:'Peaceful Academy of Kansas City, Missouri',phone:'',address:'',yearStart:'07-01'}); });
 $('#scNeonSync')?.addEventListener('change', ()=>{ const s=getSettings(); s.neonSync = $('#scNeonSync').checked; setSettings(s); });
 $('#scSyncNow')?.addEventListener('click', performManualSync);
+
+// Add a test function to check Neon database directly
+async function testNeonConnection() {
+  try {
+    appendLog('info', ['Testing Neon connection...']);
+    
+    const res = await fetch('/.netlify/functions/db', { 
+      method: 'POST', 
+      headers: { 'content-type': 'application/json' }, 
+      body: JSON.stringify({ action: 'bulk.readAll' })
+    });
+    
+    if (!res.ok) {
+      appendLog('error', ['Neon test failed', `HTTP ${res.status}: ${res.statusText}`]);
+      return false;
+    }
+    
+    const json = await res.json().catch(() => null);
+    if (!json || json.error) {
+      appendLog('error', ['Neon test failed', json?.error || 'Unknown error']);
+      return false;
+    }
+    
+    const data = json.data || {};
+    appendLog('info', ['Neon test successful', 
+      `students: ${(data.students || []).length}`,
+      `courses: ${(data.courses || []).length}`,
+      `logs: ${(data.logs || []).length}`,
+      `portfolio: ${(data.portfolio || []).length}`,
+      `files: ${(data.files || []).length}`
+    ]);
+    
+    return true;
+  } catch(e) {
+    appendLog('error', ['Neon test exception', String(e&&e.message||e)]);
+    return false;
+  }
+}
+
+// Add test button to settings (temporary for debugging)
+const testButton = document.createElement('button');
+testButton.textContent = 'Test Neon Connection';
+testButton.onclick = testNeonConnection;
+testButton.style.cssText = 'margin-top: 0.5rem; font-size: 0.9rem; padding: 0.5rem;';
+document.querySelector('#scSyncNow')?.parentNode?.appendChild(testButton);
 // Build a rich snapshot including denormalized names/subjects for logs
 async function buildSnapshotPayload(){
   const [students,courses,logs,portfolio,files] = await Promise.all([
@@ -1296,11 +1341,16 @@ async function init(){
     // Always attempt to sync with Neon on startup (regardless of neonSync setting)
     await performInitialSync();
     
-    // Render UI after sync
+    // Render UI after sync - ensure this always happens
+    appendLog('info', ['init: rendering UI after sync...']);
     await renderStudents(); 
     await renderCourses(); 
     await renderYearSelectors(); 
     await renderDashboard();
+    await renderLogsTable();
+    await renderPortfolio();
+    await renderReports();
+    appendLog('info', ['init: UI rendering completed']);
 
     // Set up periodic sync if enabled
     const s = getSettings();
@@ -1343,6 +1393,7 @@ async function performInitialSync() {
     }
     
     // Get latest data from Neon
+    appendLog('info', ['Initial sync: fetching data from Neon...']);
     const res = await fetch('/.netlify/functions/db', { 
       method: 'POST', 
       headers: { 'content-type': 'application/json' }, 
@@ -1350,7 +1401,7 @@ async function performInitialSync() {
     });
     
     if (!res.ok) {
-      appendLog('warn', ['Initial sync: Neon unavailable, using local data']);
+      appendLog('warn', ['Initial sync: Neon unavailable, using local data', `HTTP ${res.status}: ${res.statusText}`]);
       updateSyncStatus('Neon unavailable - using local data', 'warning');
       return;
     }
@@ -1362,11 +1413,38 @@ async function performInitialSync() {
       return;
     }
     
+    // Debug: Log what we received from Neon
+    appendLog('info', ['Initial sync: Neon response received', 
+      `students: ${(json.data?.students || []).length}`,
+      `courses: ${(json.data?.courses || []).length}`,
+      `logs: ${(json.data?.logs || []).length}`,
+      `portfolio: ${(json.data?.portfolio || []).length}`,
+      `files: ${(json.data?.files || []).length}`
+    ]);
+    
     const neonData = json.data || {};
     const localData = await getLocalDataSnapshot();
     
+    // Debug: Log local data
+    appendLog('info', ['Initial sync: Local data snapshot', 
+      `students: ${localData.students.length}`,
+      `courses: ${localData.courses.length}`,
+      `logs: ${localData.logs.length}`,
+      `portfolio: ${localData.portfolio.length}`,
+      `files: ${localData.files.length}`
+    ]);
+    
     // Compare and merge data intelligently
     const mergedData = await mergeDataIntelligently(neonData, localData);
+    
+    // Debug: Log merged data
+    appendLog('info', ['Initial sync: Merged data ready', 
+      `students: ${mergedData.students.length}`,
+      `courses: ${mergedData.courses.length}`,
+      `logs: ${mergedData.logs.length}`,
+      `portfolio: ${mergedData.portfolio.length}`,
+      `files: ${mergedData.files.length}`
+    ]);
     
     // Apply merged data to local storage
     await applyDataToLocal(mergedData);
@@ -1379,6 +1457,23 @@ async function performInitialSync() {
     appendLog('warn', ['Initial sync: failed, using local data', String(e&&e.message||e)]);
     updateSyncStatus('Sync failed - using local data', 'error');
     // Continue with local data if sync fails
+  }
+  
+  // Ensure we have some data to display - fallback to local data if sync failed
+  try {
+    const localStudents = await listStudents();
+    const localCourses = await listCourses();
+    
+    if (localStudents.length === 0 && localCourses.length === 0) {
+      appendLog('warn', ['Initial sync: no local data found, this might be a fresh installation']);
+    } else {
+      appendLog('info', ['Initial sync: local data available', 
+        `students: ${localStudents.length}`,
+        `courses: ${localCourses.length}`
+      ]);
+    }
+  } catch(e) {
+    appendLog('error', ['Initial sync: failed to check local data', String(e&&e.message||e)]);
   }
 }
 
@@ -1478,31 +1573,40 @@ function mergeEntities(neonEntities, localEntities, entityType) {
 // Apply merged data to local storage
 async function applyDataToLocal(mergedData) {
   try {
+    appendLog('info', ['applyDataToLocal: starting data application...']);
+    
     // Clear existing data
+    appendLog('info', ['applyDataToLocal: clearing existing data...']);
     await clearStoresSafely(['students', 'courses', 'logs', 'portfolio', 'files']);
     
     // Apply settings
     if (mergedData.settings) {
       setSettings(mergedData.settings);
+      appendLog('info', ['applyDataToLocal: settings applied']);
     }
     
-    // Add all entities
+    // Add all entities with detailed logging
+    appendLog('info', ['applyDataToLocal: adding students...', `count: ${mergedData.students.length}`]);
     for (const student of mergedData.students) {
       await DB.add('students', student);
     }
     
+    appendLog('info', ['applyDataToLocal: adding courses...', `count: ${mergedData.courses.length}`]);
     for (const course of mergedData.courses) {
       await DB.add('courses', course);
     }
     
+    appendLog('info', ['applyDataToLocal: adding logs...', `count: ${mergedData.logs.length}`]);
     for (const log of mergedData.logs) {
       await DB.add('logs', log);
     }
     
+    appendLog('info', ['applyDataToLocal: adding portfolio...', `count: ${mergedData.portfolio.length}`]);
     for (const portfolio of mergedData.portfolio) {
       await DB.add('portfolio', portfolio);
     }
     
+    appendLog('info', ['applyDataToLocal: adding files...', `count: ${mergedData.files.length}`]);
     for (const file of mergedData.files) {
       await DB.add('files', file);
     }
@@ -1510,13 +1614,22 @@ async function applyDataToLocal(mergedData) {
     // Store sync timestamp
     localStorage.setItem('pa_last_sync', new Date().toISOString());
     
-    appendLog('info', ['Local data updated', 
-      `students: ${mergedData.students.length}`,
-      `courses: ${mergedData.courses.length}`,
-      `logs: ${mergedData.logs.length}`,
-      `portfolio: ${mergedData.portfolio.length}`,
-      `files: ${mergedData.files.length}`
+    // Verify data was actually stored
+    const verifyStudents = await listStudents();
+    const verifyCourses = await listCourses();
+    const verifyLogs = await listLogs();
+    const verifyPortfolio = await listPortfolio();
+    const verifyFiles = await DB.all('files');
+    
+    appendLog('info', ['applyDataToLocal: verification complete', 
+      `students stored: ${verifyStudents.length}`,
+      `courses stored: ${verifyCourses.length}`,
+      `logs stored: ${verifyLogs.length}`,
+      `portfolio stored: ${verifyPortfolio.length}`,
+      `files stored: ${verifyFiles.length}`
     ]);
+    
+    appendLog('info', ['applyDataToLocal: data application completed successfully']);
     
   } catch(e) {
     appendLog('error', ['Failed to apply merged data to local storage', String(e&&e.message||e)]);
@@ -1613,7 +1726,8 @@ async function performManualSync() {
     
     await performInitialSync();
     
-    // Re-render all UI components
+    // Force refresh all UI components
+    appendLog('info', ['Manual sync: refreshing UI...']);
     await renderStudents();
     await renderCourses();
     await renderYearSelectors();
@@ -1622,9 +1736,15 @@ async function performManualSync() {
     await renderPortfolio();
     await renderReports();
     
-    appendLog('info', ['Manual sync: completed']);
+    // Force a page refresh to ensure everything is updated
+    appendLog('info', ['Manual sync: forcing page refresh...']);
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
+    
+    appendLog('info', ['Manual sync: completed, page will refresh shortly']);
     updateSyncStatus('Last synced: ' + new Date().toLocaleTimeString(), 'success');
-    showNotification('Manual sync completed successfully', 'success');
+    showNotification('Manual sync completed successfully. Page will refresh shortly.', 'success');
     
   } catch(e) {
     appendLog('error', ['Manual sync: failed', String(e&&e.message||e)]);
