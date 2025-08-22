@@ -285,22 +285,46 @@ async function loadEnvironmentInfo() {
     // Get environment information from backend
     const envData = await dbCall('system.environment');
     
+    // Debug logging for environment data
+    console.log('Environment data received:', envData);
+    
     // Display environment variables
     envVarsEl.innerHTML = '';
     const envVars = {
       'CONTEXT': envData.context || 'Not set',
+      'CONTEXT TYPE': envData.contextType || 'Unknown',
       'NODE_ENV': envData.nodeEnv || 'Not set',
       'NETLIFY_DATABASE_URL': envData.hasDatabaseUrl ? 'Set (auto)' : 'Not set',
       'Database URL Info': envData.databaseUrlInfo || 'Unknown',
-      'Database URL Source': envData.databaseUrl || 'Unknown'
+      'Database URL Source': envData.databaseUrl || 'Unknown',
+      'NETLIFY ENVIRONMENT': envData.netlifyEnv || 'Unknown',
+      'DEPLOY URL': envData.deployUrl || 'Not set',
+      'DEPLOY CONTEXT': envData.deployContext || 'Not set'
     };
     
     Object.entries(envVars).forEach(([key, value]) => {
       const item = document.createElement('div');
       item.className = 'env-item';
+      
+      // Determine value class based on content
+      let valueClass = '';
+      if (value.includes('masked')) {
+        valueClass = 'masked';
+      } else if (key === 'CONTEXT TYPE') {
+        valueClass = value === 'Development' ? 'success' : value === 'Production' ? 'warning' : '';
+      } else if (key === 'CONTEXT' && value.includes('Not set')) {
+        valueClass = 'warning';
+      } else if (key === 'NETLIFY ENVIRONMENT') {
+        valueClass = value === 'Yes' ? 'success' : 'warning';
+      } else if (key === 'DEPLOY URL' && value !== 'Not set') {
+        valueClass = 'success';
+      } else if (key === 'DEPLOY CONTEXT' && value !== 'Not set') {
+        valueClass = 'success';
+      }
+      
       item.innerHTML = `
         <div class="env-label">${key}</div>
-        <div class="env-value ${value.includes('masked') ? 'masked' : ''}">${value}</div>
+        <div class="env-value ${valueClass}">${value}</div>
       `;
       envVarsEl.appendChild(item);
     });
@@ -310,6 +334,7 @@ async function loadEnvironmentInfo() {
     const connectionDetails = {
       'Environment': envData.environment || 'Unknown',
       'Context': envData.context || 'Unknown',
+      'Context Type': envData.contextType || 'Unknown',
       'Is Development': envData.isDev ? 'Yes' : 'No',
       'Is Production': envData.isProd ? 'Yes' : 'No',
       'Database URL Source': envData.databaseUrl || 'Unknown'
@@ -318,7 +343,19 @@ async function loadEnvironmentInfo() {
     Object.entries(connectionDetails).forEach(([key, value]) => {
       const item = document.createElement('div');
       item.className = 'env-item';
-      const valueClass = value === 'Yes' ? 'success' : value === 'No' ? 'warning' : '';
+      
+      // Determine value class based on content
+      let valueClass = '';
+      if (value === 'Yes') {
+        valueClass = 'success';
+      } else if (value === 'No') {
+        valueClass = 'warning';
+      } else if (key === 'Context Type') {
+        valueClass = value === 'Development' ? 'success' : value === 'Production' ? 'warning' : '';
+      } else if (key === 'Context' && value.includes('Not set')) {
+        valueClass = 'warning';
+      }
+      
       item.innerHTML = `
         <div class="env-label">${key}</div>
         <div class="env-value ${valueClass}">${value}</div>

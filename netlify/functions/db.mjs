@@ -57,16 +57,35 @@ export async function handler(event) {
         environment = 'PROD';
       }
       
+      // Enhanced context information
+      const contextInfo = {
+        raw: context,
+        display: context === 'unknown' ? 'Not set (local development)' : context,
+        type: isDev ? 'Development' : isProd ? 'Production' : 'Unknown'
+      };
+      
+      // Additional context detection for Netlify environments
+      if (context === 'unknown' && process.env.NETLIFY) {
+        contextInfo.display = 'Netlify (context not set)';
+        contextInfo.type = 'Netlify';
+      }
+      
       return jsonResponse({
         environment,
-        context,
+        context: contextInfo.display,
+        contextRaw: contextInfo.raw,
+        contextType: contextInfo.type,
         isDev,
         isProd,
         nodeEnv: process.env.NODE_ENV || 'unknown',
         databaseUrl: 'AUTO', // Netlify automatically sets NETLIFY_DATABASE_URL
         databaseUrlInfo: process.env.NETLIFY_DATABASE_URL ? 
           process.env.NETLIFY_DATABASE_URL.replace(/:[^:@]*@/, ':****@') : 'Not set',
-        hasDatabaseUrl: !!process.env.NETLIFY_DATABASE_URL
+        hasDatabaseUrl: !!process.env.NETLIFY_DATABASE_URL,
+        // Additional debugging info
+        netlifyEnv: process.env.NETLIFY ? 'Yes' : 'No',
+        deployUrl: process.env.URL || 'Not set',
+        deployContext: process.env.DEPLOY_CONTEXT || 'Not set'
       });
     }
 
