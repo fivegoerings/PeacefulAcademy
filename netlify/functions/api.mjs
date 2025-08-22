@@ -10,8 +10,27 @@ import {
 } from '../../db/schema.js';
 import { eq, and, desc, asc, sql, count } from 'drizzle-orm';
 
-// Use Netlify's automatic database URL handling
-const sqlClient = neon();
+// Environment-specific database URL handling
+function getDatabaseUrl() {
+  const context = process.env.CONTEXT || 'unknown';
+  
+  // For production, use the production database URL
+  if (context === 'production') {
+    return process.env.PROD_DATABASE_URL || process.env.NETLIFY_DATABASE_URL;
+  }
+  
+  // For non-production environments (dev, deploy-preview, branch-deploy), use the non-prod database URL
+  if (context !== 'production') {
+    return process.env.NONPROD_DATABASE_URL || process.env.NETLIFY_DATABASE_URL;
+  }
+  
+  // Fallback to Netlify's automatic database URL
+  return process.env.NETLIFY_DATABASE_URL;
+}
+
+// Initialize database connection with environment-specific URL
+const databaseUrl = getDatabaseUrl();
+const sqlClient = neon(databaseUrl);
 const db = drizzle(sqlClient);
 
 // Helper function to create error response
@@ -46,18 +65,22 @@ export async function handler(event) {
     // Test database connection
     if (action === 'test') {
       try {
-        await sql`SELECT 1 as test`;
+        // Use the same database URL logic for consistency
+        const testSql = neon(getDatabaseUrl());
+        await testSql`SELECT 1 as test`;
         return jsonResponse({ 
           connected: true, 
           message: 'Database connection successful',
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          databaseUrl: getDatabaseUrl() ? 'Environment-specific URL' : 'Fallback URL'
         });
       } catch (error) {
         return jsonResponse({ 
           connected: false, 
           message: 'Database connection failed',
           error: error.message,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          databaseUrl: getDatabaseUrl() ? 'Environment-specific URL' : 'Fallback URL'
         });
       }
     }
@@ -89,7 +112,9 @@ export async function handler(event) {
     // Health check
     if (action === 'health') {
       try {
-        await sql`SELECT 1`;
+        // Use the same database URL logic for consistency
+        const healthSql = neon(getDatabaseUrl());
+        await healthSql`SELECT 1`;
         return jsonResponse({ 
           status: 'healthy', 
           timestamp: new Date().toISOString(),

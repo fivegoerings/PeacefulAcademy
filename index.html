@@ -285,6 +285,7 @@ footer{margin:3rem 0 2rem;color:var(--muted);text-align:center}
             <div><label>Address</label><input id="scAddress" placeholder="Street, Kansas City, MO"></div>
             <div><label>Year Starts</label><select id="scYearStart"><option value="07-01" selected>July 1</option><option value="08-01">August 1</option><option value="09-01">September 1</option></select></div>
             <div style="grid-column: 1 / -1"><label><input type="checkbox" id="scNeonSync"> Enable Neon Sync (multi-device)</label><div class="muted">When enabled, the app pulls the latest data from Neon on startup and periodically while still working offline.</div></div>
+            <div style="grid-column: 1 / -1"><button id="scSyncNow" class="primary">🔄 Sync from Database Now</button><div class="muted">Manually pull the latest data from the database (useful after adding data in Admin panel)</div></div>
           </div>
           <div class="row" style="margin-top:.6rem"><button class="primary" id="scSave">Save</button><button class="ghost" id="scReset">Reset</button></div>
         </div>
@@ -723,6 +724,44 @@ $('#scSave')?.addEventListener('click', ()=>{
 });
 $('#scReset')?.addEventListener('click', ()=>{ if(confirm('Reset to defaults?')) setSettings({name:'Peaceful Academy of Kansas City, Missouri',phone:'',address:'',yearStart:'07-01'}); });
 $('#scNeonSync')?.addEventListener('change', ()=>{ const s=getSettings(); s.neonSync = $('#scNeonSync').checked; setSettings(s); });
+
+// Manual sync from database
+$('#scSyncNow')?.addEventListener('click', async()=>{
+  try {
+    appendLog('info', ['Manual sync from database started']);
+    const res = await fetch('/.netlify/functions/db', { 
+      method: 'POST', 
+      headers: { 'content-type': 'application/json' }, 
+      body: JSON.stringify({ action: 'backup.latest' }) 
+    });
+    const raw = await res.text(); 
+    let json = null; 
+    try{ json = JSON.parse(raw); } catch(_){ }
+    if(res.ok && json && json.backup && json.backup.payload){
+      const data = json.backup.payload; 
+      await clearStoresSafely(['students','courses','logs','portfolio','files']); 
+      if(data.settings) setSettings(Object.assign(getSettings(), data.settings)); 
+      for(const st of (data.students||[])) await DB.add('students', st); 
+      for(const c of (data.courses||[])) await DB.add('courses', c); 
+      for(const l of (data.logs||[])) await DB.add('logs', l); 
+      for(const p of (data.portfolio||[])) await DB.add('portfolio', p); 
+      for(const f of (data.files||[])) await DB.add('files', f);
+      appendLog('info', ['Manual sync from database completed']);
+      showNotification('Sync completed successfully!', 'success');
+      renderDashboard(); 
+      renderStudents(); 
+      renderCourses(); 
+      renderLogsTable(); 
+      renderPortfolio(); 
+      renderReports();
+    } else {
+      throw new Error('No backup data found or invalid response');
+    }
+  } catch(e) { 
+    appendLog('warn', ['Manual sync from database failed', String(e&&e.message||e)]); 
+    showNotification('Sync failed. See console for details.', 'error');
+  }
+});
 // Build a rich snapshot including denormalized names/subjects for logs
 async function buildSnapshotPayload(){
   const [students,courses,logs,portfolio,files] = await Promise.all([
