@@ -62,9 +62,6 @@ export async function handler(event) {
         type: isNonProd ? 'Non-Production' : 'Production'
       };
       
-      // Get the actual database URL being used
-      const actualDatabaseUrl = getDatabaseUrl();
-      
       return jsonResponse({
         environment,
         context: contextInfo.display,
@@ -74,10 +71,9 @@ export async function handler(event) {
         isProd,
         isDev: isNonProd, // Add isDev for backward compatibility
         nodeEnv: process.env.NODE_ENV || 'unknown',
-        databaseUrl: context === 'production' ? 'PROD_DATABASE_URL' : 'NONPROD_DATABASE_URL',
-        databaseUrlInfo: actualDatabaseUrl ? 
-          actualDatabaseUrl.replace(/:[^:@]*@/, ':****@') : 'Not set',
-        hasDatabaseUrl: !!actualDatabaseUrl,
+        databaseUrl: 'NETLIFY_DATABASE_URL',
+        databaseUrlInfo: 'Using Netlify automatic database URL',
+        hasDatabaseUrl: true,
         // Additional debugging info
         netlifyEnv: process.env.NETLIFY ? 'Yes' : 'No',
         deployUrl: process.env.URL || 'Not set',
