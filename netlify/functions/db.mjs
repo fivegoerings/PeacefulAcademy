@@ -10,29 +10,10 @@ import {
   backups 
 } from '../../db/schema.js';
 import { eq, and, desc, asc, sql, count, sum } from 'drizzle-orm';
-
-// Environment-specific database URL handling
-function getDatabaseUrl() {
-  const context = process.env.CONTEXT || 'unknown';
-  
-  // For production, use the production database URL
-  if (context === 'production') {
-    return process.env.PROD_DATABASE_URL || process.env.NETLIFY_DATABASE_URL;
-  }
-  
-  // For non-production environments (dev, deploy-preview, branch-deploy), use the non-prod database URL
-  if (context !== 'production') {
-    return process.env.NONPROD_DATABASE_URL || process.env.NETLIFY_DATABASE_URL;
-  }
-  
-  // Fallback to Netlify's automatic database URL
-  return process.env.NETLIFY_DATABASE_URL;
-}
+import { createDatabaseConnection, getEnvironmentInfo } from './db-utils.mjs';
 
 // Initialize database connection with environment-specific URL
-const databaseUrl = getDatabaseUrl();
-const sqlClient = neon(databaseUrl);
-const db = drizzle(sqlClient);
+const { sql: sqlClient, db, databaseUrl } = createDatabaseConnection();
 
 // Helper function to create error response
 function errorResponse(message, statusCode = 500) {
@@ -65,61 +46,45 @@ export async function handler(event) {
 
     // System environment information
     if (action === 'system.environment') {
-      const context = process.env.CONTEXT || 'unknown';
-      const isNonProd = context !== 'production';
-      const isProd = context === 'production';
-      
-      let environment = 'UNKNOWN';
-      if (isNonProd) {
-        environment = 'NON-PROD';
-      } else if (isProd) {
-        environment = 'PROD';
-      }
+      const envInfo = getEnvironmentInfo();
       
       // Simple context information based on Netlify docs
       const contextInfo = {
-        raw: context,
-        display: context === 'unknown' ? 'Local Development' : context,
-        type: isNonProd ? 'Non-Production' : 'Production'
+        raw: envInfo.context,
+        display: envInfo.context === 'unknown' ? 'Local Development' : envInfo.context,
+        type: envInfo.contextType
       };
       
-      // Get the actual database URL being used
-      const actualDatabaseUrl = getDatabaseUrl();
-      
       return jsonResponse({
-        environment,
+        environment: envInfo.environment,
         context: contextInfo.display,
         contextRaw: contextInfo.raw,
         contextType: contextInfo.type,
-        isNonProd,
-        isProd,
-        isDev: isNonProd, // Add isDev for backward compatibility
-        nodeEnv: process.env.NODE_ENV || 'unknown',
-        databaseUrl: context === 'production' ? 'PROD_DATABASE_URL' : 'NONPROD_DATABASE_URL',
-        databaseUrlInfo: actualDatabaseUrl ? 
-          actualDatabaseUrl.replace(/:[^:@]*@/, ':****@') : 'Not set',
-        hasDatabaseUrl: !!actualDatabaseUrl,
-        // Additional debugging info
-        netlifyEnv: process.env.NETLIFY ? 'Yes' : 'No',
-        deployUrl: process.env.URL || 'Not set',
-        // Show which environment variables are set
-        prodDbUrlSet: !!process.env.PROD_DATABASE_URL,
-        nonprodDbUrlSet: !!process.env.NONPROD_DATABASE_URL,
-        netlifyDbUrlSet: !!process.env.NETLIFY_DATABASE_URL
+        isNonProd: envInfo.isNonProd,
+        isProd: envInfo.isProd,
+        isDev: envInfo.isDev,
+        nodeEnv: envInfo.nodeEnv,
+        databaseUrl: envInfo.databaseUrl,
+        databaseUrlInfo: databaseUrl ? 
+          databaseUrl.replace(/:[^:@]*@/, ':****@') : 'Not set',
+        hasDatabaseUrl: !!databaseUrl,
+        netlifyEnv: envInfo.netlifyEnv,
+        deployUrl: envInfo.deployUrl,
+        prodDbUrlSet: envInfo.prodDbUrlSet,
+        nonprodDbUrlSet: envInfo.nonprodDbUrlSet,
+        netlifyDbUrlSet: envInfo.netlifyDbUrlSet
       });
     }
 
     // Test database connection
     if (action === 'system.testConnection') {
       try {
-        // Use the same database URL logic for consistency
-        const testSql = neon(getDatabaseUrl());
-        await testSql`SELECT 1 as test`;
+        await sqlClient`SELECT 1 as test`;
         return jsonResponse({ 
           connected: true, 
           message: 'Database connection successful',
           timestamp: new Date().toISOString(),
-          databaseUrl: getDatabaseUrl() ? 'Environment-specific URL' : 'Fallback URL'
+          databaseUrl: databaseUrl ? 'Environment-specific URL' : 'Fallback URL'
         });
       } catch (error) {
         return jsonResponse({ 
@@ -127,7 +92,7 @@ export async function handler(event) {
           message: 'Database connection failed',
           error: error.message,
           timestamp: new Date().toISOString(),
-          databaseUrl: getDatabaseUrl() ? 'Environment-specific URL' : 'Fallback URL'
+          databaseUrl: databaseUrl ? 'Environment-specific URL' : 'Fallback URL'
         });
       }
     }
@@ -159,18 +124,20 @@ export async function handler(event) {
     // Health check
     if (action === 'health') {
       try {
-        await sql`SELECT 1`;
+        await sqlClient`SELECT 1`;
         return jsonResponse({ 
           status: 'healthy', 
           timestamp: new Date().toISOString(),
-          database: 'connected'
+          database: 'connected',
+          databaseUrl: databaseUrl ? 'Environment-specific URL' : 'Fallback URL'
         });
       } catch (error) {
         return jsonResponse({ 
           status: 'unhealthy', 
           timestamp: new Date().toISOString(),
           database: 'disconnected',
-          error: error.message
+          error: error.message,
+          databaseUrl: databaseUrl ? 'Environment-specific URL' : 'Fallback URL'
         });
       }
     }

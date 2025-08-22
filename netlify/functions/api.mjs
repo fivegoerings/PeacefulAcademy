@@ -9,10 +9,10 @@ import {
   settings 
 } from '../../db/schema.js';
 import { eq, and, desc, asc, sql, count } from 'drizzle-orm';
+import { createDatabaseConnection } from './db-utils.mjs';
 
-// Use Netlify's automatic database URL handling
-const sqlClient = neon();
-const db = drizzle(sqlClient);
+// Initialize database connection with environment-specific URL
+const { sql: sqlClient, db, databaseUrl } = createDatabaseConnection();
 
 // Helper function to create error response
 function errorResponse(message, statusCode = 500) {
@@ -34,8 +34,6 @@ function jsonResponse(data) {
 
 export async function handler(event) {
   try {
-    // Use Netlify's automatic database URL handling
-    const sql = neon();
     const action = (event.queryStringParameters?.action) ||
                    (JSON.parse(event.body || '{}').action);
 
@@ -46,18 +44,20 @@ export async function handler(event) {
     // Test database connection
     if (action === 'test') {
       try {
-        await sql`SELECT 1 as test`;
+        await sqlClient`SELECT 1 as test`;
         return jsonResponse({ 
           connected: true, 
           message: 'Database connection successful',
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          databaseUrl: databaseUrl ? 'Environment-specific URL' : 'Fallback URL'
         });
       } catch (error) {
         return jsonResponse({ 
           connected: false, 
           message: 'Database connection failed',
           error: error.message,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          databaseUrl: databaseUrl ? 'Environment-specific URL' : 'Fallback URL'
         });
       }
     }
@@ -89,18 +89,20 @@ export async function handler(event) {
     // Health check
     if (action === 'health') {
       try {
-        await sql`SELECT 1`;
+        await sqlClient`SELECT 1`;
         return jsonResponse({ 
           status: 'healthy', 
           timestamp: new Date().toISOString(),
-          database: 'connected'
+          database: 'connected',
+          databaseUrl: databaseUrl ? 'Environment-specific URL' : 'Fallback URL'
         });
       } catch (error) {
         return jsonResponse({ 
           status: 'unhealthy', 
           timestamp: new Date().toISOString(),
           database: 'disconnected',
-          error: error.message
+          error: error.message,
+          databaseUrl: databaseUrl ? 'Environment-specific URL' : 'Fallback URL'
         });
       }
     }
