@@ -741,7 +741,7 @@ async function renderPortfolio(){
       </div>
       <div style="padding:.6rem">
         <div><strong>${sanitizeHtml(p.title||'(untitled)')}</strong></div>
-        <div class="muted">${sanitizeHtml(p.date)} • ${sanitizeHtml(st?.name||'')} • ${sanitizeHtml(c?.title||'')}</div>
+        <div class="muted">${sanitizeHtml(formatDateForDisplay(p.date))} • ${sanitizeHtml(st?.name||'')} • ${sanitizeHtml(c?.title||'')}</div>
         <div style="font-size:.92rem">${sanitizeHtml(p.desc||'')}</div>
         <div class="row" style="margin-top:.5rem;justify-content:space-between">
           <div class="muted">${sanitizeHtml((p.tags||[]).join(', '))}</div>
@@ -840,7 +840,7 @@ window.addEventListener('hashchange', ()=>{ const v=(location.hash||'#dashboard'
 
 async function renderStudents(){
   const students = await listStudents();
-  const tb = $('#stTable tbody'); if(tb){ tb.innerHTML=''; students.forEach(s=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>${s.name}</td><td>${s.dob||''}</td><td>${s.grade||''}</td><td>${s.startYear||''}</td><td class="right"><button class="stDel" data-id="${s.id}">Delete</button></td>`; tb.appendChild(tr); });}
+  const tb = $('#stTable tbody'); if(tb){ tb.innerHTML=''; students.forEach(s=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>${s.name}</td><td>${s.dob ? formatDateForDisplay(s.dob) : ''}</td><td>${s.grade||''}</td><td>${s.startYear||''}</td><td class="right"><button class="stDel" data-id="${s.id}">Delete</button></td>`; tb.appendChild(tr); });}
   const opts = students.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
   ['dashStudent','qaStudent','lgStudent','lgStudentFilter','pfStudent','pfStudentFilter','rpStudent','trStudent','dpStudent'].forEach(id=>{ const el=$('#'+id); if(!el) return; const prev=el.value; el.innerHTML=(id.endsWith('Filter')?'<option value="">All</option>':'')+opts; if(prev) el.value=prev; });
 }
@@ -934,7 +934,7 @@ async function renderDashboard(){
         };
         
         tr.innerHTML=`
-          <td>${sanitizeHtml(r.date)}</td>
+          <td>${sanitizeHtml(formatDateForDisplay(r.date))}</td>
           <td>${sanitizeHtml(c?.title||'')}</td>
           <td class="right">${fmt.format(r.hours)}</td>
           <td>${r.location==='home'?'Home':'Offsite'}</td>
@@ -963,7 +963,7 @@ async function renderLogsTable(){
   const [logs,courses,students]=await Promise.all([listLogs(), listCourses(), listStudents()]);
   const subjF=$('#lgSubjectFilter').value; const y=$('#lgYearFilter').value; const s=$('#lgStudentFilter').value; const cMap=new Map(courses.map(c=>[c.id,c])); const sMap=new Map(students.map(x=>[x.id,x]));
   const filtered=logs.filter(l=> (!y||yearForDate(l.date)==Number(y)) && (!s||l.studentId==Number(s)) && (!subjF||cMap.get(l.courseId)?.subject===subjF)).sort((a,b)=>b.date.localeCompare(a.date));
-  const tb=$('#lgTable tbody'); tb.innerHTML=''; filtered.forEach(l=>{ const c=cMap.get(Number(l.courseId)), st=sMap.get(Number(l.studentId)); const tr=document.createElement('tr'); tr.innerHTML=`<td>${l.date}</td><td>${st?.name||''}</td><td>${c?.title||''}</td><td>${c?.subject||''}</td><td class="right">${fmt.format(l.hours)}</td><td>${l.location==='home'?'Home':'Offsite'}</td><td class="muted">${l.notes||''}</td><td class="right"><button class="lgDel" data-id="${l.id}">Delete</button></td>`; tb.appendChild(tr); });
+  const tb=$('#lgTable tbody'); tb.innerHTML=''; filtered.forEach(l=>{ const c=cMap.get(Number(l.courseId)), st=sMap.get(Number(l.studentId)); const tr=document.createElement('tr'); tr.innerHTML=`<td>${formatDateForDisplay(l.date)}</td><td>${st?.name||''}</td><td>${c?.title||''}</td><td>${c?.subject||''}</td><td class="right">${fmt.format(l.hours)}</td><td>${l.location==='home'?'Home':'Offsite'}</td><td class="muted">${l.notes||''}</td><td class="right"><button class="lgDel" data-id="${l.id}">Delete</button></td>`; tb.appendChild(tr); });
 }
 
 async function renderReports(){
@@ -1375,7 +1375,7 @@ $('#lgAdd')?.addEventListener('click', async()=>{
   }
 });
 document.body.addEventListener('click', async(e)=>{ if(e.target.classList.contains('lgDel')){ await DB.del('logs', Number(e.target.dataset.id)); renderLogsTable(); renderDashboard(); renderReports(); } });
-$('#exportCSV')?.addEventListener('click', async()=>{ const [logs,courses,students]=await Promise.all([listLogs(), listCourses(), listStudents()]); const cMap=new Map(courses.map(c=>[c.id,c])); const sMap=new Map(students.map(s=>[s.id,s])); const y=$('#lgYearFilter').value; const rows=[['date','student','course','subject','hours','location','notes']]; for(const l of logs){ if(y && yearForDate(l.date)!=Number(y)) continue; const c=cMap.get(l.courseId), st=sMap.get(l.studentId); rows.push([l.date, st?.name||'', c?.title||'', c?.subject||'', String(l.hours), l.location, (l.notes||'').replace(/\n/g,' ')]);} const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n'); const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob([csv],{type:'text/csv'})),download:'logs.csv'}); a.click(); });
+$('#exportCSV')?.addEventListener('click', async()=>{ const [logs,courses,students]=await Promise.all([listLogs(), listCourses(), listStudents()]); const cMap=new Map(courses.map(c=>[c.id,c])); const sMap=new Map(students.map(s=>[s.id,s])); const y=$('#lgYearFilter').value; const rows=[['date','student','course','subject','hours','location','notes']]; for(const l of logs){ if(y && yearForDate(l.date)!=Number(y)) continue; const c=cMap.get(l.courseId), st=sMap.get(l.studentId); rows.push([formatDateForDisplay(l.date), st?.name||'', c?.title||'', c?.subject||'', String(l.hours), l.location, (l.notes||'').replace(/\n/g,' ')]);} const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n'); const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob([csv],{type:'text/csv'})),download:'logs.csv'}); a.click(); });
 $('#exportJSON')?.addEventListener('click', async()=>{ const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob([JSON.stringify({logs:await listLogs()},null,2)],{type:'application/json'})),download:'logs.json'}); a.click(); });
 $('#importJSON')?.addEventListener('change', async(e)=>{ const f=e.target.files?.[0]; if(!f) return; const data=JSON.parse(await f.text()); if(!Array.isArray(data.logs)){ alert('Invalid'); return; } for(const l of data.logs) await DB.add('logs', l); alert('Imported'); renderLogsTable(); renderDashboard(); renderReports(); });
 
@@ -1426,7 +1426,7 @@ async function buildTranscript(){
   const [logs,courses,students]=await Promise.all([listLogs(), listCourses(), listStudents()]); const sId=Number($('#trStudent').value); if(!sId){ alert('Choose a student'); return; } const years=Array.from($('#trYears').selectedOptions).map(o=>Number(o.value)); const scale=Number($('#trScale').value)||120; const cMap=new Map(courses.map(c=>[c.id,c])); const st=students.find(s=>s.id===sId); const filtered=logs.filter(l=> l.studentId===sId && years.includes(yearForDate(l.date)));
   const by=new Map(); filtered.forEach(l=>{ const y=yearForDate(l.date), key=l.courseId+'|'+y; const c=cMap.get(l.courseId); const o=by.get(key)||{hours:0, subject:c?.subject, title:c?.title, year:y}; o.hours+=Number(l.hours)||0; by.set(key,o); });
   const rows=Array.from(by.values()).sort((a,b)=> (a.year-b.year)||a.title.localeCompare(b.title)); const ov=getTranscriptOverrides(); ov[sId]=ov[sId]||{};
-  let html=`<div class="card" style="background:white;color:#111827"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:1.5rem;font-weight:800">Peaceful Academy • Kansas City, MO</div><div class="muted">Official High School Transcript</div></div>      <div class="muted">Issued: ${formatDateForDisplay($('#trIssue').value)||formatDateForDisplay(todayISO())}</div></div><hr><div class="grid three"><div><strong>Student</strong><div>${st?.name||''}</div></div><div><strong>DOB</strong><div>${st?.dob||''}</div></div><div><strong>Address</strong><div>${getSettings().address||'On file'}</div></div></div><table style="width:100%;border-collapse:collapse;margin-top:10px"><thead><tr><th style="text-align:left">Year</th><th style="text-align:left">Course</th><th style="text-align:left">Subject</th><th class="right">Hours</th><th class="right">Credits</th><th class="right">Grade</th><th class="right">Pts</th></tr></thead><tbody>`;
+  let html=`<div class="card" style="background:white;color:#111827"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:1.5rem;font-weight:800">Peaceful Academy • Kansas City, MO</div><div class="muted">Official High School Transcript</div></div>      <div class="muted">Issued: ${formatDateForDisplay($('#trIssue').value)||formatDateForDisplay(todayISO())}</div></div><hr><div class="grid three"><div><strong>Student</strong><div>${st?.name||''}</div></div><div><strong>DOB</strong><div>${st?.dob ? formatDateForDisplay(st.dob) : ''}</div></div><div><strong>Address</strong><div>${getSettings().address||'On file'}</div></div></div><table style="width:100%;border-collapse:collapse;margin-top:10px"><thead><tr><th style="text-align:left">Year</th><th style="text-align:left">Course</th><th style="text-align:left">Subject</th><th class="right">Hours</th><th class="right">Credits</th><th class="right">Grade</th><th class="right">Pts</th></tr></thead><tbody>`;
   let totalCredits=0, totalPts=0, gradedCredits=0;
   for(const r of rows){ const key=r.year+'|'+r.title; const rec=ov[sId][key] || {credit:(r.hours/scale).toFixed(2), grade:''}; ov[sId][key]=rec; const gp=gradePoint(rec.grade); const pts=gp!=null? gp*Number(rec.credit) : ''; if(gp!=null){ totalPts+=gp*Number(rec.credit); gradedCredits+=Number(rec.credit);} totalCredits+=Number(rec.credit);
     html += `<tr><td>${yearLabel(r.year)}</td><td>${r.title}</td><td>${r.subject||''}</td><td class="right">${fmt.format(r.hours)}</td><td class="right" contenteditable="true" data-tr-key="${key}" data-tr-field="credit">${rec.credit}</td><td class="right" contenteditable="true" data-tr-key="${key}" data-tr-field="grade">${rec.grade||''}</td><td class="right">${pts===''?'':fmt.format(pts)}</td></tr>`; }
