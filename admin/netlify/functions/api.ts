@@ -26,7 +26,20 @@ function getDatabaseUrl() {
   return process.env.NETLIFY_DATABASE_URL;
 }
 
-const sql = neon(getDatabaseUrl());
+// Initialize database connection with environment-specific URL
+let sql;
+
+try {
+  const databaseUrl = getDatabaseUrl();
+  if (!databaseUrl) {
+    console.error('No database URL found. Please set NONPROD_DATABASE_URL for local development or PROD_DATABASE_URL for production.');
+    throw new Error('Database URL not configured');
+  }
+  sql = neon(databaseUrl);
+} catch (error) {
+  console.error('Failed to initialize database connection:', error.message);
+  // We'll handle this in the handler function
+}
 
 function schemaPath() {
   const base = process.env.LAMBDA_TASK_ROOT || process.cwd();
@@ -45,6 +58,22 @@ async function ensureSchemaLoaded() {
 
 export default async (request: Request) => {
   try {
+    // Check if database is initialized
+    if (!sql) {
+      const context = process.env.CONTEXT || 'unknown';
+      const isLocalDev = context === 'unknown';
+      
+      let errorMessage = 'Database connection not configured. ';
+      if (isLocalDev) {
+        errorMessage += 'For local development, please set the NONPROD_DATABASE_URL environment variable. ';
+        errorMessage += 'You can create a .env file with: NONPROD_DATABASE_URL=your_database_url_here';
+      } else {
+        errorMessage += 'Please check your environment variables configuration.';
+      }
+      
+      return json({ ok: false, error: errorMessage }, 500);
+    }
+
     const url = new URL(request.url);
     const path = url.pathname.replace(/\.netlify\/functions\/api/, "");
     const parts = path.split("/").filter(Boolean);

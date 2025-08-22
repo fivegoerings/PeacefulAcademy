@@ -30,9 +30,20 @@ function getDatabaseUrl() {
 }
 
 // Initialize database connection with environment-specific URL
-const databaseUrl = getDatabaseUrl();
-const sqlClient = neon(databaseUrl);
-const db = drizzle(sqlClient);
+let databaseUrl, sqlClient, db;
+
+try {
+  databaseUrl = getDatabaseUrl();
+  if (!databaseUrl) {
+    console.error('No database URL found. Please set NONPROD_DATABASE_URL for local development or PROD_DATABASE_URL for production.');
+    throw new Error('Database URL not configured');
+  }
+  sqlClient = neon(databaseUrl);
+  db = drizzle(sqlClient);
+} catch (error) {
+  console.error('Failed to initialize database connection:', error.message);
+  // We'll handle this in the handler function
+}
 
 // Helper function to create error response
 function errorResponse(message, statusCode = 500) {
@@ -54,6 +65,22 @@ function jsonResponse(data) {
 
 export async function handler(event) {
   try {
+    // Check if database is initialized
+    if (!db) {
+      const context = process.env.CONTEXT || 'unknown';
+      const isLocalDev = context === 'unknown';
+      
+      let errorMessage = 'Database connection not configured. ';
+      if (isLocalDev) {
+        errorMessage += 'For local development, please set the NONPROD_DATABASE_URL environment variable. ';
+        errorMessage += 'You can create a .env file with: NONPROD_DATABASE_URL=your_database_url_here';
+      } else {
+        errorMessage += 'Please check your environment variables configuration.';
+      }
+      
+      return errorResponse(errorMessage, 500);
+    }
+
     const action = (event.queryStringParameters?.action) ||
                    (JSON.parse(event.body || '{}').action);
 
