@@ -690,24 +690,100 @@ async function renderYearSelectors(){
   set('dashYear'); set('lgYearFilter', true); set('pfYearFilter', true); set('rpYear'); const stStart=$('#stStart'); if(stStart){ stStart.innerHTML=years.slice().reverse().map(y=>`<option value="${y}">${yearLabel(y)}</option>`).join(''); } const trYears=$('#trYears'); if(trYears){ trYears.innerHTML=years.map(y=>`<option value="${y}" selected>${yearLabel(y)}</option>`).join(''); }
 }
 async function renderDashboard(){
-  const [logs,courses,students]=await Promise.all([listLogs(), listCourses(), listStudents()]); await renderYearSelectors(); await renderStudents(); await renderCourses();
-  const sId=Number($('#dashStudent').value || (students[0]?.id||0)); $('#dashStudent').value=sId||''; const yStart=Number($('#dashYear').value)||currentAcademicStart();
-  const filtered=logs.filter(l=> Number(l.studentId)===sId && yearForDate(l.date)===yStart); const cMap=new Map(courses.map(c=>[c.id,c]));
-  let total=0, core=0, home=0, nonCore=0; filtered.forEach(l=>{ const subj=cMap.get(Number(l.courseId))?.subject; const hrs=Number(l.hours)||0; total+=hrs; if(CORE.has(subj)){ core+=hrs; if(l.location==='home') home+=hrs; } else { nonCore+=hrs; }});
-  
-  // Calculate average daily hours and days attended
-  const uniqueDays = new Set(filtered.map(l => l.date));
-  const daysAttended = uniqueDays.size;
-  const avgDailyHours = daysAttended > 0 ? total / daysAttended : 0;
-  
-  $('#kpiTotal').textContent=fmt.format(total); $('#kpiCore').textContent=fmt.format(core); $('#kpiHome').textContent=fmt.format(home); $('#kpiNonCore').textContent=fmt.format(nonCore);
-  $('#kpiAvgDaily').textContent=fmt.format(avgDailyHours); $('#kpiDaysAttended').textContent=daysAttended;
-  
-  $('#barTotal').style.width=Math.min(100,(total/1000)*100)+'%'; $('#barCore').style.width=Math.min(100,(core/600)*100)+'%'; $('#barHome').style.width=Math.min(100,(home/400)*100)+'%'; $('#barNonCore').style.width=Math.min(100,(nonCore/400)*100)+'%';
-  $('#barAvgDaily').style.width=Math.min(100,(avgDailyHours/8)*100)+'%'; $('#barDaysAttended').style.width=Math.min(100,(daysAttended/180)*100)+'%';
-  
-  const recent = filtered.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,10); const tb=$('#recentTable tbody'); tb.innerHTML=''; recent.forEach(r=>{ const c=cMap.get(Number(r.courseId)); const tr=document.createElement('tr'); tr.innerHTML=`<td>${r.date}</td><td>${c?.title||''}</td><td class="right">${fmt.format(r.hours)}</td><td>${r.location==='home'?'Home':'Offsite'}</td><td class="muted">${r.notes||''}</td>`; tb.appendChild(tr); });
-  $('#qaStudent').value=sId||''; $('#qaCourse').value=courses[0]?.id||''; $('#qaDate').value=todayISO();
+  try {
+    appendLog('info', ['renderDashboard: starting...']);
+    
+    const [logs,courses,students]=await Promise.all([listLogs(), listCourses(), listStudents()]);
+    
+    appendLog('info', ['renderDashboard: data loaded', 
+      `logs: ${logs.length}`,
+      `courses: ${courses.length}`,
+      `students: ${students.length}`
+    ]);
+    
+    // Update dropdowns first
+    await renderYearSelectors(); 
+    await renderStudents(); 
+    await renderCourses();
+    
+    // Get selected values
+    const sId=Number($('#dashStudent').value || (students[0]?.id||0)); 
+    const yStart=Number($('#dashYear').value)||currentAcademicStart();
+    
+    appendLog('info', ['renderDashboard: selected values', `studentId: ${sId}`, `yearStart: ${yStart}`]);
+    
+    // Filter logs for selected student and year
+    const filtered=logs.filter(l=> Number(l.studentId)===sId && yearForDate(l.date)===yStart); 
+    const cMap=new Map(courses.map(c=>[c.id,c]));
+    
+    appendLog('info', ['renderDashboard: filtered logs', `filtered: ${filtered.length}`]);
+    
+    // Calculate totals
+    let total=0, core=0, home=0, nonCore=0; 
+    filtered.forEach(l=>{ 
+      const subj=cMap.get(Number(l.courseId))?.subject; 
+      const hrs=Number(l.hours)||0; 
+      total+=hrs; 
+      if(CORE.has(subj)){ 
+        core+=hrs; 
+        if(l.location==='home') home+=hrs; 
+      } else { 
+        nonCore+=hrs; 
+      }
+    });
+    
+    // Calculate average daily hours and days attended
+    const uniqueDays = new Set(filtered.map(l => l.date));
+    const daysAttended = uniqueDays.size;
+    const avgDailyHours = daysAttended > 0 ? total / daysAttended : 0;
+    
+    appendLog('info', ['renderDashboard: calculated totals', 
+      `total: ${total}`,
+      `core: ${core}`,
+      `home: ${home}`,
+      `nonCore: ${nonCore}`,
+      `daysAttended: ${daysAttended}`,
+      `avgDailyHours: ${avgDailyHours}`
+    ]);
+    
+    // Update KPI displays
+    $('#kpiTotal').textContent=fmt.format(total); 
+    $('#kpiCore').textContent=fmt.format(core); 
+    $('#kpiHome').textContent=fmt.format(home); 
+    $('#kpiNonCore').textContent=fmt.format(nonCore);
+    $('#kpiAvgDaily').textContent=fmt.format(avgDailyHours); 
+    $('#kpiDaysAttended').textContent=daysAttended;
+    
+    // Update progress bars
+    $('#barTotal').style.width=Math.min(100,(total/1000)*100)+'%'; 
+    $('#barCore').style.width=Math.min(100,(core/600)*100)+'%'; 
+    $('#barHome').style.width=Math.min(100,(home/400)*100)+'%'; 
+    $('#barNonCore').style.width=Math.min(100,(nonCore/400)*100)+'%';
+    $('#barAvgDaily').style.width=Math.min(100,(avgDailyHours/8)*100)+'%'; 
+    $('#barDaysAttended').style.width=Math.min(100,(daysAttended/180)*100)+'%';
+    
+    // Update recent activity table
+    const recent = filtered.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,10); 
+    const tb=$('#recentTable tbody'); 
+    tb.innerHTML=''; 
+    recent.forEach(r=>{ 
+      const c=cMap.get(Number(r.courseId)); 
+      const tr=document.createElement('tr'); 
+      tr.innerHTML=`<td>${r.date}</td><td>${c?.title||''}</td><td class="right">${fmt.format(r.hours)}</td><td>${r.location==='home'?'Home':'Offsite'}</td><td class="muted">${r.notes||''}</td>`; 
+      tb.appendChild(tr); 
+    });
+    
+    // Update quick add form defaults
+    $('#qaStudent').value=sId||''; 
+    $('#qaCourse').value=courses[0]?.id||''; 
+    $('#qaDate').value=todayISO();
+    
+    appendLog('info', ['renderDashboard: completed successfully']);
+    
+  } catch(e) {
+    appendLog('error', ['renderDashboard: failed', String(e&&e.message||e)]);
+    console.error('Dashboard rendering error:', e);
+  }
 }
 async function renderLogsTable(){
   const [logs,courses,students]=await Promise.all([listLogs(), listCourses(), listStudents()]);
@@ -802,6 +878,55 @@ testButton.textContent = 'Test Neon Connection';
 testButton.onclick = testNeonConnection;
 testButton.style.cssText = 'margin-top: 0.5rem; font-size: 0.9rem; padding: 0.5rem;';
 document.querySelector('#scSyncNow')?.parentNode?.appendChild(testButton);
+
+// Add refresh dashboard button (temporary for debugging)
+const refreshButton = document.createElement('button');
+refreshButton.textContent = 'Refresh Dashboard';
+refreshButton.onclick = async () => {
+  appendLog('info', ['Manual dashboard refresh requested']);
+  await renderDashboard();
+  showNotification('Dashboard refreshed', 'success');
+};
+refreshButton.style.cssText = 'margin-top: 0.5rem; font-size: 0.9rem; padding: 0.5rem; margin-left: 0.5rem;';
+document.querySelector('#scSyncNow')?.parentNode?.appendChild(refreshButton);
+
+// Add check data button (temporary for debugging)
+const checkDataButton = document.createElement('button');
+checkDataButton.textContent = 'Check Local Data';
+checkDataButton.onclick = async () => {
+  try {
+    const students = await listStudents();
+    const courses = await listCourses();
+    const logs = await listLogs();
+    const portfolio = await listPortfolio();
+    const files = await DB.all('files');
+    
+    appendLog('info', ['Local data check', 
+      `students: ${students.length}`,
+      `courses: ${courses.length}`,
+      `logs: ${logs.length}`,
+      `portfolio: ${portfolio.length}`,
+      `files: ${files.length}`
+    ]);
+    
+    if (students.length > 0) {
+      appendLog('info', ['Sample student data', JSON.stringify(students[0])]);
+    }
+    if (courses.length > 0) {
+      appendLog('info', ['Sample course data', JSON.stringify(courses[0])]);
+    }
+    if (logs.length > 0) {
+      appendLog('info', ['Sample log data', JSON.stringify(logs[0])]);
+    }
+    
+    showNotification(`Local data: ${students.length} students, ${courses.length} courses, ${logs.length} logs`, 'info');
+  } catch(e) {
+    appendLog('error', ['Check data failed', String(e&&e.message||e)]);
+    showNotification('Failed to check local data', 'error');
+  }
+};
+checkDataButton.style.cssText = 'margin-top: 0.5rem; font-size: 0.9rem; padding: 0.5rem; margin-left: 0.5rem;';
+document.querySelector('#scSyncNow')?.parentNode?.appendChild(checkDataButton);
 // Build a rich snapshot including denormalized names/subjects for logs
 async function buildSnapshotPayload(){
   const [students,courses,logs,portfolio,files] = await Promise.all([
