@@ -298,8 +298,7 @@ async function loadEnvironmentInfo() {
       'Database URL Info': envData.databaseUrlInfo || 'Unknown',
       'Database URL Source': envData.databaseUrl || 'Unknown',
       'NETLIFY ENVIRONMENT': envData.netlifyEnv || 'Unknown',
-      'DEPLOY URL': envData.deployUrl || 'Not set',
-      'DEPLOY CONTEXT': envData.deployContext || 'Not set'
+      'DEPLOY URL': envData.deployUrl || 'Not set'
     };
     
     Object.entries(envVars).forEach(([key, value]) => {
@@ -311,14 +310,12 @@ async function loadEnvironmentInfo() {
       if (value.includes('masked')) {
         valueClass = 'masked';
       } else if (key === 'CONTEXT TYPE') {
-        valueClass = value === 'Development' ? 'success' : value === 'Production' ? 'warning' : '';
+        valueClass = value === 'Non-Production' ? 'success' : value === 'Production' ? 'warning' : '';
       } else if (key === 'CONTEXT' && value.includes('Not set')) {
         valueClass = 'warning';
       } else if (key === 'NETLIFY ENVIRONMENT') {
         valueClass = value === 'Yes' ? 'success' : 'warning';
       } else if (key === 'DEPLOY URL' && value !== 'Not set') {
-        valueClass = 'success';
-      } else if (key === 'DEPLOY CONTEXT' && value !== 'Not set') {
         valueClass = 'success';
       }
       
@@ -335,7 +332,7 @@ async function loadEnvironmentInfo() {
       'Environment': envData.environment || 'Unknown',
       'Context': envData.context || 'Unknown',
       'Context Type': envData.contextType || 'Unknown',
-      'Is Development': envData.isDev ? 'Yes' : 'No',
+      'Is Non-Production': envData.isNonProd ? 'Yes' : 'No',
       'Is Production': envData.isProd ? 'Yes' : 'No',
       'Database URL Source': envData.databaseUrl || 'Unknown'
     };
@@ -351,7 +348,7 @@ async function loadEnvironmentInfo() {
       } else if (value === 'No') {
         valueClass = 'warning';
       } else if (key === 'Context Type') {
-        valueClass = value === 'Development' ? 'success' : value === 'Production' ? 'warning' : '';
+        valueClass = value === 'Non-Production' ? 'success' : value === 'Production' ? 'warning' : '';
       } else if (key === 'Context' && value.includes('Not set')) {
         valueClass = 'warning';
       }

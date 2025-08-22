@@ -47,35 +47,29 @@ export async function handler(event) {
     // System environment information
     if (action === 'system.environment') {
       const context = process.env.CONTEXT || 'unknown';
-      const isDev = ['dev', 'develop', 'development', 'deploy-preview', 'branch-deploy'].includes(context.toLowerCase());
+      const isNonProd = context !== 'production';
       const isProd = context === 'production';
       
       let environment = 'UNKNOWN';
-      if (isDev) {
-        environment = 'DEV';
+      if (isNonProd) {
+        environment = 'NON-PROD';
       } else if (isProd) {
         environment = 'PROD';
       }
       
-      // Enhanced context information
+      // Simple context information based on Netlify docs
       const contextInfo = {
         raw: context,
         display: context === 'unknown' ? 'Not set (local development)' : context,
-        type: isDev ? 'Development' : isProd ? 'Production' : 'Unknown'
+        type: isNonProd ? 'Non-Production' : 'Production'
       };
-      
-      // Additional context detection for Netlify environments
-      if (context === 'unknown' && process.env.NETLIFY) {
-        contextInfo.display = 'Netlify (context not set)';
-        contextInfo.type = 'Netlify';
-      }
       
       return jsonResponse({
         environment,
         context: contextInfo.display,
         contextRaw: contextInfo.raw,
         contextType: contextInfo.type,
-        isDev,
+        isNonProd,
         isProd,
         nodeEnv: process.env.NODE_ENV || 'unknown',
         databaseUrl: 'AUTO', // Netlify automatically sets NETLIFY_DATABASE_URL
@@ -84,8 +78,7 @@ export async function handler(event) {
         hasDatabaseUrl: !!process.env.NETLIFY_DATABASE_URL,
         // Additional debugging info
         netlifyEnv: process.env.NETLIFY ? 'Yes' : 'No',
-        deployUrl: process.env.URL || 'Not set',
-        deployContext: process.env.DEPLOY_CONTEXT || 'Not set'
+        deployUrl: process.env.URL || 'Not set'
       });
     }
 
