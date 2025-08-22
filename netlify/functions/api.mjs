@@ -11,8 +11,8 @@ import {
 import { eq, and, desc, asc, sql, count } from 'drizzle-orm';
 
 // Initialize database connection using Netlify's automatic database URL handling
-const sql = neon();
-const db = drizzle(sql);
+const sqlClient = neon();
+const db = drizzle(sqlClient);
 
 // Helper function to create error response
 function errorResponse(message, statusCode = 500) {
@@ -44,7 +44,7 @@ export async function handler(event) {
     // Test database connection
     if (action === 'test') {
       try {
-        await sql`SELECT 1 as test`;
+        await sqlClient`SELECT 1 as test`;
         return jsonResponse({ 
           connected: true, 
           message: 'Database connection successful',
@@ -87,7 +87,7 @@ export async function handler(event) {
     // Health check
     if (action === 'health') {
       try {
-        await sql`SELECT 1`;
+        await sqlClient`SELECT 1`;
         return jsonResponse({ 
           status: 'healthy', 
           timestamp: new Date().toISOString(),
