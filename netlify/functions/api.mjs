@@ -250,6 +250,29 @@ export async function handler(event) {
       }
     }
 
+    // Sync action to pull all data from database for local IndexedDB sync
+    if (action === 'sync.all') {
+      try {
+        const [studentsResult, coursesResult, logsResult, portfolioResult] = await Promise.all([
+          db.select().from(students).orderBy(asc(students.name)),
+          db.select().from(courses).orderBy(asc(courses.title)),
+          db.select().from(logs).orderBy(desc(logs.date)),
+          db.select().from(portfolio).orderBy(desc(portfolio.date))
+        ]);
+
+        return jsonResponse({
+          students: studentsResult,
+          courses: coursesResult,
+          logs: logsResult,
+          portfolio: portfolioResult,
+          timestamp: new Date().toISOString()
+        });
+      } catch (error) {
+        console.error('Sync all error:', error);
+        return errorResponse('Failed to sync data', 500);
+      }
+    }
+
     return errorResponse(`Unknown action: ${action}`, 400);
 
   } catch (error) {

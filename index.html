@@ -732,20 +732,17 @@ $('#scSyncNow')?.addEventListener('click', async()=>{
     const res = await fetch('/.netlify/functions/db', { 
       method: 'POST', 
       headers: { 'content-type': 'application/json' }, 
-      body: JSON.stringify({ action: 'backup.latest' }) 
+              body: JSON.stringify({ action: 'sync.all' }) 
     });
     const raw = await res.text(); 
     let json = null; 
     try{ json = JSON.parse(raw); } catch(_){ }
-    if(res.ok && json && json.backup && json.backup.payload){
-      const data = json.backup.payload; 
+    if(res.ok && json){
       await clearStoresSafely(['students','courses','logs','portfolio','files']); 
-      if(data.settings) setSettings(Object.assign(getSettings(), data.settings)); 
-      for(const st of (data.students||[])) await DB.add('students', st); 
-      for(const c of (data.courses||[])) await DB.add('courses', c); 
-      for(const l of (data.logs||[])) await DB.add('logs', l); 
-      for(const p of (data.portfolio||[])) await DB.add('portfolio', p); 
-      for(const f of (data.files||[])) await DB.add('files', f);
+      for(const st of (json.students||[])) await DB.add('students', st); 
+      for(const c of (json.courses||[])) await DB.add('courses', c); 
+      for(const l of (json.logs||[])) await DB.add('logs', l); 
+      for(const p of (json.portfolio||[])) await DB.add('portfolio', p);
       appendLog('info', ['Manual sync from database completed']);
       showNotification('Sync completed successfully!', 'success');
       renderDashboard(); 
@@ -755,7 +752,7 @@ $('#scSyncNow')?.addEventListener('click', async()=>{
       renderPortfolio(); 
       renderReports();
     } else {
-      throw new Error('No backup data found or invalid response');
+      throw new Error('No data found or invalid response');
     }
   } catch(e) { 
     appendLog('warn', ['Manual sync from database failed', String(e&&e.message||e)]); 
@@ -868,7 +865,7 @@ $('#scRestoreNeon')?.addEventListener('click', async()=>{
   try {
     appendLog('info', ['Restore from Neon started']);
     const res = await fetch('/.netlify/functions/db', {
-      method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'backup.latest' })
+              method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'sync.all' })
     });
     const raw=await res.text(); let json=null; try{ json=JSON.parse(raw);}catch(_){ }
     if(!res.ok || (json && json.error)){
@@ -1305,10 +1302,14 @@ async function init(){
     if (s.neonSync) {
       try {
         appendLog('info', ['Neon sync: initial pull started']);
-        const res = await fetch('/.netlify/functions/db', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ action: 'backup.latest' }) });
-        const raw=await res.text(); let json=null; try{ json=JSON.parse(raw);}catch(_){ }
-        if(res.ok && json && json.backup && json.backup.payload){
-          const data=json.backup.payload; await clearStoresSafely(['students','courses','logs','portfolio','files']); if(data.settings) setSettings(Object.assign(getSettings(), data.settings)); for(const st of (data.students||[])) await DB.add('students', st); for(const c of (data.courses||[])) await DB.add('courses', c); for(const l of (data.logs||[])) await DB.add('logs', l); for(const p of (data.portfolio||[])) await DB.add('portfolio', p); for(const f of (data.files||[])) await DB.add('files', f);
+        const res = await fetch('/.netlify/functions/db', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ action: 'sync.all' }) });
+        const json = await res.json().catch(() => null);
+        if(res.ok && json){
+          await clearStoresSafely(['students','courses','logs','portfolio','files']); 
+          for(const st of (json.students||[])) await DB.add('students', st); 
+          for(const c of (json.courses||[])) await DB.add('courses', c); 
+          for(const l of (json.logs||[])) await DB.add('logs', l); 
+          for(const p of (json.portfolio||[])) await DB.add('portfolio', p);
           appendLog('info', ['Neon sync: initial pull applied']);
           await renderStudents(); await renderCourses(); await renderYearSelectors(); await renderDashboard();
         }
@@ -1317,10 +1318,14 @@ async function init(){
       // periodic background pull
       setInterval(async()=>{
         try{
-          const res = await fetch('/.netlify/functions/db', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ action: 'backup.latest' }) });
+          const res = await fetch('/.netlify/functions/db', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ action: 'sync.all' }) });
           const json=await res.json().catch(()=>null);
-          if(res.ok && json && json.backup && json.backup.payload){
-            const data=json.backup.payload; await clearStoresSafely(['students','courses','logs','portfolio','files']); if(data.settings) setSettings(Object.assign(getSettings(), data.settings)); for(const st of (data.students||[])) await DB.add('students', st); for(const c of (data.courses||[])) await DB.add('courses', c); for(const l of (data.logs||[])) await DB.add('logs', l); for(const p of (data.portfolio||[])) await DB.add('portfolio', p); for(const f of (data.files||[])) await DB.add('files', f);
+          if(res.ok && json){
+            await clearStoresSafely(['students','courses','logs','portfolio','files']); 
+            for(const st of (json.students||[])) await DB.add('students', st); 
+            for(const c of (json.courses||[])) await DB.add('courses', c); 
+            for(const l of (json.logs||[])) await DB.add('logs', l); 
+            for(const p of (json.portfolio||[])) await DB.add('portfolio', p);
             appendLog('info', ['Neon sync: periodic pull applied']);
           }
         }catch(_){}

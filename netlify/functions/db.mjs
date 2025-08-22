@@ -54,8 +54,6 @@ function jsonResponse(data) {
 
 export async function handler(event) {
   try {
-    // Use Netlify's automatic database URL handling
-    const sql = neon();
     const action = (event.queryStringParameters?.action) ||
                    (JSON.parse(event.body || '{}').action);
 
@@ -340,6 +338,8 @@ export async function handler(event) {
         const result = await db.insert(logs).values({
           studentId: data.studentId,
           courseId: data.courseId,
+          studentName: data.studentName || null,
+          courseTitle: data.courseTitle || null,
           subject: data.subject || null,
           date: data.date,
           hours: data.hours,
@@ -573,6 +573,29 @@ export async function handler(event) {
       } catch (error) {
         console.error('Backup latest error:', error);
         return errorResponse('Failed to get latest backup', 500);
+      }
+    }
+
+    // Sync action to pull all data from database for local IndexedDB sync
+    if (action === 'sync.all') {
+      try {
+        const [studentsResult, coursesResult, logsResult, portfolioResult] = await Promise.all([
+          db.select().from(students).orderBy(asc(students.name)),
+          db.select().from(courses).orderBy(asc(courses.title)),
+          db.select().from(logs).orderBy(desc(logs.date)),
+          db.select().from(portfolio).orderBy(desc(portfolio.date))
+        ]);
+
+        return jsonResponse({
+          students: studentsResult,
+          courses: coursesResult,
+          logs: logsResult,
+          portfolio: portfolioResult,
+          timestamp: new Date().toISOString()
+        });
+      } catch (error) {
+        console.error('Sync all error:', error);
+        return errorResponse('Failed to sync data', 500);
       }
     }
 
