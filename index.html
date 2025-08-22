@@ -128,7 +128,7 @@ footer{margin:3rem 0 2rem;color:var(--muted);text-align:center}
         <div class="grid two">
           <div><label>Student</label><select id="qaStudent"></select></div>
           <div><label>Course</label><select id="qaCourse"></select></div>
-          <div><label>Date</label><input type="date" id="qaDate"></div>
+                      <div><label>Date</label><input type="text" id="qaDate" placeholder="mm/dd/yyyy" pattern="\d{1,2}/\d{1,2}/\d{4}"></div>
                      <div><label>Time (minutes)</label><input type="number" step="1" min="0" id="qaMinutes" placeholder="e.g., 90 for 1.5 hours"></div>
           <div><label>Location</label><select id="qaLocation"><option value="home">Home</option><option value="offsite">Offsite</option></select></div>
           <div><label>Notes</label><input id="qaNotes" placeholder="Lesson, lab, trip…"></div>
@@ -183,7 +183,7 @@ footer{margin:3rem 0 2rem;color:var(--muted);text-align:center}
       <div class="grid three">
         <div><label>Student</label><select id="lgStudent"></select></div>
         <div><label>Course</label><select id="lgCourse"></select></div>
-        <div><label>Date</label><input type="date" id="lgDate"></div>
+                    <div><label>Date</label><input type="text" id="lgDate" placeholder="mm/dd/yyyy" pattern="\d{1,2}/\d{1,2}/\d{4}"></div>
                  <div><label>Time (minutes)</label><input type="number" step="1" min="0" id="lgMinutes" placeholder="e.g., 90 for 1.5 hours"></div>
         <div><label>Location</label><select id="lgLocation"><option value="home">Home</option><option value="offsite">Offsite</option></select></div>
         <div><label>Notes</label><input id="lgNotes" placeholder="Activity details"></div>
@@ -211,7 +211,7 @@ footer{margin:3rem 0 2rem;color:var(--muted);text-align:center}
           <div class="grid two">
             <div><label>Student</label><select id="pfStudent"></select></div>
             <div><label>Course</label><select id="pfCourse"></select></div>
-            <div><label>Date</label><input type="date" id="pfDate"></div>
+            <div><label>Date</label><input type="text" id="pfDate" placeholder="mm/dd/yyyy" pattern="\d{1,2}/\d{1,2}/\d{4}"></div>
             <div><label>File</label><input type="file" id="pfFile" accept="image/*,application/pdf"></div>
             <div><label>Title</label><input id="pfTitle" placeholder="Essay, lab, test…"></div>
             <div><label>Tags</label><input id="pfTags" placeholder="draft, test, project"></div>
@@ -254,7 +254,7 @@ footer{margin:3rem 0 2rem;color:var(--muted);text-align:center}
       </div>
       <div class="grid two" style="margin-top:12px">
         <div><label>Administrator Name</label><input id="trAdmin" placeholder="Administrator / Parent"></div>
-        <div><label>Issue Date</label><input type="date" id="trIssue"></div>
+        <div><label>Issue Date</label><input type="text" id="trIssue" placeholder="mm/dd/yyyy" pattern="\d{1,2}/\d{1,2}/\d{4}"></div>
       </div>
       <div class="row" style="margin-top:12px"><button id="trBuild" class="primary">Build Transcript</button><button id="trPrint">Print Transcript</button></div>
       <div id="trOut" style="margin-top:16px"></div>
@@ -265,7 +265,7 @@ footer{margin:3rem 0 2rem;color:var(--muted);text-align:center}
     <div class="card"><h2>Diploma Generator (Printable)</h2>
       <div class="grid two">
         <div><label>Student</label><select id="dpStudent"></select></div>
-        <div><label>Graduation Date</label><input type="date" id="dpDate"></div>
+        <div><label>Graduation Date</label><input type="text" id="dpDate" placeholder="mm/dd/yyyy" pattern="\d{1,2}/\d{1,2}/\d{4}"></div>
         <div><label>City, State</label><input id="dpPlace" value="Kansas City, Missouri"></div>
         <div><label>Administrator Title</label><input id="dpTitleA" value="Administrator"></div>
         <div><label>Second Title</label><input id="dpTitleB" value="Parent/Guardian"></div>
@@ -362,6 +362,48 @@ const todayISO = ()=> {
   return `${year}-${month}-${day}`;
 };
 
+// Format date for display in mm/dd/yyyy format
+const formatDateForDisplay = (dateString) => {
+  if (!dateString) return '';
+  const date = new Date(dateString + 'T00:00:00');
+  if (isNaN(date.getTime())) return '';
+  
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const year = date.getFullYear();
+  
+  return `${month}/${day}/${year}`;
+};
+
+// Parse mm/dd/yyyy format back to ISO format
+const parseDisplayDate = (displayDate) => {
+  if (!displayDate) return '';
+  
+  // Handle mm/dd/yyyy format
+  const match = displayDate.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (match) {
+    const [, month, day, year] = match;
+    const monthNum = parseInt(month, 10);
+    const dayNum = parseInt(day, 10);
+    const yearNum = parseInt(year, 10);
+    
+    // Validate date
+    const date = new Date(yearNum, monthNum - 1, dayNum);
+    if (date.getFullYear() === yearNum && 
+        date.getMonth() === monthNum - 1 && 
+        date.getDate() === dayNum) {
+      return `${yearNum}-${String(monthNum).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+    }
+  }
+  
+  // If not in expected format, try to parse as ISO
+  if (isValidDate(displayDate)) {
+    return displayDate;
+  }
+  
+  return '';
+};
+
 // Enhanced date validation with timezone awareness
 const isValidDate = (dateString) => {
   if (!dateString) return false;
@@ -391,6 +433,45 @@ const isValidDate = (dateString) => {
   
   // Check if date is not in the future
   const inputDate = new Date(dateString + 'T00:00:00');
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  return inputDate <= today;
+};
+
+// Validate display date format (mm/dd/yyyy)
+const isValidDisplayDate = (displayDate) => {
+  if (!displayDate) return false;
+  
+  // Check if it's in mm/dd/yyyy format
+  const match = displayDate.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!match) {
+    return false;
+  }
+  
+  const [, month, day, year] = match;
+  const monthNum = parseInt(month, 10);
+  const dayNum = parseInt(day, 10);
+  const yearNum = parseInt(year, 10);
+  
+  // Validate year range
+  if (yearNum < 1900 || yearNum > 2100) {
+    return false;
+  }
+  
+  // Validate month
+  if (monthNum < 1 || monthNum > 12) {
+    return false;
+  }
+  
+  // Validate day
+  const daysInMonth = new Date(yearNum, monthNum, 0).getDate();
+  if (dayNum < 1 || dayNum > daysInMonth) {
+    return false;
+  }
+  
+  // Check if date is not in the future
+  const inputDate = new Date(yearNum, monthNum - 1, dayNum);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
@@ -1125,8 +1206,8 @@ $('#coSave')?.addEventListener('click', async()=>{
 $('#coClear')?.addEventListener('click', ()=>{$$('#view-courses input, #view-courses textarea').forEach(el=>el.value='')});
 
 /* Logs */
-$('#qaToday')?.addEventListener('click', ()=> $('#qaDate').value=todayISO());
-$('#lgToday2')?.addEventListener('click', ()=> $('#lgDate').value=todayISO());
+$('#qaToday')?.addEventListener('click', ()=> $('#qaDate').value=formatDateForDisplay(todayISO()));
+$('#lgToday2')?.addEventListener('click', ()=> $('#lgDate').value=formatDateForDisplay(todayISO()));
 $('#qaAdd')?.addEventListener('click', async()=>{
   const minutes = Number($('#qaMinutes').value);
   const hours = minutesToHours(minutes);
@@ -1134,7 +1215,7 @@ $('#qaAdd')?.addEventListener('click', async()=>{
   const obj={ 
     studentId:Number($('#qaStudent').value), 
     courseId:Number($('#qaCourse').value), 
-    date:$('#qaDate').value||todayISO(), 
+    date:parseDisplayDate($('#qaDate').value)||todayISO(), 
     hours: hours, 
     location:$('#qaLocation').value, 
     notes:$('#qaNotes').value.trim() 
@@ -1145,7 +1226,7 @@ $('#qaAdd')?.addEventListener('click', async()=>{
   if(!obj.studentId){ errors.push('Please select a student'); }
   if(!obj.courseId){ errors.push('Please select a course'); }
   if(!validateMinutes(minutes)){ errors.push('Please enter valid minutes (1 to 1440)'); }
-  if(!validateDate(obj.date)){ errors.push('Please enter a valid date'); }
+  if(!isValidDisplayDate($('#qaDate').value)){ errors.push('Please enter a valid date in mm/dd/yyyy format'); }
   if(obj.notes.length > 500) { errors.push('Notes are too long (max 500 characters)'); }
   
   if(errors.length > 0) {
@@ -1217,7 +1298,7 @@ $('#lgAdd')?.addEventListener('click', async()=>{
   const obj={ 
     studentId:Number($('#lgStudent').value), 
     courseId:Number($('#lgCourse').value), 
-    date:$('#lgDate').value||todayISO(), 
+    date:parseDisplayDate($('#lgDate').value)||todayISO(), 
     hours: hours, 
     location:$('#lgLocation').value, 
     notes:$('#lgNotes').value.trim() 
@@ -1228,7 +1309,7 @@ $('#lgAdd')?.addEventListener('click', async()=>{
   if(!obj.studentId){ errors.push('Please select a student'); }
   if(!obj.courseId){ errors.push('Please select a course'); }
   if(!validateMinutes(minutes)){ errors.push('Please enter valid minutes (1 to 1440)'); }
-  if(!validateDate(obj.date)){ errors.push('Please enter a valid date'); }
+  if(!isValidDisplayDate($('#lgDate').value)){ errors.push('Please enter a valid date in mm/dd/yyyy format'); }
   if(obj.notes.length > 500) { errors.push('Notes are too long (max 500 characters)'); }
   
   if(errors.length > 0) {
@@ -1306,7 +1387,7 @@ $('#pfSave')?.addEventListener('click', async()=>{
   const obj={ 
     studentId:Number($('#pfStudent').value), 
     courseId:Number($('#pfCourse').value), 
-    date:$('#pfDate').value||todayISO(), 
+    date:parseDisplayDate($('#pfDate').value)||todayISO(), 
     title:$('#pfTitle').value.trim(), 
     desc:$('#pfDesc').value.trim(), 
     tags:$('#pfTags').value.split(',').map(t=>t.trim()).filter(Boolean), 
@@ -1316,7 +1397,7 @@ $('#pfSave')?.addEventListener('click', async()=>{
   // Enhanced validation
   if(!obj.studentId){ alert('Please select a student'); return; }
   if(!obj.courseId){ alert('Please select a course'); return; }
-  if(!validateDate(obj.date)){ alert('Please enter a valid date'); return; }
+  if(!isValidDisplayDate($('#pfDate').value)){ alert('Please enter a valid date in mm/dd/yyyy format'); return; }
   
   await DB.add('portfolio', obj);
   const [courses,students]=await Promise.all([listCourses(), listStudents()]); const c=courses.find(x=>x.id===obj.courseId), s=students.find(x=>x.id===obj.studentId);
@@ -1345,7 +1426,7 @@ async function buildTranscript(){
   const [logs,courses,students]=await Promise.all([listLogs(), listCourses(), listStudents()]); const sId=Number($('#trStudent').value); if(!sId){ alert('Choose a student'); return; } const years=Array.from($('#trYears').selectedOptions).map(o=>Number(o.value)); const scale=Number($('#trScale').value)||120; const cMap=new Map(courses.map(c=>[c.id,c])); const st=students.find(s=>s.id===sId); const filtered=logs.filter(l=> l.studentId===sId && years.includes(yearForDate(l.date)));
   const by=new Map(); filtered.forEach(l=>{ const y=yearForDate(l.date), key=l.courseId+'|'+y; const c=cMap.get(l.courseId); const o=by.get(key)||{hours:0, subject:c?.subject, title:c?.title, year:y}; o.hours+=Number(l.hours)||0; by.set(key,o); });
   const rows=Array.from(by.values()).sort((a,b)=> (a.year-b.year)||a.title.localeCompare(b.title)); const ov=getTranscriptOverrides(); ov[sId]=ov[sId]||{};
-  let html=`<div class="card" style="background:white;color:#111827"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:1.5rem;font-weight:800">Peaceful Academy • Kansas City, MO</div><div class="muted">Official High School Transcript</div></div><div class="muted">Issued: ${$('#trIssue').value||todayISO()}</div></div><hr><div class="grid three"><div><strong>Student</strong><div>${st?.name||''}</div></div><div><strong>DOB</strong><div>${st?.dob||''}</div></div><div><strong>Address</strong><div>${getSettings().address||'On file'}</div></div></div><table style="width:100%;border-collapse:collapse;margin-top:10px"><thead><tr><th style="text-align:left">Year</th><th style="text-align:left">Course</th><th style="text-align:left">Subject</th><th class="right">Hours</th><th class="right">Credits</th><th class="right">Grade</th><th class="right">Pts</th></tr></thead><tbody>`;
+  let html=`<div class="card" style="background:white;color:#111827"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:1.5rem;font-weight:800">Peaceful Academy • Kansas City, MO</div><div class="muted">Official High School Transcript</div></div>      <div class="muted">Issued: ${formatDateForDisplay($('#trIssue').value)||formatDateForDisplay(todayISO())}</div></div><hr><div class="grid three"><div><strong>Student</strong><div>${st?.name||''}</div></div><div><strong>DOB</strong><div>${st?.dob||''}</div></div><div><strong>Address</strong><div>${getSettings().address||'On file'}</div></div></div><table style="width:100%;border-collapse:collapse;margin-top:10px"><thead><tr><th style="text-align:left">Year</th><th style="text-align:left">Course</th><th style="text-align:left">Subject</th><th class="right">Hours</th><th class="right">Credits</th><th class="right">Grade</th><th class="right">Pts</th></tr></thead><tbody>`;
   let totalCredits=0, totalPts=0, gradedCredits=0;
   for(const r of rows){ const key=r.year+'|'+r.title; const rec=ov[sId][key] || {credit:(r.hours/scale).toFixed(2), grade:''}; ov[sId][key]=rec; const gp=gradePoint(rec.grade); const pts=gp!=null? gp*Number(rec.credit) : ''; if(gp!=null){ totalPts+=gp*Number(rec.credit); gradedCredits+=Number(rec.credit);} totalCredits+=Number(rec.credit);
     html += `<tr><td>${yearLabel(r.year)}</td><td>${r.title}</td><td>${r.subject||''}</td><td class="right">${fmt.format(r.hours)}</td><td class="right" contenteditable="true" data-tr-key="${key}" data-tr-field="credit">${rec.credit}</td><td class="right" contenteditable="true" data-tr-key="${key}" data-tr-field="grade">${rec.grade||''}</td><td class="right">${pts===''?'':fmt.format(pts)}</td></tr>`; }
@@ -1397,7 +1478,7 @@ $('#trBuild')?.addEventListener('click', buildTranscript);
 $('#trPrint')?.addEventListener('click', ()=>window.print());
 
 /* Diploma */
-async function buildDiploma(){ const stId=Number($('#dpStudent').value); if(!stId){ alert('Choose a student'); return; } const st=(await listStudents()).find(s=>s.id===stId); const school=getSettings().name; const date=$('#dpDate').value||todayISO(); const place=$('#dpPlace').value||'Kansas City, Missouri'; const tA=$('#dpTitleA').value||'Administrator'; const tB=$('#dpTitleB').value||'Parent/Guardian'; const html=`<div class="diploma-page"><div class="watermark"></div><div style="text-align:center;font-family:Georgia,serif"><div style="font-size:2rem;font-weight:700">${school}</div><div style="margin-top:8px;font-size:1rem;letter-spacing:.08em">Kansas City, Missouri</div><div style="margin-top:24px;font-size:1.4rem">Diploma of High School Graduation</div><div style="margin-top:24px">This certifies that</div><div style="margin-top:6px;font-size:2.2rem;font-weight:800">${st?.name||''}</div><div style="margin-top:6px">has satisfactorily completed a course of study prescribed for graduation and is hereby awarded this diploma.</div><div style="margin-top:6px">Given at ${place}, this ${date}.</div></div><div class="row" style="margin-top:48px;justify-content:space-between"><div style="text-align:center;flex:1"><div style="height:48px;border-bottom:1px solid #1f2937;margin:0 24px"></div><div class="muted">${tA}</div></div><div style="text-align:center;flex:1"><div style="height:48px;border-bottom:1px solid #1f2937;margin:0 24px"></div><div class="muted">${tB}</div></div></div></div>`; $('#dpOut').innerHTML=html; }
+async function buildDiploma(){ const stId=Number($('#dpStudent').value); if(!stId){ alert('Choose a student'); return; } const st=(await listStudents()).find(s=>s.id===stId); const school=getSettings().name; const date=formatDateForDisplay($('#dpDate').value)||formatDateForDisplay(todayISO()); const place=$('#dpPlace').value||'Kansas City, Missouri'; const tA=$('#dpTitleA').value||'Administrator'; const tB=$('#dpTitleB').value||'Parent/Guardian'; const html=`<div class="diploma-page"><div class="watermark"></div><div style="text-align:center;font-family:Georgia,serif"><div style="font-size:2rem;font-weight:700">${school}</div><div style="margin-top:8px;font-size:1rem;letter-spacing:.08em">Kansas City, Missouri</div><div style="margin-top:24px;font-size:1.4rem">Diploma of High School Graduation</div><div style="margin-top:24px">This certifies that</div><div style="margin-top:6px;font-size:2.2rem;font-weight:800">${st?.name||''}</div><div style="margin-top:6px">has satisfactorily completed a course of study prescribed for graduation and is hereby awarded this diploma.</div><div style="margin-top:6px">Given at ${place}, this ${date}.</div></div><div class="row" style="margin-top:48px;justify-content:space-between"><div style="text-align:center;flex:1"><div style="height:48px;border-bottom:1px solid #1f2937;margin:0 24px"></div><div class="muted">${tA}</div></div><div style="text-align:center;flex:1"><div style="height:48px;border-bottom:1px solid #1f2937;margin:0 24px"></div><div class="muted">${tB}</div></div></div></div>`; $('#dpOut').innerHTML=html; }
 $('#dpPreview')?.addEventListener('click', buildDiploma);
 $('#dpPrint')?.addEventListener('click', ()=>window.print());
 
@@ -1409,6 +1490,35 @@ $('#rpPrint')?.addEventListener('click', ()=>window.print());
 
 // Clean up object URLs when page unloads
 window.addEventListener('beforeunload', cleanupObjectUrls);
+
+// Auto-format date inputs
+function setupDateInputFormatting() {
+  const dateInputs = document.querySelectorAll('input[placeholder*="mm/dd/yyyy"]');
+  
+  dateInputs.forEach(input => {
+    input.addEventListener('input', (e) => {
+      let value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+      
+      // Format as mm/dd/yyyy
+      if (value.length >= 1) {
+        value = value.substring(0, 2) + (value.length > 2 ? '/' + value.substring(2, 4) : '') + (value.length > 4 ? '/' + value.substring(4, 8) : '');
+      }
+      
+      e.target.value = value;
+    });
+    
+    // Validate on blur
+    input.addEventListener('blur', (e) => {
+      const value = e.target.value;
+      if (value && !isValidDisplayDate(value)) {
+        e.target.style.borderColor = 'var(--danger)';
+        showNotification('Please enter a valid date in mm/dd/yyyy format', 'error');
+      } else {
+        e.target.style.borderColor = '';
+      }
+    });
+  });
+}
 
 // Hamburger menu functionality
 function initHamburgerMenu() {
@@ -1533,10 +1643,10 @@ async function init(){
   try {
     if (!location.hash) location.hash = '#dashboard';
     
-    // Set default dates safely
+    // Set default dates safely in mm/dd/yyyy format
     const setDateSafely = (id) => {
       const element = $('#' + id);
-      if (element) element.value = todayISO();
+      if (element) element.value = formatDateForDisplay(todayISO());
     };
     
     setDateSafely('qaDate');
@@ -1681,6 +1791,9 @@ async function init(){
     // Initialize hamburger menu
     initHamburgerMenu();
     
+    // Setup date input formatting
+    setupDateInputFormatting();
+    
     // Display app version and environment
     await displayAppVersion();
     
@@ -1790,6 +1903,20 @@ style.textContent = `
     color: var(--ok);
     font-size: 0.875rem;
     margin-top: 0.25rem;
+  }
+  
+  /* Date input styling */
+  input[placeholder*="mm/dd/yyyy"] {
+    font-family: monospace;
+    letter-spacing: 0.5px;
+  }
+  
+  input[placeholder*="mm/dd/yyyy"]:focus {
+    border-color: var(--accent);
+  }
+  
+  input[placeholder*="mm/dd/yyyy"]:invalid {
+    border-color: var(--danger);
   }
 `;
 document.head.appendChild(style);
