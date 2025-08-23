@@ -46,27 +46,30 @@ export async function handler(event) {
 
     // System environment information
     if (action === 'system.environment') {
-      const context = process.env.CONTEXT || 'unknown';
-      const isDev = ['dev', 'develop', 'development', 'deploy-preview', 'branch-deploy'].includes(context.toLowerCase());
-      const isProd = context === 'production';
-      
-      let environment = 'UNKNOWN';
-      if (isDev) {
-        environment = 'DEV';
-      } else if (isProd) {
-        environment = 'PROD';
-      }
-      
+      const rawContext = process.env.CONTEXT || '';
+      const nodeEnv = (process.env.NODE_ENV || '').toLowerCase();
+      const netlifyDev = (process.env.NETLIFY_DEV === 'true') || (process.env.NETLIFY_LOCAL === 'true');
+      const inferredContext = rawContext || (netlifyDev ? 'dev' : (nodeEnv || 'local'));
+      const context = inferredContext;
+      const isDev = netlifyDev || ['dev', 'develop', 'development', 'deploy-preview', 'branch-deploy'].includes(context.toLowerCase()) || nodeEnv === 'development';
+      const isProd = context === 'production' || nodeEnv === 'production';
+
+      const dbUrl = process.env.NETLIFY_DATABASE_URL || process.env.DATABASE_URL || '';
+      const databaseUrlSource = process.env.NETLIFY_DATABASE_URL ? 'NETLIFY_DATABASE_URL' : (process.env.DATABASE_URL ? 'DATABASE_URL' : 'Not set');
+      const databaseUrlInfo = dbUrl ? dbUrl.replace(/:[^:@]*@/, ':****@') : 'Not set';
+
+      const environment = isDev ? 'DEV' : (isProd ? 'PROD' : 'UNKNOWN');
+
       return jsonResponse({
         environment,
         context,
         isDev,
         isProd,
         nodeEnv: process.env.NODE_ENV || 'unknown',
-        databaseUrl: 'AUTO', // Netlify automatically sets NETLIFY_DATABASE_URL
-        databaseUrlInfo: process.env.NETLIFY_DATABASE_URL ? 
-          process.env.NETLIFY_DATABASE_URL.replace(/:[^:@]*@/, ':****@') : 'Not set',
-        hasDatabaseUrl: !!process.env.NETLIFY_DATABASE_URL
+        databaseUrl: databaseUrlSource,
+        databaseUrlSource,
+        databaseUrlInfo,
+        hasDatabaseUrl: !!dbUrl
       });
     }
 

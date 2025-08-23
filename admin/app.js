@@ -290,9 +290,9 @@ async function loadEnvironmentInfo() {
     const envVars = {
       'CONTEXT': envData.context || 'Not set',
       'NODE_ENV': envData.nodeEnv || 'Not set',
-      'NETLIFY_DATABASE_URL': envData.hasDatabaseUrl ? 'Set (auto)' : 'Not set',
+      'NETLIFY_DATABASE_URL/DATABASE_URL': envData.hasDatabaseUrl ? 'Set' : 'Not set',
       'Database URL Info': envData.databaseUrlInfo || 'Unknown',
-      'Database URL Source': envData.databaseUrl || 'Unknown'
+      'Database URL Source': envData.databaseUrl || envData.databaseUrlSource || 'Unknown'
     };
     
     Object.entries(envVars).forEach(([key, value]) => {
@@ -312,7 +312,7 @@ async function loadEnvironmentInfo() {
       'Context': envData.context || 'Unknown',
       'Is Development': envData.isDev ? 'Yes' : 'No',
       'Is Production': envData.isProd ? 'Yes' : 'No',
-      'Database URL Source': envData.databaseUrl || 'Unknown'
+      'Database URL Source': envData.databaseUrl || envData.databaseUrlSource || 'Unknown'
     };
     
     Object.entries(connectionDetails).forEach(([key, value]) => {
