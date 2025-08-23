@@ -117,6 +117,8 @@ The application uses a comprehensive database schema with the following tables:
 - `files`: File storage metadata
 - `settings`: Application configuration
 
+For details on how the database is created and populated (migrations, bootstrap, CRUD, bulk upsert), see `DATABASE_POPULATION.md`.
+
 ### Environment Variables
 - `NETLIFY_DATABASE_URL`: Neon PostgreSQL connection string
 
