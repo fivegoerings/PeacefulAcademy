@@ -8,7 +8,7 @@ import {
   files, 
   settings,
   backups 
-} from '../../db/schema.js';
+} from '../../db/schema.ts';
 import { eq, and, desc, asc, sql, count, sum } from 'drizzle-orm';
 
 // Use Netlify's automatic database URL handling

@@ -7,7 +7,7 @@ import {
   portfolio, 
   files, 
   settings 
-} from '../../db/schema.js';
+} from '../../db/schema.ts';
 import { eq, and, desc, asc, sql, count } from 'drizzle-orm';
 
 // Use Netlify's automatic database URL handling
