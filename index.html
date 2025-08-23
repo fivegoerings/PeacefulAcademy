@@ -122,7 +122,7 @@ footer{margin:3rem 0 2rem;color:var(--muted);text-align:center}
           </button>
         </div>
       </div>
-      <div class="card">s
+      <div class="card">
         <h2>Quick Add</h2>
         <div class="grid two">
           <div><label>Student</label><select id="qaStudent"></select></div>
@@ -740,7 +740,7 @@ async function buildSnapshotPayload(){
 
 $('#scExportAll')?.addEventListener('click', async()=>{ const payload = await buildSnapshotPayload(); const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}); const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:'peaceful-academy-backup.json'}); a.click(); });
 $('#scImportAll')?.addEventListener('change', async(e)=>{ const f=e.target.files?.[0]; if(!f) return; if(!confirm('Import will REPLACE existing data. Continue?')) return; const data=JSON.parse(await f.text()); await clearStoresSafely(['students','courses','logs','portfolio','files']); if(data.settings) setSettings(data.settings); for(const s of (data.students||[])) await DB.add('students', s); for(const c of (data.courses||[])) await DB.add('courses', c); for(const l of (data.logs||[])) await DB.add('logs', l); for(const p of (data.portfolio||[])) await DB.add('portfolio', p); alert('Imported.'); renderDashboard(); renderStudents(); renderCourses(); renderLogsTable(); renderPortfolio(); renderReports(); });
-$('#scWipe')?.addEventListener('click', async()=>{ if(!confirm('Erase ALL data?')) return; await Promise.all(['students','courses','logs','portfolio','files'].map(s=>new Promise((res,rej)=>{ const r=tx([s],'readwrite').objectStore(s).clear(); r.onsuccess=()=>res(); r.onerror=()=>rej(r.error);}))); alert('Cleared.'); renderDashboard(); renderStudents(); renderCourses(); renderLogsTable(); renderPortfolio(); renderReports(); });
+$('#scWipe')?.addEventListener('click', async()=>{ if(!confirm('Erase ALL data?')) return; await clearStoresSafely(['students','courses','logs','portfolio','files']); alert('Cleared.'); renderDashboard(); renderStudents(); renderCourses(); renderLogsTable(); renderPortfolio(); renderReports(); });
 
 // Export all local data to Neon (bulk upsert)
 $('#scExportNeon')?.addEventListener('click', async()=>{
@@ -858,8 +858,9 @@ $('#scBackfillLogs')?.addEventListener('click', async()=>{
     if(!res.ok || (json && json.error)){
       const msg=(json&&json.error)||`HTTP ${res.status}`; appendLog('error',['Logs backfill failed', msg, 'raw:', raw.slice(0,500)]); showNotification('Backfill failed', 'error'); return;
     }
-    showNotification(`Backfilled: student_name ${json.updated.student_name}, course_title ${json.updated.course_title}, subject ${json.updated.subject}`, 'success');
-    appendLog('info', ['Logs backfill completed', JSON.stringify(json.updated||{})]);
+    const count = json?.updated?.count ?? 0;
+    showNotification(`Backfilled ${count} log entr${count===1?'y':'ies'}`, 'success');
+    appendLog('info', ['Logs backfill completed', String(count)]);
   } catch(e){ console.error('Logs backfill exception', e); appendLog('error',['Logs backfill exception', String(e&&e.message||e)]); showNotification('Backfill failed', 'error'); }
 });
 
@@ -1070,10 +1071,10 @@ async function buildTranscript(){
   html += `</tbody></table><div class="row" style="justify-content:flex-end;margin-top:8px"><div class="card" style="background:#f1f5f9;color:#111827"><div><strong>Total Credits:</strong> ${fmt.format(totalCredits)}</div><div><strong>Cumulative GPA:</strong> ${gpa}</div></div></div><div class="row" style="margin-top:16px;justify-content:space-between"><div>Administrator: ${$('#trAdmin').value||''}</div><div>Signature: _____________________________</div></div></div>`;
   $('#trOut').innerHTML=html;
   
-  // Fix the event listener issue by removing the {once:true} option and properly managing listeners
+  // Attach a bubbling listener so edits are captured reliably
   const trOut = $('#trOut');
-  trOut.removeEventListener('blur', handleTranscriptEdit);
-  trOut.addEventListener('blur', handleTranscriptEdit);
+  trOut.removeEventListener('focusout', handleTranscriptEdit);
+  trOut.addEventListener('focusout', handleTranscriptEdit);
 }
 
 // Separate function for transcript edit handling

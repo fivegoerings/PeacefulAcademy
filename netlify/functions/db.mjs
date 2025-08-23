@@ -422,7 +422,11 @@ export async function handler(event) {
         const settingsList = await db.select().from(settings);
         const settingsObj = {};
         settingsList.forEach(s => {
-          settingsObj[s.key] = s.value;
+          try {
+            settingsObj[s.key] = JSON.parse(s.value);
+          } catch(_) {
+            settingsObj[s.key] = s.value;
+          }
         });
 
         return jsonResponse({
