@@ -49,9 +49,11 @@ export async function handler(event) {
       const rawContext = process.env.CONTEXT || '';
       const nodeEnv = (process.env.NODE_ENV || '').toLowerCase();
       const netlifyDev = (process.env.NETLIFY_DEV === 'true') || (process.env.NETLIFY_LOCAL === 'true');
-      const inferredContext = rawContext || (netlifyDev ? 'dev' : (nodeEnv || 'local'));
+      const hostHeader = (event.headers && (event.headers.host || event.headers.Host)) || '';
+      const isLocalHost = /localhost|127\.0\.0\.1|0\.0\.0\.0/i.test(hostHeader);
+      const inferredContext = rawContext || (netlifyDev || isLocalHost ? 'dev' : (nodeEnv || 'local'));
       const context = inferredContext;
-      const isDev = netlifyDev || ['dev', 'develop', 'development', 'deploy-preview', 'branch-deploy'].includes(context.toLowerCase()) || nodeEnv === 'development';
+      const isDev = netlifyDev || isLocalHost || ['dev', 'develop', 'development', 'deploy-preview', 'branch-deploy'].includes(context.toLowerCase()) || nodeEnv === 'development';
       const isProd = context === 'production' || nodeEnv === 'production';
 
       const dbUrl = process.env.NETLIFY_DATABASE_URL || process.env.DATABASE_URL || '';
