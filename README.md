@@ -119,6 +119,11 @@ The application uses a comprehensive database schema with the following tables:
 
 ### Environment Variables
 - `NETLIFY_DATABASE_URL`: Neon PostgreSQL connection string
+- `NETLIFY_DATABASE_URL_DEV` (optional): Overrides DB URL for local `netlify dev`
+- `NETLIFY_DATABASE_URL_PREVIEW` (optional): Overrides DB URL for branch/deploy previews
+- `DATABASE_URL` (fallback): Used if the specific NETLIFY_* vars are not set
+
+The app detects Netlify deployment context via `CONTEXT`/`NETLIFY_LOCAL` and selects the DB URL accordingly. Health endpoints include a `context` field for visibility.
 
 ## 🎯 Key Improvements Made
 

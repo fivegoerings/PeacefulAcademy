@@ -1,4 +1,5 @@
 import { neon } from '@neondatabase/serverless';
+import { getDatabaseUrl, getDeploymentContext } from './_context.mjs';
 
 // Input validation helpers
 function validateStudentData(data) {
@@ -126,12 +127,14 @@ export async function handler(event) {
   }
 
   try {
-    // Validate database connection
-    if (!process.env.NETLIFY_DATABASE_URL) {
+    // Validate database connection (context-aware)
+    const databaseUrl = getDatabaseUrl();
+    if (!databaseUrl) {
+      console.error('Database configuration error. Context:', getDeploymentContext());
       return errorResponse('Database configuration error', 500);
     }
 
-    const sql = neon(process.env.NETLIFY_DATABASE_URL);
+    const sql = neon(databaseUrl);
     const action = (event.queryStringParameters?.action) ||
                    (JSON.parse(event.body || '{}').action);
 
@@ -208,7 +211,8 @@ export async function handler(event) {
           ok: true,
           version: result.version,
           timestamp: result.now,
-          latency_ms: latency
+          latency_ms: latency,
+          context: getDeploymentContext()
         });
       } catch (error) {
         console.error('Health check failed:', error);
