@@ -181,5 +181,13 @@
             </ol>
         </div>
     </div>
+    <footer style="text-align:center;color:#94a3b8;margin:12px 0">© <span id="yearNowIcon"></span> Peaceful Academy • Kansas City, MO • <span id="versionFooterIcon"></span></footer>
+    <script>
+      (function(){
+        var y=document.getElementById('yearNowIcon'); if(y) y.textContent=new Date().getFullYear();
+        var el=document.getElementById('versionFooterIcon');
+        if(el){ fetch('/.version', { cache:'no-store' }).then(function(r){ return r.ok ? r.text() : ''; }).then(function(t){ el.textContent=(t||'').trim(); }).catch(function(){}); }
+      })();
+    </script>
 </body>
 </html>

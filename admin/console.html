@@ -29,6 +29,7 @@
     </div>
     <div id="log" class="log" aria-live="polite"></div>
   </div>
+  <footer style="text-align:center;color:#94a3b8;margin:12px 0">© <span id="yearNowConsole"></span> Peaceful Academy • Kansas City, MO • <span id="versionFooterConsole"></span></footer>
   <script>
     const KEY = 'pa_log_console_v1';
     const $ = s=>document.querySelector(s);
@@ -44,6 +45,13 @@
     let timer = setInterval(()=>{ if($('#auto').checked) render(); }, 1000);
     window.addEventListener('beforeunload', ()=> clearInterval(timer));
     render();
+
+    // Footer year + version
+    (function(){
+      const y=document.getElementById('yearNowConsole'); if(y) y.textContent=new Date().getFullYear();
+      const el=document.getElementById('versionFooterConsole');
+      if(el){ fetch('/.version', { cache:'no-store' }).then(r=>r.ok?r.text():'').then(t=>{ el.textContent=(t||'').trim(); }).catch(()=>{}); }
+    })();
   </script>
 </body>
 </html>
