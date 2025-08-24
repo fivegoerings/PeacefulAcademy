@@ -51,10 +51,11 @@ export async function handler(event) {
       const netlifyDev = (process.env.NETLIFY_DEV === 'true') || (process.env.NETLIFY_LOCAL === 'true');
       const hostHeader = (event.headers && (event.headers.host || event.headers.Host)) || '';
       const isLocalHost = /localhost|127\.0\.0\.1|0\.0\.0\.0/i.test(hostHeader);
-      const inferredContext = rawContext || (netlifyDev || isLocalHost ? 'dev' : (nodeEnv || 'local'));
+      const inferredContext = rawContext || (netlifyDev || isLocalHost ? 'local' : (nodeEnv || 'local'));
       const context = inferredContext;
-      const isDev = netlifyDev || isLocalHost || ['dev', 'develop', 'development', 'deploy-preview', 'branch-deploy'].includes(context.toLowerCase()) || nodeEnv === 'development';
-      const isProd = context === 'production' || nodeEnv === 'production';
+      const ctx = String(context || '').toLowerCase();
+      const isDev = netlifyDev || isLocalHost || ['local','dev','develop','development','deploy-preview','branch-deploy','test'].includes(ctx) || nodeEnv === 'development';
+      const isProd = ctx === 'production' || nodeEnv === 'production';
 
       const dbUrl = process.env.NETLIFY_DATABASE_URL || process.env.DATABASE_URL || '';
       const databaseUrlSource = process.env.NETLIFY_DATABASE_URL ? 'NETLIFY_DATABASE_URL' : (process.env.DATABASE_URL ? 'DATABASE_URL' : 'Not set');
