@@ -52,6 +52,11 @@ table{width:100%;border-collapse:collapse}th,td{padding:.5rem;border-bottom:1px 
 .gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}.tile{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:#0a1123}
 .pill{padding:.25rem .5rem;border-radius:999px;border:1px solid var(--border)}
 footer{margin:3rem 0 2rem;color:var(--muted);text-align:center}
+.tooltip{position:relative}
+[data-help]{position:relative}
+[data-help]::after{content:attr(data-help);position:absolute;left:50%;transform:translateX(-50%);bottom:calc(100% + 8px);background:#0a1123;color:var(--ink);border:1px solid var(--border);padding:.4rem .6rem;border-radius:8px;white-space:normal;width:max-content;max-width:280px;box-shadow:0 6px 18px rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:opacity .15s ease;z-index:20}
+[data-help]::before{content:'';position:absolute;left:50%;transform:translateX(-50%);bottom:calc(100% + 4px);border:6px solid transparent;border-top-color:#0a1123;opacity:0;transition:opacity .15s ease;z-index:21}
+[data-help]:hover::after,[data-help]:hover::before{opacity:1}
 .diploma-page{background:linear-gradient(180deg,#ffffff,#f8fafc);color:#111827;border:8px double #d1d5db;border-radius:12px;padding:48px;position:relative}
 .watermark{position:absolute;inset:0;opacity:0.06;background:url('assets/icon.svg') center/60% no-repeat;pointer-events:none}
 @media print{ nav,.no-print{display:none !important} .diploma-page{box-shadow:none} body{background:white}}
@@ -290,13 +295,13 @@ footer{margin:3rem 0 2rem;color:var(--muted);text-align:center}
         <div class="card">
           <h3 style="margin-top:0">Data</h3>
           <div class="row">
-            <button id="scExportAll">Export ALL (JSON)</button>
-            <label class="pill muted">Import ALL <input type="file" id="scImportAll" accept="application/json" style="display:none"></label>
-            <button class="danger" id="scWipe">Erase Everything</button>
-            <button id="scExportNeon" title="Push all local data to Neon (upsert)">Export to Neon</button>
-            <button id="scImportNeon" title="Replace local data with Neon data">Import from Neon</button>
-            <button id="scBackupNeon" title="Save a full JSON snapshot into Neon backups">Backup to Neon</button>
-            <button id="scRestoreNeon" title="Replace local data with the latest Neon backup">Restore from Neon</button>
+            <button id="scExportAll" data-help="Download a full JSON backup of settings, students, courses, logs, portfolio, and files.">Download ALL (JSON)</button>
+            <label class="pill muted" data-help="Replace ALL local data with the uploaded JSON backup.">Import ALL (JSON) <input type="file" id="scImportAll" accept="application/json" style="display:none"></label>
+            <button class="danger" id="scWipe" data-help="Delete ALL local data from this device (students, courses, logs, portfolio, files).">Erase Local Data</button>
+            <button id="scExportNeon" data-help="Upsert rows into the Neon database (students, courses, logs, portfolio). Does not affect backups.">Upsert Rows to Neon DB</button>
+            <button id="scImportNeon" data-help="Replace local data with rows pulled from the Neon database.">Replace from Neon DB</button>
+            <button id="scBackupNeon" data-help="Save a full JSON snapshot into the Neon backups table. Does not change live rows.">Save JSON Backup to Neon</button>
+            <button id="scRestoreNeon" data-help="Replace local data with the latest JSON backup stored in Neon backups.">Restore from Neon JSON Backup</button>
           </div>
         </div>
       </div>
