@@ -289,7 +289,6 @@ async function loadEnvironmentInfo() {
     envVarsEl.innerHTML = '';
     const envVars = {
       'CONTEXT': envData.context || 'Not set',
-      'NODE_ENV': envData.nodeEnv || 'Not set',
       'NETLIFY_DATABASE_URL/DATABASE_URL': envData.hasDatabaseUrl ? 'Set' : 'Not set',
       'Database URL Info': envData.databaseUrlInfo || 'Unknown',
       'Database URL Source': envData.databaseUrl || envData.databaseUrlSource || 'Unknown'
