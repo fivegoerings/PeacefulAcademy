@@ -78,7 +78,7 @@ self.addEventListener('fetch', event => {
   }
 
   // Always get fresh version file
-  if (url.pathname === '/.version') {
+  if (url.pathname === '/.version' || url.pathname === '/version.txt') {
     event.respondWith(
       fetch(request, { cache: 'no-store' }).catch(async () => {
         const cached = await caches.match(request);

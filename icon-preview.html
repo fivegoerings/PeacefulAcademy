@@ -186,7 +186,14 @@
       (function(){
         var y=document.getElementById('yearNowIcon'); if(y) y.textContent=new Date().getFullYear();
         var el=document.getElementById('versionFooterIcon');
-        if(el){ fetch('/.version', { cache:'no-store' }).then(function(r){ return r.ok ? r.text() : ''; }).then(function(t){ el.textContent=(t||'').trim(); }).catch(function(){}); }
+        if(el){
+          fetch('/.version', { cache:'no-store' })
+            .then(function(r){ return r.ok ? r.text() : Promise.reject(); })
+            .catch(function(){ return fetch('/version.txt', { cache:'no-store' }); })
+            .then(function(r){ return typeof r === 'string' ? r : (r && r.ok ? r.text() : ''); })
+            .then(function(t){ el.textContent=(t||'').trim(); })
+            .catch(function(){});
+        }
       })();
     </script>
 </body>

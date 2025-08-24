@@ -1168,8 +1168,17 @@ async function displayAppVersion() {
   const versionElement = document.getElementById('appVersion');
   if (!versionElement) return;
   
-  // Get version from package.json or use a default
-  const version = '1.0.0'; // This could be dynamically loaded from package.json
+  // Get version from server-side file(s)
+  let version = 'unknown';
+  try {
+    let res = await fetch('/.version', { cache: 'no-store' });
+    if (!res.ok) {
+      res = await fetch('/version.txt', { cache: 'no-store' });
+    }
+    if (res && res.ok) {
+      version = (await res.text()).trim();
+    }
+  } catch(_) {}
   
   // Try to get environment from backend first, fallback to client-side detection
   let environment = 'UNKNOWN';
@@ -1209,7 +1218,7 @@ async function displayAppVersion() {
   const buildTime = new Date().toISOString().split('T')[0]; // Current date as fallback
   
   // Display version and environment
-  versionElement.textContent = `v${version} | ${environment}`;
+  versionElement.textContent = `${version} | ${environment}`;
   
   // Add hover effect to show more details
   const details = [
@@ -1298,7 +1307,8 @@ async function init(){
       try{
         const el = document.getElementById('versionFooter');
         if(!el) return;
-        const res = await fetch('/.version');
+        let res = await fetch('/.version', { cache: 'no-store' });
+        if(!res.ok){ res = await fetch('/version.txt', { cache: 'no-store' }); }
         if(!res.ok) return;
         const txt = (await res.text()).trim();
         el.textContent = txt;

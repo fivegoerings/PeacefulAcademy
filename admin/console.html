@@ -50,7 +50,14 @@
     (function(){
       const y=document.getElementById('yearNowConsole'); if(y) y.textContent=new Date().getFullYear();
       const el=document.getElementById('versionFooterConsole');
-      if(el){ fetch('/.version', { cache:'no-store' }).then(r=>r.ok?r.text():'').then(t=>{ el.textContent=(t||'').trim(); }).catch(()=>{}); }
+      if(el){
+        fetch('/.version', { cache:'no-store' })
+          .then(r=> r.ok ? r.text() : Promise.reject())
+          .catch(()=> fetch('/version.txt', { cache:'no-store' }))
+          .then(r=> typeof r === 'string' ? r : (r && r.ok ? r.text() : ''))
+          .then(t=>{ el.textContent=(t||'').trim(); })
+          .catch(()=>{});
+      }
     })();
   </script>
 </body>
