@@ -1,6 +1,6 @@
-const CACHE_NAME = 'peaceful-academy-v4';
-const STATIC_CACHE = 'peaceful-academy-static-v4';
-const DYNAMIC_CACHE = 'peaceful-academy-dynamic-v4';
+const CACHE_NAME = 'peaceful-academy-v5';
+const STATIC_CACHE = 'peaceful-academy-static-v5';
+const DYNAMIC_CACHE = 'peaceful-academy-dynamic-v5';
 
 // Assets to cache immediately
 const STATIC_ASSETS = [
@@ -77,14 +77,33 @@ self.addEventListener('fetch', event => {
     return;
   }
 
+  // Always get fresh version file
+  if (url.pathname === '/.version') {
+    event.respondWith(
+      fetch(request, { cache: 'no-store' }).catch(async () => {
+        const cached = await caches.match(request);
+        return cached || new Response('', { status: 200 });
+      })
+    );
+    return;
+  }
+
   // Handle API requests
   if (url.pathname.includes('/.netlify/functions/')) {
     event.respondWith(handleApiRequest(request));
     return;
   }
 
-  // Handle static assets
+  // Handle same-origin requests
   if (url.origin === location.origin) {
+    // Network-first for HTML/navigation to avoid stale UI
+    const acceptsHtml = (request.headers.get('accept') || '').includes('text/html');
+    if (request.mode === 'navigate' || acceptsHtml) {
+      event.respondWith(handleHtmlRequest(request));
+      return;
+    }
+
+    // Cache-first for other static assets
     event.respondWith(handleStaticRequest(request));
     return;
   }
@@ -176,6 +195,37 @@ async function handleStaticRequest(request) {
         statusText: 'Service Unavailable',
         headers: { 'Content-Type': 'text/html' }
       }
+    );
+  }
+}
+
+// Handle HTML/navigation with network-first strategy
+async function handleHtmlRequest(request) {
+  try {
+    // Prefer fresh HTML so UI updates immediately
+    const networkResponse = await fetch(request, { cache: 'no-store' });
+    if (networkResponse && networkResponse.ok) {
+      const cache = await caches.open(DYNAMIC_CACHE);
+      cache.put(request, networkResponse.clone());
+      return networkResponse;
+    }
+
+    // Fallback to cache if network not OK
+    const cachedResponse = await caches.match(request);
+    if (cachedResponse) return cachedResponse;
+
+    // Last resort: cached app shell
+    const shell = await caches.match('./index.html');
+    if (shell) return shell;
+
+    return networkResponse;
+  } catch (error) {
+    // Offline fallback to cached shell
+    const shell = await caches.match('./index.html');
+    if (shell) return shell;
+    return new Response(
+      '<!DOCTYPE html><html><head><title>Offline</title></head><body><h1>You are offline</h1><p>Please check your connection and try again.</p></body></html>',
+      { status: 503, statusText: 'Service Unavailable', headers: { 'Content-Type': 'text/html' } }
     );
   }
 }
