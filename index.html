@@ -315,7 +315,7 @@ footer{margin:3rem 0 2rem;color:var(--muted);text-align:center}
   </div></section>
 </main>
 
-<footer>© <span id="yearNow"></span> Peaceful Academy • Kansas City, MO</footer>
+<footer>© <span id="yearNow"></span> Peaceful Academy • Kansas City, MO • <span id="versionFooter"></span></footer>
 
 <script>
 if ('serviceWorker' in navigator) { window.addEventListener('load', ()=> navigator.serviceWorker.register('./sw.js')); }
@@ -1293,6 +1293,17 @@ async function init(){
     
     // Display app version and environment
     await displayAppVersion();
+    // Display footer version
+    (async function displayFooterVersion(){
+      try{
+        const el = document.getElementById('versionFooter');
+        if(!el) return;
+        const res = await fetch('/.version');
+        if(!res.ok) return;
+        const txt = (await res.text()).trim();
+        el.textContent = txt;
+      }catch(_){ /* ignore */ }
+    })();
     
     // Add loading states
     document.body.classList.add('loaded');
