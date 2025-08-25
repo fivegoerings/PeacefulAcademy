@@ -44,6 +44,19 @@ export async function handler(event) {
       return errorResponse('No action specified', 400);
     }
 
+    // Helper: ensure schema up to date (add missing columns)
+    async function ensureSchemaUpToDate(){
+      // portfolio.file_id column (introduced in newer versions)
+      try{
+        const q = await sql`SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'portfolio' AND column_name = 'file_id' LIMIT 1`;
+        const exists = Array.isArray(q) ? q.length > 0 : (q?.rowCount || 0) > 0;
+        if(!exists){
+          await sql`ALTER TABLE portfolio ADD COLUMN file_id integer`;
+          // Optional: no FK constraint to files to keep flexibility
+        }
+      }catch(_){ /* ignore so we don't break primary flows */ }
+    }
+
     // System environment information
     if (action === 'system.environment') {
       // Use Netlify CONTEXT exclusively per Netlify docs
@@ -68,6 +81,16 @@ export async function handler(event) {
         databaseUrlInfo,
         hasDatabaseUrl: !!dbUrl
       });
+    }
+
+    // Manual schema migration trigger
+    if (action === 'schema.migrate'){
+      try{
+        await ensureSchemaUpToDate();
+        return jsonResponse({ migrated: true });
+      }catch(e){
+        return errorResponse('Schema migration failed');
+      }
     }
 
     // List all environment variables (masked)
@@ -434,6 +457,7 @@ export async function handler(event) {
     // Bulk operations
     if (action === 'bulk.readAll') {
       try {
+        await ensureSchemaUpToDate();
         // Detect presence of optional columns for backward compatibility
         let hasPortfolioFileId = false;
         try {
@@ -500,6 +524,7 @@ export async function handler(event) {
     if (action === 'bulk.upsertAll') {
       const { data } = JSON.parse(event.body || '{}');
       try {
+        await ensureSchemaUpToDate();
         // Detect optional columns for compatibility (e.g., portfolio.file_id)
         let hasPortfolioFileId = false;
         try {
