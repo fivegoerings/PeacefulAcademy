@@ -46,25 +46,21 @@ export async function handler(event) {
 
     // System environment information
     if (action === 'system.environment') {
-      const rawContext = process.env.CONTEXT || '';
-      const netlifyDev = (process.env.NETLIFY_DEV === 'true') || (process.env.NETLIFY_LOCAL === 'true');
-      const hostHeader = (event.headers && (event.headers.host || event.headers.Host)) || '';
-      const isLocalHost = /localhost|127\.0\.0\.1|0\.0\.0\.0/i.test(hostHeader);
-      const inferredContext = rawContext || (netlifyDev || isLocalHost ? 'local' : 'local');
-      const context = inferredContext;
-      const ctx = String(context || '').toLowerCase();
-      const isDev = netlifyDev || isLocalHost || ['local','dev','develop','development','deploy-preview','branch-deploy','test'].includes(ctx);
+      // Use Netlify CONTEXT exclusively per Netlify docs
+      const contextRaw = process.env.CONTEXT || 'local';
+      const ctx = String(contextRaw).toLowerCase();
       const isProd = ctx === 'production';
+      const isDev = ctx === 'dev' || ctx === 'deploy-preview' || ctx === 'branch-deploy' || ctx === 'local';
 
       const dbUrl = process.env.NETLIFY_DATABASE_URL || process.env.DATABASE_URL || '';
       const databaseUrlSource = process.env.NETLIFY_DATABASE_URL ? 'NETLIFY_DATABASE_URL' : (process.env.DATABASE_URL ? 'DATABASE_URL' : 'Not set');
       const databaseUrlInfo = dbUrl ? dbUrl.replace(/:[^:@]*@/, ':****@') : 'Not set';
 
-      const environment = isDev ? 'DEV' : (isProd ? 'PROD' : 'UNKNOWN');
+      const environment = isProd ? 'PROD' : 'DEV';
 
       return jsonResponse({
         environment,
-        context,
+        context: contextRaw,
         isDev,
         isProd,
         databaseUrl: databaseUrlSource,
