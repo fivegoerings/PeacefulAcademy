@@ -55,6 +55,11 @@ export async function handler(event) {
           // Optional: no FK constraint to files to keep flexibility
         }
       }catch(_){ /* ignore so we don't break primary flows */ }
+
+      // Legacy constraint: logs_student_date_unique (blocks multiple logs per day per student)
+      try{
+        await sql`DO $$ BEGIN IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'logs_student_date_unique') THEN ALTER TABLE logs DROP CONSTRAINT logs_student_date_unique; END IF; END $$;`;
+      }catch(_){ /* ignore */ }
     }
 
     // System environment information
