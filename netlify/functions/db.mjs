@@ -434,11 +434,35 @@ export async function handler(event) {
     // Bulk operations
     if (action === 'bulk.readAll') {
       try {
-        const [studentsList, coursesList, logsList, portfolioList, filesList] = await Promise.all([
+        // Detect presence of optional columns for backward compatibility
+        let hasPortfolioFileId = false;
+        try {
+          const q = await sql`SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'portfolio' AND column_name = 'file_id' LIMIT 1`;
+          hasPortfolioFileId = Array.isArray(q) ? q.length > 0 : (q?.rowCount || 0) > 0;
+        } catch(_) { /* default false */ }
+
+        const [studentsList, coursesList, logsList, portfolioListRaw, filesList] = await Promise.all([
           db.select().from(students),
           db.select().from(courses),
           db.select().from(logs),
-          db.select().from(portfolio),
+          (async()=>{
+            if (hasPortfolioFileId) {
+              return await db.select().from(portfolio);
+            }
+            // Fallback: select without file_id and map to expected keys
+            const rows = await sql`SELECT id, student_id, course_id, title, description, tags, date, created_at FROM portfolio`;
+            const arr = Array.isArray(rows) ? rows : (rows?.rows || []);
+            return arr.map(r => ({
+              id: r.id,
+              studentId: r.student_id,
+              courseId: r.course_id,
+              title: r.title,
+              description: r.description,
+              tags: r.tags,
+              date: r.date,
+              createdAt: r.created_at
+            }));
+          })(),
           db.select().from(files)
         ]);
 
@@ -458,7 +482,7 @@ export async function handler(event) {
             students: studentsList,
             courses: coursesList,
             logs: logsList,
-            portfolio: portfolioList,
+            portfolio: portfolioListRaw,
             files: filesList,
             settings: settingsObj
           }
