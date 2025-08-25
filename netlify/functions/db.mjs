@@ -500,7 +500,14 @@ export async function handler(event) {
     if (action === 'bulk.upsertAll') {
       const { data } = JSON.parse(event.body || '{}');
       try {
-        // Clear existing data
+        // Detect optional columns for compatibility (e.g., portfolio.file_id)
+        let hasPortfolioFileId = false;
+        try {
+          const q = await sql`SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'portfolio' AND column_name = 'file_id' LIMIT 1`;
+          hasPortfolioFileId = Array.isArray(q) ? q.length > 0 : (q?.rowCount || 0) > 0;
+        } catch(_) { /* default false */ }
+
+        // Clear existing data in FK-safe order
         await db.delete(logs);
         await db.delete(portfolio);
         await db.delete(files);
@@ -519,7 +526,11 @@ export async function handler(event) {
           await db.insert(logs).values(data.logs);
         }
         if (data.portfolio && data.portfolio.length > 0) {
-          await db.insert(portfolio).values(data.portfolio);
+          const portVals = hasPortfolioFileId ? data.portfolio : data.portfolio.map(p => {
+            const { fileId, ...rest } = p || {};
+            return rest;
+          });
+          await db.insert(portfolio).values(portVals);
         }
         if (data.files && data.files.length > 0) {
           await db.insert(files).values(data.files);
