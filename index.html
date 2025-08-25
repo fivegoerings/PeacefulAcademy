@@ -757,12 +757,15 @@ $('#scExportNeon')?.addEventListener('click', async()=>{
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ action: 'bulk.upsertAll', data: payload })
     });
+    appendLog('info', ['Export to Neon response status', String(res.status)]);
     const raw = await res.text();
-    let json = null; try{ json = JSON.parse(raw); } catch(_){}
+    appendLog('info', ['Export to Neon raw length', String(raw.length)]);
+    let json = null; try{ json = JSON.parse(raw); } catch(parseErr){ appendLog('error', ['Export to Neon JSON parse error', String(parseErr)]); }
     if(!res.ok || (json && json.error)){
       const msg = (json && json.error) ? json.error : `HTTP ${res.status}`;
-      appendLog('error', ['Export to Neon failed', msg, 'raw:', raw.slice(0,500)]);
-      throw new Error(msg);
+      const details = json && json.details ? json.details : '';
+      appendLog('error', ['Export to Neon failed', msg, details, 'raw:', raw.slice(0,500)]);
+      throw new Error(details || msg);
     }
     appendLog('info', ['Export to Neon completed', JSON.stringify(json.counts||{})]);
     showNotification('Exported to Neon successfully!', 'success');
