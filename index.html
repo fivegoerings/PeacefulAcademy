@@ -298,8 +298,7 @@ footer{margin:3rem 0 2rem;color:var(--muted);text-align:center}
             <button id="scExportAll" data-help="Download a full JSON backup of settings, students, courses, logs, portfolio, and files.">Download ALL (JSON)</button>
             <label class="pill muted" data-help="Replace ALL local data with the uploaded JSON backup.">Import ALL (JSON) <input type="file" id="scImportAll" accept="application/json" style="display:none"></label>
             <button class="danger" id="scWipe" data-help="Delete ALL local data from this device (students, courses, logs, portfolio, files).">Erase Local Data</button>
-            <button id="scExportNeon" data-help="Upsert rows into the Neon database (students, courses, logs, portfolio). Does not affect backups.">Upsert Rows to Neon DB</button>
-            <button id="scImportNeon" data-help="Replace local data with rows pulled from the Neon database.">Replace from Neon DB</button>
+            
             <button id="scBackupNeon" data-help="Save a full JSON snapshot into the Neon backups table. Does not change live rows.">Save JSON Backup to Neon</button>
             <button id="scRestoreNeon" data-help="Replace local data with the latest JSON backup stored in Neon backups.">Restore from Neon JSON Backup</button>
           </div>
@@ -747,78 +746,7 @@ $('#scExportAll')?.addEventListener('click', async()=>{ const payload = await bu
 $('#scImportAll')?.addEventListener('change', async(e)=>{ const f=e.target.files?.[0]; if(!f) return; if(!confirm('Import will REPLACE existing data. Continue?')) return; const data=JSON.parse(await f.text()); await clearStoresSafely(['students','courses','logs','portfolio','files']); if(data.settings) setSettings(data.settings); for(const s of (data.students||[])) await DB.add('students', s); for(const c of (data.courses||[])) await DB.add('courses', c); for(const l of (data.logs||[])) await DB.add('logs', l); for(const p of (data.portfolio||[])) await DB.add('portfolio', p); alert('Imported.'); renderDashboard(); renderStudents(); renderCourses(); renderLogsTable(); renderPortfolio(); renderReports(); });
 $('#scWipe')?.addEventListener('click', async()=>{ if(!confirm('Erase ALL data?')) return; await clearStoresSafely(['students','courses','logs','portfolio','files']); alert('Cleared.'); renderDashboard(); renderStudents(); renderCourses(); renderLogsTable(); renderPortfolio(); renderReports(); });
 
-// Export all local data to Neon (bulk upsert)
-$('#scExportNeon')?.addEventListener('click', async()=>{
-  try {
-    const payload = await buildSnapshotPayload();
-    appendLog('info', ['Export to Neon started']);
-    const res = await fetch('/.netlify/functions/db', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ action: 'bulk.upsertAll', data: payload })
-    });
-    appendLog('info', ['Export to Neon response status', String(res.status)]);
-    const raw = await res.text();
-    appendLog('info', ['Export to Neon raw length', String(raw.length)]);
-    let json = null; try{ json = JSON.parse(raw); } catch(parseErr){ appendLog('error', ['Export to Neon JSON parse error', String(parseErr)]); }
-    if(!res.ok || (json && json.error)){
-      const msg = (json && json.error) ? json.error : `HTTP ${res.status}`;
-      const details = json && json.details ? json.details : '';
-      appendLog('error', ['Export to Neon failed', msg, details, 'raw:', raw.slice(0,500)]);
-      throw new Error(details || msg);
-    }
-    appendLog('info', ['Export to Neon completed', JSON.stringify(json.counts||{})]);
-    showNotification('Exported to Neon successfully!', 'success');
-  } catch(e){
-    console.error('Export to Neon failed', e);
-    appendLog('error', ['Export to Neon exception', String(e&&e.message||e)]);
-    showNotification('Export to Neon failed. See console.', 'error');
-  }
-});
-
-// Import all data from Neon (replace local)
-$('#scImportNeon')?.addEventListener('click', async()=>{
-  if(!confirm('Import from Neon will REPLACE local data. Continue?')) return;
-  try {
-    appendLog('info', ['Import from Neon started']);
-    const res = await fetch('/.netlify/functions/db', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ action: 'bulk.readAll' })
-    });
-    appendLog('info', ['Import from Neon response status', String(res.status)]);
-    const raw = await res.text();
-    appendLog('info', ['Import from Neon raw length', String(raw.length)]);
-    let json = null; try{ json = JSON.parse(raw); } catch(parseErr){ appendLog('error', ['Import from Neon JSON parse error', String(parseErr)]); }
-    if(!res.ok || (json && json.error)){
-      const msg = (json && json.error) ? json.error : `HTTP ${res.status}`;
-      const details = json && json.details ? json.details : '';
-      appendLog('error', ['Import from Neon failed', msg, details, 'raw:', raw.slice(0,500)]);
-      throw new Error(details || msg);
-    }
-    const data = (json && json.data) || {};
-    if(!data || typeof data !== 'object'){
-      appendLog('error', ['Import from Neon missing data object']);
-      showNotification('Import failed: missing data payload', 'error');
-      return;
-    }
-    appendLog('info', ['Import from Neon counts', `students=${(data.students||[]).length}`, `courses=${(data.courses||[]).length}`, `logs=${(data.logs||[]).length}`, `portfolio=${(data.portfolio||[]).length}`, `files=${(data.files||[]).length}`]);
-    await clearStoresSafely(['students','courses','logs','portfolio','files']); 
-    if(data.settings) setSettings(data.settings);
-    for(const s of (data.students||[])) await DB.add('students', s);
-    for(const c of (data.courses||[])) await DB.add('courses', c);
-    for(const l of (data.logs||[])) await DB.add('logs', l);
-    for(const p of (data.portfolio||[])) await DB.add('portfolio', p);
-    for(const f of (data.files||[])) await DB.add('files', f);
-    appendLog('info', ['Import from Neon completed', `students=${(data.students||[]).length}`, `courses=${(data.courses||[]).length}`, `logs=${(data.logs||[]).length}`, `portfolio=${(data.portfolio||[]).length}`, `files=${(data.files||[]).length}`]);
-    showNotification('Imported from Neon successfully!', 'success');
-    renderDashboard(); renderStudents(); renderCourses(); renderLogsTable(); renderPortfolio(); renderReports();
-  } catch(e){
-    console.error('Import from Neon failed', e);
-    appendLog('error', ['Import from Neon exception', String(e&&e.message||e)]);
-    showNotification('Import from Neon failed. See console.', 'error');
-  }
-});
+// (Neon DB row sync controls removed)
 
 // Backup to Neon (store JSON in backups table)
 $('#scBackupNeon')?.addEventListener('click', async()=>{
