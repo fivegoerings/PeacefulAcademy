@@ -60,6 +60,10 @@ export async function handler(event) {
       try{
         await sql`DO $$ BEGIN IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'logs_student_date_unique') THEN ALTER TABLE logs DROP CONSTRAINT logs_student_date_unique; END IF; END $$;`;
       }catch(_){ /* ignore */ }
+      // Also drop legacy unique index if it exists with the same name
+      try{
+        await sql`DO $$ BEGIN IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='public' AND indexname='logs_student_date_unique') THEN DROP INDEX logs_student_date_unique; END IF; END $$;`;
+      }catch(_){ /* ignore */ }
     }
 
     // System environment information
