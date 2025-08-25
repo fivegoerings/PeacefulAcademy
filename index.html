@@ -742,6 +742,38 @@ async function buildSnapshotPayload(){
   return { settings: getSettings(), students, courses, logs: logsRich, portfolio, files };
 }
 
+// Prompt on app close and optionally back up to Neon
+function setupExitBackupPrompt(){
+  if (window.__exitBackupPromptInstalled) return;
+  window.__exitBackupPromptInstalled = true;
+  window.addEventListener('beforeunload', (e)=>{
+    try{
+      e.preventDefault();
+      e.returnValue = '';
+      // If user cancels navigation (chooses Stay), ask whether to back up
+      setTimeout(async()=>{
+        try{
+          const want = confirm('Backup to Neon before leaving?');
+          if(!want) return;
+          appendLog('info', ['Exit backup to Neon started']);
+          const payload = await buildSnapshotPayload();
+          const res = await fetch('/.netlify/functions/db', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ action: 'backup.save', data: { payload, note: 'exit backup' } })
+          });
+          const raw = await res.text(); let json=null; try{ json=JSON.parse(raw);}catch(_){ }
+          if(!res.ok || (json && json.error)){
+            const msg=(json&&json.error)||`HTTP ${res.status}`; appendLog('error',['Exit backup failed', msg, 'raw:', raw.slice(0,500)]); showNotification('Exit backup failed','error'); return;
+          }
+          appendLog('info', ['Exit backup to Neon completed', JSON.stringify(json)]);
+          showNotification('Exit backup saved in Neon', 'success');
+        }catch(err){ console.error('Exit backup exception', err); }
+      }, 0);
+    }catch(_){ }
+  });
+}
+
 $('#scExportAll')?.addEventListener('click', async()=>{ const payload = await buildSnapshotPayload(); const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}); const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:'peaceful-academy-backup.json'}); a.click(); });
 $('#scImportAll')?.addEventListener('change', async(e)=>{ const f=e.target.files?.[0]; if(!f) return; if(!confirm('Import will REPLACE existing data. Continue?')) return; const data=JSON.parse(await f.text()); await clearStoresSafely(['students','courses','logs','portfolio','files']); if(data.settings) setSettings(data.settings); for(const s of (data.students||[])) await DB.add('students', s); for(const c of (data.courses||[])) await DB.add('courses', c); for(const l of (data.logs||[])) await DB.add('logs', l); for(const p of (data.portfolio||[])) await DB.add('portfolio', p); alert('Imported.'); renderDashboard(); renderStudents(); renderCourses(); renderLogsTable(); renderPortfolio(); renderReports(); });
 
@@ -1260,6 +1292,9 @@ async function init(){
       }catch(_){ /* ignore */ }
     })();
     
+    // Install exit backup prompt
+    setupExitBackupPrompt();
+
     // Add loading states
     document.body.classList.add('loaded');
   } catch(e) {
