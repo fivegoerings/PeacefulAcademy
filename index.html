@@ -783,14 +783,23 @@ $('#scImportNeon')?.addEventListener('click', async()=>{
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ action: 'bulk.readAll' })
     });
+    appendLog('info', ['Import from Neon response status', String(res.status)]);
     const raw = await res.text();
-    let json = null; try{ json = JSON.parse(raw); } catch(_){}
+    appendLog('info', ['Import from Neon raw length', String(raw.length)]);
+    let json = null; try{ json = JSON.parse(raw); } catch(parseErr){ appendLog('error', ['Import from Neon JSON parse error', String(parseErr)]); }
     if(!res.ok || (json && json.error)){
       const msg = (json && json.error) ? json.error : `HTTP ${res.status}`;
-      appendLog('error', ['Import from Neon failed', msg, 'raw:', raw.slice(0,500)]);
-      throw new Error(msg);
+      const details = json && json.details ? json.details : '';
+      appendLog('error', ['Import from Neon failed', msg, details, 'raw:', raw.slice(0,500)]);
+      throw new Error(details || msg);
     }
-    const data = json.data || {};
+    const data = (json && json.data) || {};
+    if(!data || typeof data !== 'object'){
+      appendLog('error', ['Import from Neon missing data object']);
+      showNotification('Import failed: missing data payload', 'error');
+      return;
+    }
+    appendLog('info', ['Import from Neon counts', `students=${(data.students||[]).length}`, `courses=${(data.courses||[]).length}`, `logs=${(data.logs||[]).length}`, `portfolio=${(data.portfolio||[]).length}`, `files=${(data.files||[]).length}`]);
     await clearStoresSafely(['students','courses','logs','portfolio','files']); 
     if(data.settings) setSettings(data.settings);
     for(const s of (data.students||[])) await DB.add('students', s);
@@ -798,7 +807,7 @@ $('#scImportNeon')?.addEventListener('click', async()=>{
     for(const l of (data.logs||[])) await DB.add('logs', l);
     for(const p of (data.portfolio||[])) await DB.add('portfolio', p);
     for(const f of (data.files||[])) await DB.add('files', f);
-    appendLog('info', ['Import from Neon completed', `students=${(data.students||[]).length}`, `courses=${(data.courses||[]).length}`, `logs=${(data.logs||[]).length}`, `portfolio=${(data.portfolio||[]).length}`]);
+    appendLog('info', ['Import from Neon completed', `students=${(data.students||[]).length}`, `courses=${(data.courses||[]).length}`, `logs=${(data.logs||[]).length}`, `portfolio=${(data.portfolio||[]).length}`, `files=${(data.files||[]).length}`]);
     showNotification('Imported from Neon successfully!', 'success');
     renderDashboard(); renderStudents(); renderCourses(); renderLogsTable(); renderPortfolio(); renderReports();
   } catch(e){

@@ -465,7 +465,11 @@ export async function handler(event) {
         });
       } catch (error) {
         console.error('Bulk read error:', error);
-        return errorResponse('Failed to read all data', 500);
+        return {
+          statusCode: 500,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ error: 'Failed to read all data', details: String(error && error.message || error) })
+        };
       }
     }
 
@@ -519,7 +523,11 @@ export async function handler(event) {
         });
       } catch (error) {
         console.error('Bulk upsert error:', error);
-        return errorResponse('Failed to upsert data', 500);
+        return {
+          statusCode: 500,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ error: 'Failed to upsert data', details: String(error && error.message || error) })
+        };
       }
     }
 
