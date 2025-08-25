@@ -74,6 +74,30 @@ export async function handler(event) {
       });
     }
 
+    // List all environment variables (masked)
+    if (action === 'system.envAll') {
+      try {
+        const env = process.env || {};
+        const SENSITIVE = /(SECRET|TOKEN|KEY|PASSWORD|PWD|PASS|DATABASE_URL|CONNECTION|API|BEARER|AUTH)/i;
+        const masked = {};
+        Object.keys(env).forEach((k) => {
+          const v = String(env[k] ?? '');
+          if (SENSITIVE.test(k)) {
+            // mask value but keep hint of length
+            const head = v.slice(0, 4);
+            const tail = v.slice(-4);
+            masked[k] = v ? `${head}…${tail} (masked)` : '';
+          } else {
+            masked[k] = v;
+          }
+        });
+        return jsonResponse({ env: masked, count: Object.keys(masked).length });
+      } catch (error) {
+        console.error('Env list error:', error);
+        return errorResponse('Failed to list environment variables', 500);
+      }
+    }
+
     // Test database connection
     if (action === 'system.testConnection') {
       try {

@@ -285,24 +285,42 @@ async function loadEnvironmentInfo() {
     // Get environment information from backend
     const envData = await dbCall('system.environment');
     
-    // Display environment variables
+    // Display key environment highlights first
     envVarsEl.innerHTML = '';
-    const envVars = {
+    const summaryVars = {
       'CONTEXT': envData.context || 'Not set',
       'NETLIFY_DATABASE_URL/DATABASE_URL': envData.hasDatabaseUrl ? 'Set' : 'Not set',
       'Database URL Info': envData.databaseUrlInfo || 'Unknown',
       'Database URL Source': envData.databaseUrl || envData.databaseUrlSource || 'Unknown'
     };
-    
-    Object.entries(envVars).forEach(([key, value]) => {
+    Object.entries(summaryVars).forEach(([key, value]) => {
       const item = document.createElement('div');
       item.className = 'env-item';
       item.innerHTML = `
         <div class="env-label">${key}</div>
-        <div class="env-value ${value.includes('masked') ? 'masked' : ''}">${value}</div>
+        <div class="env-value ${String(value).includes('masked') ? 'masked' : ''}">${value}</div>
       `;
       envVarsEl.appendChild(item);
     });
+
+    // Fetch and render all environment variables (masked) and write to log console
+    try {
+      const all = await dbCall('system.envAll');
+      if (all && all.env) {
+        Object.entries(all.env).forEach(([key, value]) => {
+          const item = document.createElement('div');
+          item.className = 'env-item';
+          item.innerHTML = `
+            <div class="env-label">${key}</div>
+            <div class="env-value ${String(value).includes('masked') ? 'masked' : ''}">${value}</div>
+          `;
+          envVarsEl.appendChild(item);
+        });
+        console.info('All environment variables (masked):', all.env);
+      }
+    } catch (envErr) {
+      console.warn('Failed to load full environment list', envErr);
+    }
     
     // Display connection details
     connectionInfoEl.innerHTML = '';
