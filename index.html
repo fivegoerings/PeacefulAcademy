@@ -297,7 +297,7 @@ footer{margin:3rem 0 2rem;color:var(--muted);text-align:center}
           <div class="row">
             <button id="scExportAll" data-help="Download a full JSON backup of settings, students, courses, logs, portfolio, and files.">Download ALL (JSON)</button>
             <label class="pill muted" data-help="Replace ALL local data with the uploaded JSON backup.">Import ALL (JSON) <input type="file" id="scImportAll" accept="application/json" style="display:none"></label>
-            <button class="danger" id="scWipe" data-help="Delete ALL local data from this device (students, courses, logs, portfolio, files).">Erase Local Data</button>
+            
             
             <button id="scBackupNeon" data-help="Save a full JSON snapshot into the Neon backups table. Does not change live rows.">Save JSON Backup to Neon</button>
             <button id="scRestoreNeon" data-help="Replace local data with the latest JSON backup stored in Neon backups.">Restore from Neon JSON Backup</button>
@@ -744,7 +744,7 @@ async function buildSnapshotPayload(){
 
 $('#scExportAll')?.addEventListener('click', async()=>{ const payload = await buildSnapshotPayload(); const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}); const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:'peaceful-academy-backup.json'}); a.click(); });
 $('#scImportAll')?.addEventListener('change', async(e)=>{ const f=e.target.files?.[0]; if(!f) return; if(!confirm('Import will REPLACE existing data. Continue?')) return; const data=JSON.parse(await f.text()); await clearStoresSafely(['students','courses','logs','portfolio','files']); if(data.settings) setSettings(data.settings); for(const s of (data.students||[])) await DB.add('students', s); for(const c of (data.courses||[])) await DB.add('courses', c); for(const l of (data.logs||[])) await DB.add('logs', l); for(const p of (data.portfolio||[])) await DB.add('portfolio', p); alert('Imported.'); renderDashboard(); renderStudents(); renderCourses(); renderLogsTable(); renderPortfolio(); renderReports(); });
-$('#scWipe')?.addEventListener('click', async()=>{ if(!confirm('Erase ALL data?')) return; await clearStoresSafely(['students','courses','logs','portfolio','files']); alert('Cleared.'); renderDashboard(); renderStudents(); renderCourses(); renderLogsTable(); renderPortfolio(); renderReports(); });
+
 
 // (Neon DB row sync controls removed)
 

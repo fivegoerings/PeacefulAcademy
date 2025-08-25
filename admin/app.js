@@ -888,6 +888,19 @@ function initEventListeners() {
   // Health and stats
   $('#refreshStats')?.addEventListener('click', loadStats);
   $('#refreshEnv')?.addEventListener('click', loadEnvironmentInfo);
+  // Maintenance actions
+  $('#adminWipeLocal')?.addEventListener('click', async () => {
+    try {
+      if (!confirm('Erase ALL local data in this browser? This does not affect Neon.')) return;
+      await clearStoresSafely(['students','courses','logs','portfolio','files']);
+      showToast('Local data erased', 'success');
+      // Refresh admin lists
+      await Promise.all([loadStudents(), loadCourses(), loadLogs(), loadStats()]);
+    } catch (e) {
+      console.error('Admin wipe failed', e);
+      showToast('Failed to erase local data', 'error');
+    }
+  });
   
   // Students
   $('#studentForm')?.addEventListener('submit', async (e) => {
